@@ -2680,7 +2680,10 @@ const ONLINE = (() => {
   O.syncPbs = async pbs => { if (!O.profile || !pbs) return 0; const clean = {}; for (const k of Object.keys(pbs)) if (/^[a-z0-9_]{2,24}$/.test(k) && pbs[k] >= 1) clean[k] = Math.min(20000, Math.round(pbs[k])); if (!Object.keys(clean).length) return 0; try { const { data } = await O.sb.rpc('sync_pbs', { p_pbs: clean }); return data || 0; } catch (e) { return 0; } };
   // ---- live counters + unread messages: one tiny call a minute ----
   O.live = null; O.unread = 0; O.blocked = new Set();
-  O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping', { p_gid: O.myId().replace(/[^A-Za-z0-9-]/g, '').slice(0, 40), p_track: track || null, p_room: !!inRoom }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
+  // presence counts people per device: same device before and after sign-in is one row; signed-in devices merge by account
+  const devId = () => String(gid || 'gnone00').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  O.pingOff = () => { try { fetch(URL + '/rest/v1/rpc/ping_off', { method: 'POST', keepalive: true, headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_gid: devId() }) }); } catch (e) { } };
+  O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping', { p_gid: devId(), p_track: track || null, p_room: !!inRoom }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
   // ---- messages, blocks, reports, player cards ----
   const rpc = async (fn, args) => { if (!O.sb) return null; try { const { data, error } = await O.sb.rpc(fn, args || {}); return error ? null : data; } catch (e) { return null; } };
   O.sendMessage = async (to, body) => { const b = String(body || '').replace(/\s+/g, ' ').trim().slice(0, 500); if (!b) return 'Type a message first.'; const r = await rpc('send_message', { p_to: to, p_body: b }); return r ? (r.ok ? '' : r.why) : 'Could not send. Check your connection.'; };
@@ -2992,6 +2995,8 @@ const ONLINE = (() => {
   if (chatIn) { chatIn.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { const er = ONLINE.room && ONLINE.room.chat(chatIn.value); if (er) toast(er, 'bad'); else if (chatIn.value.trim() && ONLINE.room) chatShow(ONLINE.room.log[ONLINE.room.log.length - 1]); chatClose(); } else if (e.key === 'Escape') chatClose(); }); chatIn.addEventListener('blur', () => chatBox.classList.remove('typing')); }
   function pingNow() { if (!inClaude && ONLINE.status === 'ready' && track) ONLINE.ping(track.def.id, !!ONLINE.room); }
   setInterval(() => { if (document.visibilityState !== 'hidden') pingNow(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (inClaude || ONLINE.status !== 'ready') return; if (document.visibilityState === 'hidden') ONLINE.pingOff(); else pingNow(); });
+  addEventListener('pagehide', () => { if (!inClaude && ONLINE.status === 'ready') ONLINE.pingOff(); });
   async function netInit() {
     if (!inClaude) { ONLINE.init(); return; }
     try { const r = await window.claude.use('room'); if (!r) { NET.status = 'solo'; return; } NET.room = r; NET.status = 'online'; r.onPeers(() => { }, () => { NET.room = null; NET.status = 'solo'; }); } catch (e) { NET.status = 'solo'; }
