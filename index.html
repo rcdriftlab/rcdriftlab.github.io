@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>RC Drift Lab · by Stranger Kreations</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0d0e13"><link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Drift Lab"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="description" content="Free 1/10 RC drift game by Stranger Kreations. Drift solo, against AI, or online with friends.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&display=swap" rel="stylesheet">
 <style>
@@ -3179,19 +3180,26 @@ const ONLINE = (() => {
   const chips = (list, cur, fn, cls) => { const w = el('div', 'chips ' + (cls || '')); list.forEach(o => { const b = el('button', 'chip' + (o.id === cur ? ' act' : ''), o.name); if (o.sub) b.appendChild(el('small', '', o.sub)); b.onclick = () => { fn(o.id); renderPanel(); }; w.appendChild(b); }); return w; };
   const swatches = (cur, fn, extra) => { const w = el('div', 'sw'); (extra || []).concat(GFX.PAINTS).forEach(c => { const b = el('button', 'swb' + (c === cur ? ' act' : '')); if (c) b.style.background = c; else b.textContent = 'off'; b.onclick = () => { fn(c); renderPanel(); }; w.appendChild(b); }); const ci = el('input'); ci.type = 'color'; ci.value = cur || '#ffffff'; ci.oninput = () => fn(ci.value); w.appendChild(ci); return w; };
   const slider = (min, max, step, val, fmt, fn) => { const w = el('div', 'sl'), r = el('input'), o = el('output', '', fmt(val)); r.type = 'range'; r.min = min; r.max = max; r.step = step; r.value = val; r.oninput = () => { o.textContent = fmt(+r.value); fn(+r.value); }; w.appendChild(r); w.appendChild(o); return w; };
+  // ---------- install as an app (Android / desktop Chrome, Edge) ----------
+  let installEv = null, installed = false;
+  if (!inClaude && 'serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js'); } catch (e) { } }
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; if (mode !== 'drive' && (tab === 'settings')) renderPanel(); });
+  addEventListener('appinstalled', () => { installEv = null; installed = true; toast('Installed. Open RC Drift Lab from your home screen', 'good'); });
+  const isApp = () => (window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches)) || navigator.standalone === true;
+  async function doInstall() { if (!installEv) return false; installEv.prompt(); try { const r = await installEv.userChoice; if (r && r.outcome === 'accepted') installed = true; } catch (e) { } installEv = null; return true; }
   // ---------- first-run tour (also replayable from the Drive tab) ----------
   function tour(start) {
     const ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), android = /Android/.test(ua), touch = isTouchDev();
     const inApp = /\bClaude\b|FBAN|FBAV|Instagram|Line\//.test(ua);
     const save = ios ? '<ol><li>Open this link in <b>Safari</b>' + (inApp ? ' (tap the ••• or share button → <b>Open in Safari</b> first)' : '') + '.</li><li>Tap the <b>Share</b> button (square with the arrow up).</li><li>Scroll down → <b>Add to Home Screen</b> → <b>Add</b>.</li></ol>'
-      : android ? '<ol><li>Open this link in <b>Chrome</b>' + (inApp ? ' (menu → <b>Open in Chrome</b> first)' : '') + '.</li><li>Tap the <b>⋮</b> menu (top right).</li><li>Tap <b>Add to Home screen</b> (or <b>Install app</b>) → <b>Add</b>.</li></ol>'
+      : android ? '<ol><li>Open this link in <b>Chrome</b>' + (inApp ? ' (menu → <b>Open in Chrome</b> first)' : '') + '.</li><li>Tap the <b>⋮</b> menu (top right).</li><li>Tap <b>Install app</b> (or <b>Add to Home screen</b>) → <b>Install</b>.</li></ol>'
       : '<ol><li>On your phone, open this same link.</li><li>iPhone: Safari → Share → <b>Add to Home Screen</b>.</li><li>Android: Chrome → ⋮ → <b>Add to Home screen</b>.</li><li>On a computer: bookmark it, or Chrome ⋮ → <b>Cast, save and share</b> → <b>Create shortcut</b>.</li></ol>';
     const ctrl = touch ? '<p><b>Left thumb</b> anywhere on the left half = steering stick. <b>Right thumb</b> on the right half = throttle (slide up for gas, down for brake).</p><p>Turn the phone sideways. Buttons on top: pause, camera, reset.</p>'
-      : '<div class="tkeys"><kbd>W / ↑</kbd> throttle <kbd>Shift</kbd> full send <kbd>S / Space</kbd> brake <kbd>A D</kbd> steer <kbd>C</kbd> camera <kbd>R</kbd> reset <kbd>Esc</kbd> pause</div><p>Got a controller or your RC radio (USB sim mode)? Plug it in and set it up under <b>Controls</b>. Heads up: the shared link can\'t read controllers inside Claude, so use the downloaded file for that.</p>';
+      : '<div class="tkeys"><kbd>W / ↑</kbd> throttle <kbd>Shift</kbd> full send <kbd>S / Space</kbd> brake <kbd>A D</kbd> steer <kbd>C</kbd> camera <kbd>R</kbd> reset <kbd>Esc</kbd> pause</div><p>Got a controller or your RC radio (USB sim mode)? Plug it in and set it up under <b>Controls</b>.' + (inClaude ? ' Heads up: controllers can\'t be read inside Claude, so use ' + WEB + ' for that.' : '') + '</p>';
     const tracks = SIM.TRACK_DEFS.map(d => '<li><b>' + d.name + '</b> — ' + d.sub + '</li>').join('');
     const steps = [
       ['Welcome to RC Drift Lab', '<p>A 1/10 RC drift sim on real P-tile. Made by <b>Stranger Kreations</b>, Las Vegas.</p><p>Want the 30-second tour? You can skip it and find it later on the Drive tab.</p>'],
-      ['Save it like an app', save + '<p class="tmut">Then it opens from your home screen with one tap, like an app.</p>'],
+      ['Save it like an app', isApp() ? '<p>You\'re already running it as an app. Nice.</p>' : (installEv ? '<p>Tap <b>Install app</b> below. It goes on your home screen and opens full screen, like any other app.</p>' : save) + '<p class="tmut">Then it opens from your home screen with one tap, full screen, and solo mode even works offline.</p>'],
       ['Controls', ctrl],
       ['How to drift it', '<p>This isn\'t a race. <b>Throttle swings the tail and sets the angle</b>, it doesn\'t just add speed. Rev it before turn-in to break the rear loose, then hold angle with the throttle.</p><p><b>Angle assist</b> (keyboard and phone): the stick asks for an angle. <b>Direct</b> (controller/radio): you steer like the real car and the gyro helps. Switch under <b>Tuning → Steering feel</b>.</p>'],
       ['Tracks', '<ul>' + tracks + '</ul><p>Pick one on the <b>Drive</b> tab.</p><p><b>Yellow hatched zones score.</b> Outer zones (OZ): get your <b>rear bumper</b> into the band by the outside wall while sliding. Clip points (CP): get your <b>nose</b> into the box on the inside. Each zone pays for how much of it you fill, <b>how deep</b> you get (closer to the wall = more) and <b>how much angle</b> you carry (50°+ = full). The yellow IN ZONE tag shows how you\'re doing live.</p>'],
@@ -3203,7 +3211,7 @@ const ONLINE = (() => {
     const draw = () => { const [t, b] = steps[i]; ov.innerHTML = '<div class="tcard"><div class="tstep">' + (i + 1) + ' / ' + steps.length + '</div><h2>' + t + '</h2><div class="tbody">' + b + '</div><div class="tbtns"></div></div>';
       const bt = ov.querySelector('.tbtns'), mk = (lab, cls, fn) => { const x = el('button', cls, lab); x.onclick = fn; bt.appendChild(x); };
       if (i === 0) { mk('Skip', 'ghost', done); mk('Show me', 'big', () => { i++; draw(); }); }
-      else { mk(i > 0 ? 'Back' : '', 'ghost', () => { i--; draw(); }); if (i < steps.length - 1) { mk('Skip', 'ghost', done); mk('Next', 'big', () => { i++; draw(); }); } else mk("Let's drive", 'big', done); } };
+      else { mk(i > 0 ? 'Back' : '', 'ghost', () => { i--; draw(); }); if (i === 1 && installEv) mk('Install app', 'big', async () => { await doInstall(); i++; draw(); }); if (i < steps.length - 1) { mk('Skip', 'ghost', done); mk('Next', 'big', () => { i++; draw(); }); } else mk("Let's drive", 'big', done); } };
     draw();
   }
   function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) setTimeout(() => tour(0), 600); }
@@ -3499,7 +3507,7 @@ const ONLINE = (() => {
       h('Sound'); add(row('Sound', onOff(S.opt.sound, v => { S.opt.sound = v; save(); }), 'M toggles it while driving.'));
       add(row('Volume', slider(0, 100, 5, S.opt.vol ?? 100, v => v + '%', v => { S.opt.vol = v; if (A.master) A.master.gain.value = 0.5 * v / 100; save(); })));
       h('Gameplay'); add(row('Sim speed', slider(60, 100, 5, S.opt.simSpeed || 100, v => v + '%', v => { S.opt.simSpeed = v; save(); }), 'Slows the whole world down (cars, AI, physics). 85% is the default and reads more like a real 1/10 car on a small screen. 100% is real time. Online rooms run at your own setting.'));
-      h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', 'ghost', 'Save to home screen'); tb.onclick = () => tour(1); sv.onclick = () => tour(1); br.append(tb, sv); add(br);
+      h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', installEv ? 'big' : 'ghost', isApp() ? 'Installed as an app' : installEv ? 'Install app' : 'Add to home screen'); tb.onclick = () => tour(1); sv.disabled = isApp(); sv.onclick = async () => { if (!(await doInstall())) tour(1); renderPanel(); }; br.append(tb, sv); add(br);
       if (web) { const pv = el('a', 'ghost', 'Privacy policy'); pv.href = 'privacy.html'; pv.target = '_blank'; pv.rel = 'noopener'; pv.style.textDecoration = 'none'; add(pv); }
       msg('RC Drift Lab ' + VERSION + ' · made in Las Vegas by Stranger Kreations.');
     }
