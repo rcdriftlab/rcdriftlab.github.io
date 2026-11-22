@@ -578,7 +578,7 @@ const SIM = (function () {
   // It reads the judged line (wide into outer zones, nose to the clipping points), carries real angle and holds it with
   // countersteer, and uses the throttle the way you would: more trigger for more angle, lift to tighten the line.
   // ctx: { lead: car|null (car to chase), follower: car|null (car chasing me), hold }
-  const AIG = { lA: 1.2986, lB: 0.6199, bMax: 0.75, k0: 2.4491, bStr: 0.0767, kL: 2.4701, kS: 3.6497, kD: 0.3243, aMax: 0.1692, w0: 12.9849, kW: 15.9898, kV: 14.4965, kO: 25.4935, kP: 12.7361, aLat: 9.8656, vMax: 32.4189, vMin: 0.5252, comp: 0.0181, asst: 0, kE: -4.0719, kI: 15.2878, cc: 0.0774, kOI: 0.0613 };   // tuned by CMA-ES against the judge on every track (aicma.js)
+  const AIG = { lA: 2.2201, lB: 0.4099, bMax: 0.8672, k0: 1.9884, bStr: 0.314, kL: 1.737, kS: 4.9554, kD: 0.4132, aMax: 0.2487, w0: 45.0586, kW: 9.9732, kV: 45.3663, kO: 23.6087, kP: 12.7316, aLat: 4.998, vMax: 40.7775, vMin: 0.2303, comp: 0.0193, asst: 0, kE: -6.4608, kI: 12.6635, cc: 0.22, kOI: 0.0313, aFl: 0.1285 };   // tuned by CMA-ES against the strict drift judge on every track (aicma3.js): stays sideways through links (aFl)
   function makeAI(skill) { return { skill, stuck: 0, mimic: 0, gapI: 0, mode: 'line', pace: 1 }; }
   const unExpo = (y, e) => { y = clamp(y, -1, 1); if (e <= 0.001) return y; let x = y; for (let k = 0; k < 6; k++) { const f = x * (1 - e) + e * x * x * x - y, d = (1 - e) + 3 * e * x * x; x = clamp(x - f / d, -1, 1); } return x; };
   function aiDrive(c, ai, tr, ctx, dt) {
@@ -599,6 +599,8 @@ const SIM = (function () {
     // ---- target angle (body vs travel): full angle in the corners, a little held through short straights ----
     const kn = Math.abs(kap) / g.k0; let betaT = Math.sign(kap) * (g.bMax * (0.65 + 0.35 * sk)) * (kn > 1 ? 1 : kn * kn * (3 - 2 * kn));
     if (Math.abs(betaT) < g.bStr && Math.abs(c.slip) > 0.3 && Math.sign(c.slip) === Math.sign(kap || c.slip)) betaT = Math.sign(c.slip) * g.bStr;   // don't drop a slide between linked corners
+    // stay sideways through the links like a real driver: once moving, never ask for less than aFl of angle (side follows the corner, or the slide you're in)
+    if (g.aFl && sp > 0.8 && ai.mode !== 'chase') { const sgn = Math.abs(kap) > 0.05 ? Math.sign(kap) : Math.sign(c.slip || kap || 1); if (Math.abs(betaT) < g.aFl * (0.65 + 0.35 * sk)) betaT = sgn * g.aFl * (0.65 + 0.35 * sk); }
     // ---- target speed: what the tightest bit ahead can carry sideways ----
     let vT = Math.min(g.vMax * Math.sqrt(tr.width / 2.2), Math.sqrt(g.aLat * c.p.muR / 0.546 / Math.max(0.05, kMax)));
     vT = Math.max(g.vMin, vT) * ai.pace * (0.9 + 0.1 * sk); ai.mode = 'line';
@@ -2974,7 +2976,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v35', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v36', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
