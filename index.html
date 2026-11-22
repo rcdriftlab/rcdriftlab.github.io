@@ -144,6 +144,8 @@ kbd{display:inline-block;min-width:26px;padding:2px 7px;margin-right:8px;border:
 #chatIn{display:none;pointer-events:auto;margin-top:6px;background:rgba(8,9,12,.85)}#chat.typing #chatIn{display:block}
 #tbtns [data-a=chat]{display:none}.inroomOnly{display:none}.inroom .inroomOnly{display:inline}.inroom #tbtns [data-a=chat]{display:inline-block}
 #menu{width:min(600px,100vw);padding-right:34px}#nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}.nav{flex:0 0 auto}
+#hZone.on.warn{background:rgba(255,210,26,.16);border-color:#ffd21a;color:#ffd21a}
+@media (max-width:560px){#nav{flex-wrap:wrap;overflow:visible}.nav{font-size:11px;padding:8px 6px 9px;letter-spacing:.04em}}
 @media (max-width:700px){.stats b{font-size:15px}.stats span{font-size:9px;letter-spacing:.06em}}
 select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln);border-radius:4px;color:var(--tx);font:inherit}
 .venmo{display:block;text-align:center;text-decoration:none;background:#008cff;color:#fff;border:0;font-weight:700}.venmo:hover{background:#1a9bff}.venmoLink{color:#4fb2ff;text-decoration:underline}
@@ -2072,7 +2074,8 @@ const GFX = (function () {
     if (BODY[id]) return Promise.resolve(BODY[id]); if (pending[id]) return pending[id];
     let p;
     if (window.__BODY_B64 && window.__BODY_B64[id]) { const s = atob(window.__BODY_B64[id]), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); p = Promise.resolve(u.buffer); }
-    else p = pngBytes('bodies/' + id + '.png').catch(() => fetch('bodies/' + id + '.bin').then(r => { if (!r.ok) throw new Error('body ' + id); return r.arrayBuffer(); }));
+    else { const bin = () => fetch('bodies/' + id + '.bin').then(r => { if (!r.ok) throw new Error('body ' + id); return r.arrayBuffer(); }), png = () => pngBytes('bodies/' + id + '.png');
+      p = (window.claude && window.claude.use) ? png().catch(bin) : bin().catch(png); }   // website: real .bin first (no wasted 404); inside Claude: PNG-packed first
     return (pending[id] = p.then(buf => { const d = decodeBody(buf); if (!d.hdr || d.hdr.id !== id) throw new Error('body ' + id + ' corrupt'); BODY[id] = d; delete pending[id]; return d; }, e => { delete pending[id]; throw e; }));
   }
   function loadBodies(ids, onProgress) {
@@ -2665,28 +2668,30 @@ const ONLINE = (() => {
       const st = await Promise.race([O.sb.rpc('game_stats'), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 15000))]);
       if (st.error) throw st.error; O.stats = st.data; O.status = 'ready';
       const { data } = await O.sb.auth.getSession(); await setUser(data && data.session ? data.session.user : null);
-      O.sb.auth.onAuthStateChange((ev, session) => { setUser(session ? session.user : null); });
+      O.sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; setTimeout(() => setUser(u), 0); });   // never call the API inside the auth callback (supabase-js lock)
       O.refreshLobbies(); setInterval(() => { if (!O.room) O.refreshLobbies(); }, 20000);
     } catch (e) { O.tries = (O.tries || 0) + 1; if (O.tries < 4 && !(e && e.message === 'lib' && O.tries > 1)) { O.status = 'off'; setTimeout(O.init, 2500 * O.tries); } else { O.status = 'unavailable'; O.err = 'Online is not reachable from this copy of the game.'; } }
     fire();
   };
+  let pSeq = 0;   // newest profile lookup wins; a stale "no profile yet" answer can never wipe a profile that was just claimed
   async function setUser(u) {
-    const was = O.user && O.user.id; O.user = u; if (!u) { O.profile = null; fire(); return; }
+    const was = O.user && O.user.id; O.user = u; if (!u) { pSeq++; O.profile = null; fire(); return; }
     if (was === u.id && O.profile) return;
-    const { data } = await O.sb.rpc('my_profile'); O.profile = data && data.id ? data : null; fire();
-    if (O.profile) { O.loadBlocks(); O.ping(); } if (O.profile && O.onProfile) O.onProfile(O.profile);
+    const my = ++pSeq; let data = null; try { ({ data } = await O.sb.rpc('my_profile')); } catch (e) { }
+    if (my !== pSeq || !O.user || O.user.id !== u.id) return; const p = data && data.id ? data : null; if (!p && O.profile && O.profile.id === u.id) return; O.profile = p; fire();
+    if (O.profile) { O.loadBlocks(); O.ping(); O.checkAdmin(); } if (O.profile && O.onProfile) O.onProfile(O.profile);
   }
   O.signInGoogle = async () => { if (!O.sb) return; const { error } = await O.sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) { O.err = error.message; fire(); } };
-  O.signOut = async () => { if (!O.sb) return; await O.sb.auth.signOut(); O.user = null; O.profile = null; fire(); };
+  O.signOut = async () => { if (!O.sb) return; await O.sb.auth.signOut(); O.user = null; O.profile = null; O.isAdmin = false; fire(); };
   O.claimName = async (name, look) => {
     const n = O.cleanName(name); if (n.length < 3) return 'Pick a 3–16 character name (letters, numbers, space . _ -).';
     const row = { id: O.user.id, driver_name: n, look: look || {}, updated_at: new Date().toISOString() };
     const { error } = O.profile ? await O.sb.from('profiles').update({ driver_name: n, look: row.look, updated_at: row.updated_at }).eq('id', O.user.id) : await O.sb.from('profiles').insert(row);
     if (error) return /duplicate|unique/i.test(error.message) ? 'That name is taken. Try another.' : 'Could not save the name.';
-    const had = !!O.profile, { data } = await O.sb.rpc('my_profile'); O.profile = data && data.id ? data : null; fire(); if (!had && O.profile && O.onProfile) O.onProfile(O.profile); return '';
+    pSeq++; const had = !!O.profile; let data = null; try { ({ data } = await O.sb.rpc('my_profile')); } catch (e) { } O.profile = data && data.id ? data : Object.assign({}, O.profile || {}, { id: O.user.id, driver_name: n, look: row.look }); fire(); if (!had && O.profile && O.onProfile) O.onProfile(O.profile); if (!had) { O.loadBlocks(); O.ping(); } return '';
   };
   let gT = null; O.saveGarage = g => { if (!O.profile) return; clearTimeout(gT); gT = setTimeout(() => { O.sb.rpc('save_garage', { g }).then(() => { }, () => { }); if (g.look) O.sb.from('profiles').update({ look: g.look }).eq('id', O.user.id).then(() => { }, () => { }); }, 4000); };
-  O.submitLap = async (track, pts, body) => { if (!O.profile || !(pts > 0)) return null; try { const { data } = await O.sb.rpc('submit_lap', { p_track: track, p_pts: Math.round(pts), p_body: body || null }); return data; } catch (e) { return null; } };
+  O.submitLap = async (track, pts, body, ms) => { if (!O.profile || !(pts > 0)) return null; try { const { data } = await O.sb.rpc('submit_lap', { p_track: track, p_pts: Math.round(pts), p_body: body || null, p_ms: Math.max(1, Math.round(ms || 0)) }); return data; } catch (e) { return null; } };
   O.leaderboard = async (track, n) => { if (!O.sb) return []; const { data } = await O.sb.rpc('leaderboard', { p_track: track, p_limit: n || 25 }); return data || []; };
   O.trackLeaders = async () => { if (!O.sb) return []; const { data } = await O.sb.rpc('track_leaders'); return data || []; };
   O.myRanks = async () => { if (!O.profile) return []; const { data } = await O.sb.rpc('my_ranks'); return data || []; };
@@ -2707,6 +2712,13 @@ const ONLINE = (() => {
   O.unblock = async id => { const ok = await rpc('unblock_user', { p_id: id }); O.blocked.delete(id); await O.loadBlocks(); fire(); return ok; };
   O.report = async (id, reason, context) => { const r = await rpc('report_user', { p_id: id, p_reason: String(reason || '').slice(0, 300), p_context: context ? String(context).slice(0, 600) : null }); return r ? (r.ok ? '' : r.why) : 'Could not send the report.'; };
   O.playerCard = async (id, name) => rpc('player_card', id ? { p_id: id } : { p_name: name });
+  // ---- admin (Shaun): reports, bans, supporter badges ----
+  O.isAdmin = false;
+  O.checkAdmin = async () => { O.isAdmin = !!(await rpc('is_admin')); O.banned = !!(await rpc('is_banned')); fire(); };
+  O.adminReports = async all => (await rpc('admin_reports', { p_all: !!all })) || [];
+  O.adminHandle = async id => rpc('admin_handle_report', { p_id: id });
+  O.adminSet = async (id, banned, supporter) => rpc('admin_set_user', { p_id: id, p_banned: banned == null ? null : !!banned, p_supporter: supporter == null ? null : !!supporter });
+  O.adminUser = async name => rpc('admin_user', { p_name: name });
   O.recentPbs = async n => (await rpc('recent_pbs', { p_limit: n || 12 })) || [];
   O.leaderboardMonth = async (track, n) => (await rpc('leaderboard_month', { p_track: track, p_limit: n || 50 })) || [];
   O.refreshStats = async () => { if (!O.sb) return; const { data } = await O.sb.rpc('game_stats'); if (data) { O.stats = data; fire(); } };
@@ -2763,7 +2775,7 @@ const ONLINE = (() => {
     room.onPeers = (fn, onClose) => { onPeersFn = fn; onCloseFn = onClose; };
     room.debug = () => ({ ps: Object.keys(ch.presenceState()), peers: Array.from(peers.keys()), ok: Array.from(peers.values()).map(P => P.pc.connectionState + '/' + (P.dc ? P.dc.readyState : '-')), states: states.size, id, C });
     room.onChat = fn => { onChatFn = fn; };
-    room.canChat = () => O.signedIn() && !!O.profile;
+    room.canChat = () => O.signedIn() && !!O.profile && !O.banned;
     room.chat = text => { if (!room.canChat()) return 'Sign in to chat.'; const t = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 160); if (!t) return ''; const now = Date.now(); chatT = chatT.filter(x => now - x < 10000); if (chatT.length >= 5) return 'Slow down a little.'; chatT.push(now);
       const msg = { from: id, n: O.profile.driver_name, t: O.mask(t), at: now, me: true }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); ch.send({ type: 'broadcast', event: 'chat', payload: { from: id, n: msg.n, t } }); return ''; };
     room.direct = () => { let n = 0; for (const P of peers.values()) if (P.ok) n++; return n; };
@@ -2885,6 +2897,8 @@ const ONLINE = (() => {
     const n = cars.length, order = cars.slice(1), pi = S.opt.start === 'front' ? 0 : S.opt.start === 'back' ? n - 1 : Math.floor((n - 1) / 2);
     order.splice(pi, 0, player);
     order.forEach((c, slot) => { SIM.placeCar(c.sim, track, -6 - slot * 9, slot % 2 ? 0.3 : -0.3); c.skid = [null, null]; if (c.ai) c.ai.stuck = 0; });
+    // online room: everyone has their own grid box (from their player id) so drivers joining don't spawn inside each other
+    if (ONLINE.room && cars.length === 1) { let h = 0; for (const ch of String(ONLINE.myId ? ONLINE.myId() : Math.random())) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const slot = h % 10; SIM.placeCar(player.sim, track, -6 - slot * 7, slot % 2 ? 0.32 : -0.32); }
   }
   function resetPlayer() { const s = player.sim; SIM.placeCar(s, track, s.ti < 0 ? 0 : s.ti, 0); s.lap = Math.floor(s.prog); player.skid = [null, null]; bank(true); toast('Reset to track'); }
 
@@ -2976,7 +2990,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v36', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v37', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3081,7 +3095,7 @@ const ONLINE = (() => {
         if (score.run > 0) { score.lapPts += score.run; if (score.run > score.best) score.best = score.run; score.run = 0; }
         const pts = Math.round(score.lapPts), k0 = track.def.id; score.total += pts; score.lastPts = pts; S.pb = S.pb || {};
         if (pts > 0) { if (!S.pb[k0] || pts > S.pb[k0]) { S.pb[k0] = pts; save(); toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' · NEW BEST', 'good'); } else toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' pts', 'good'); }
-        if (pts > 0 && score.lapStart !== null && ONLINE.profile) { const isPb = S.pb[k0] === pts; ONLINE.submitLap(k0, pts, S.look.body).then(r => { BC.t = 0; if (r && r.pb) toast('LEADERBOARD · ' + pts.toLocaleString() + ' saved', 'good'); else if (isPb && !(r && r.ok)) ONLINE.syncPbs({ [k0]: pts }); }); }
+        if (pts > 0 && score.lapStart !== null && ONLINE.profile) { const isPb = S.pb[k0] === pts; ONLINE.submitLap(k0, pts, S.look.body, (simTime - score.lapStart) * 1000).then(r => { BC.t = 0; if (r && r.pb) toast('LEADERBOARD · ' + pts.toLocaleString() + ' saved', 'good'); else if (r && !r.ok && /update the game/.test(r.why || '')) toast('Reload the page to post laps (new version)', 'bad'); else if (isPb && !(r && r.ok)) ONLINE.syncPbs({ [k0]: pts }); }); }
         score.lapPts = 0; score.zs = [];
         if (score.lapStart !== null) { score.lastLap = simTime - score.lapStart; score.laps++; const k = track.def.id, b = S.best[k]; if (!b || score.lastLap < b) { S.best[k] = score.lastLap; save(); toast('BEST LAP ' + score.lastLap.toFixed(2) + 's'); } } score.lapStart = simTime; } score.lapN = lp;
     }
@@ -3172,7 +3186,7 @@ const ONLINE = (() => {
     const c = player.sim, ang = c.slip * 57.3;
     hud.score.textContent = Math.round(score.lapPts + score.run).toLocaleString(); hud.run.textContent = score.run > 0 ? '+' + Math.round(score.run).toLocaleString() + ' at risk' : ''; hud.mult.textContent = score.mult > 1 ? 'x' + score.mult : '';
     hud.ang.textContent = Math.round(Math.abs(ang)) + '°'; hud.spd.textContent = Math.round(c.speed * (S.opt.units === 'kmh' ? 36 : 22.37)); if (hud.unit.dataset.u !== S.opt.units) { hud.unit.dataset.u = S.opt.units; hud.unit.textContent = S.opt.units === 'kmh' ? 'SCALE KM/H' : 'SCALE MPH'; } hud.bar.style.transform = `translateX(${clamp(-ang / 70, -1, 1) * 50}%) scaleX(${0.06 + Math.min(1, Math.abs(ang) / 70) * 0.2})`; hud.bar.style.background = Math.abs(ang) > 55 ? '#ff3b3b' : Math.abs(ang) > 12 ? '#ff8a1f' : '#6b7280';
-    hud.gyro.textContent = S.tune.gyroGain + '%'; hud.thr.style.height = (c.inp.throttle * 100) + '%'; hud.tand.className = score.tandem ? 'on' : ''; if (score.inZone) { hud.zone.className = 'on'; hud.zone.textContent = 'IN ZONE · ' + Math.round((score.zoneQ || 0) * 100) + '%'; } else hud.zone.className = ''; hud.cam.textContent = CAMS[S.opt.cam];
+    hud.gyro.textContent = S.tune.gyroGain + '%'; hud.thr.style.height = (c.inp.throttle * 100) + '%'; hud.tand.className = score.tandem ? 'on' : ''; if (score.inZone) { if (c.drifting) { hud.zone.className = 'on'; hud.zone.textContent = 'IN ZONE · ' + Math.round((score.zoneQ || 0) * 100) + '%'; } else { hud.zone.className = 'on warn'; hud.zone.textContent = 'ZONE · GET SIDEWAYS'; } } else hud.zone.className = ''; hud.cam.textContent = CAMS[S.opt.cam];
     const bp = (S.pb || {})[track.def.id]; hud.lap.textContent = (score.lapStart !== null ? 'LAP ' + (score.laps + 1) + ' · ' + (simTime - score.lapStart).toFixed(1) + 's' : 'OUT LAP') + (score.lastPts != null ? ' · last ' + score.lastPts.toLocaleString() : '') + (bp ? ' · best ' + bp.toLocaleString() : '') + (score.total ? ' · session ' + Math.round(score.total).toLocaleString() : '');
     hud.net.textContent = NET.room ? 'ONLINE' + (ONLINE.room ? ' · ' + ONLINE.room.code : '') + ' · ' + (NET.count + 1) + (NET.count ? ' drivers here' : ' driver (waiting for others)') : 'SOLO SESSION'; hud.net.className = NET.room ? 'on' : ''; document.documentElement.classList.toggle('inroom', !!ONLINE.room);
     hud.src.textContent = inp.src === 'pad' ? 'CONTROLLER' : inp.src === 'touch' ? 'TOUCH' : 'KEYBOARD';
@@ -3276,6 +3290,7 @@ const ONLINE = (() => {
         for (const r of ['Rude or harassing', 'Spam', 'Offensive name', 'Cheating / fake scores', 'Something else']) { const c = el('button', 'chip', r); c.onclick = () => { pick = r; why.querySelectorAll('.chip').forEach(x => x.classList.toggle('act', x === c)); }; why.appendChild(c); } body.appendChild(why);
         const note = el('input'); note.type = 'text'; note.maxLength = 280; note.placeholder = 'Anything else? (optional)'; note.style.marginTop = '8px'; body.appendChild(note); const out = el('p', 'tmut', 'Reports go to the game admin. You can also block them so you never see their messages or chat.'); body.appendChild(out);
         btns.textContent = ''; mk('Cancel', 'ghost', close); mk('Send report', 'big', async () => { if (!pick) { out.textContent = 'Pick a reason first.'; return; } const e = await ONLINE.report(p.id, pick + (note.value ? ': ' + note.value : ''), thread && thread.id === p.id ? thread.msgs.slice(-6).map(m => (m.from_me ? 'me: ' : 'them: ') + m.body).join(' | ') : null); out.textContent = e || 'Thanks. The report was sent.'; if (!e) setTimeout(close, 1200); }); });
+      if (ONLINE.isAdmin) { mk('Admin: ban', 'ghost', async () => { await ONLINE.adminSet(p.id, true, null); toast(p.name + ' banned'); close(); }); mk(p.supporter ? 'Admin: remove ★' : 'Admin: supporter ★', 'ghost', async () => { await ONLINE.adminSet(p.id, null, !p.supporter); toast(p.supporter ? 'Badge removed' : p.name + ' is now a supporter ★', 'good'); close(); }); }
       if (!p.blocked) mk('Message', 'big', () => { close(); openThread(p.id, p.name); });
     });
   }
@@ -3410,6 +3425,23 @@ const ONLINE = (() => {
         if (O.profile) { const br = el('div', 'btnrow'), mp = el('button', 'ghost', 'My profile'), so = el('button', 'ghost', 'Sign out'); mp.onclick = () => playerCard(O.profile.id); so.onclick = () => { thread = null; O.signOut(); }; br.append(mp, so); add(br); }
         else { const so = el('button', 'ghost', 'Sign out'); so.onclick = () => O.signOut(); add(so); }
       }
+      if (O.banned) { h('Account restricted'); msg('This account has been restricted for breaking the rules. You can still drive solo and with AI.'); }
+      // ---- admin (only the game admin sees this) ----
+      if (O.isAdmin) { h('Admin', 'only you see this'); const box = el('div', 'lb'); box.textContent = 'Loading reports…'; add(box);
+        O.adminReports(false).then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No open reports. Nice.')); return; }
+          for (const r of list) { const d = el('div', 'slot'), l = el('div'); l.appendChild(el('b', '', String(r.target) + (r.target_banned ? ' (banned)' : ''))); l.appendChild(el('small', '', r.reason + ' · reported by ' + r.reporter + ' · ' + ago(r.created_at) + (r.context ? ' · chat: "' + r.context.slice(0, 140) + '"' : ''))); d.appendChild(l);
+            const pf = el('button', 'ghost', r.target_banned ? 'Unban' : 'Ban'), ok = el('button', 'ghost', 'Done');
+            pf.onclick = async () => { pf.disabled = true; await O.adminSet(r.target_id, !r.target_banned, null); toast(String(r.target) + (r.target_banned ? ' unbanned' : ' banned')); renderPanel(); };
+            ok.onclick = async () => { ok.disabled = true; await O.adminHandle(r.id); renderPanel(); }; d.append(pf, ok); box.appendChild(d); } });
+        const ai = el('input'); ai.type = 'text'; ai.maxLength = 16; ai.placeholder = 'Any driver, even banned'; const ab = el('button', 'ghost', 'Look up driver'), ao = el('div');
+        const look = async () => { const u = await O.adminUser(ai.value.trim()); ao.textContent = ''; if (!u) { ao.appendChild(el('p', 'tip', 'No driver by that name.')); return; }
+          const d = el('div', 'slot'), l = el('div'); l.appendChild(el('b', '', u.name + (u.banned ? ' (banned)' : '') + (u.supporter ? ' ★' : ''))); l.appendChild(el('small', '', fmt(u.laps) + ' laps · ' + u.reports + ' reports · since ' + new Date(u.since).toLocaleDateString())); d.appendChild(l);
+          const bn = el('button', 'ghost', u.banned ? 'Unban' : 'Ban'), sp = el('button', 'ghost', u.supporter ? 'Remove ★' : 'Supporter ★');
+          bn.onclick = async () => { await O.adminSet(u.id, !u.banned, null); toast(u.name + (u.banned ? ' unbanned' : ' banned')); look(); };
+          sp.onclick = async () => { await O.adminSet(u.id, null, !u.supporter); toast(u.supporter ? 'Supporter badge removed' : u.name + ' is now a supporter ★', 'good'); look(); };
+          d.append(bn, sp); ao.appendChild(d); };
+        ab.onclick = look; ai.onkeydown = e => { if (e.key === 'Enter') look(); }; add(row('Driver', ai)); add(ab); add(ao);
+        msg('Ban: hidden from every leaderboard, and can\'t post laps, message, chat or host rooms. Supporter: puts a ★ on their profile (for Venmo chip-ins).'); }
       // ---- messages ----
       if (O.profile) {
         if (thread) {
@@ -3427,7 +3459,7 @@ const ONLINE = (() => {
           O.inbox().then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No messages yet. Tap any name on the leaderboards or in a room to message them, or look someone up below.')); return; }
             for (const c of list) { const r = el('button', 'conv' + (c.unread ? ' new' : '')); const top = el('div'); top.appendChild(el('b', '', (c.online ? '● ' : '') + c.other_name)); top.appendChild(el('small', '', ago(c.last_at))); r.appendChild(top);
               r.appendChild(el('span', '', (c.last_from_me ? 'You: ' : '') + O.mask(c.last_body))); if (c.unread) r.appendChild(el('i', '', String(c.unread))); r.onclick = () => openThread(c.other_id, String(c.other_name)); box.appendChild(r); } });
-          const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
+          const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Their driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
           const fb = el('button', 'ghost', 'Find driver'); const find = async () => { const n = fi.value.trim(); if (n.length < 3) { fo.textContent = 'Type their driver name.'; return; } const p = await O.playerCard(null, n); if (!p) fo.textContent = 'No driver called ' + n + '.'; else { F.find = ''; playerCard(p.id, p.name); } };
           fb.onclick = find; fi.onkeydown = e => { if (e.key === 'Enter') find(); }; add(row('Message someone', fi)); add(fb); add(fo);
         }
