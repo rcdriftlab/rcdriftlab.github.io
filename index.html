@@ -389,11 +389,22 @@ const SIM = (function () {
   // Outer zone: the rear bumper has to be inside the zone band (z.w from the outside wall) while drifting. Every metre you
   // hold there is worth more the deeper you are (closer to the wall) and the more angle you carry.
   // Clipping point: the front bumper's closest pass to the inside wall while drifting; deeper and with more angle = more.
-  const angF = deg => clamp((deg - 12) / 38, 0, 1);            // 12° = nothing, 50°+ = full credit
+  const angF = deg => clamp((deg - 18) / 37, 0, 1);            // 18° = nothing, 55°+ = full credit
+  // ---- the one drift detector (player chain score, zone judge, AI, tools all use it) ----
+  // A real drift = the car is sideways and STAYS sideways: 18°+ of body slip held for 0.3 s at speed before it counts.
+  // Once in, it holds through a transition (slip passing 0 side to side) for up to 0.3 s. A swerve or a quick flick never counts.
+  const DRIFT_IN = 18, DRIFT_HOLD = 12, DRIFT_T = 0.3, DRIFT_GRACE = 0.3, DRIFT_V = 0.7;
+  function driftCheck(c, dt) {
+    const deg = Math.abs(c.slip) * 57.3, D = c._drift || (c._drift = { on: false, t: 0, lo: 0 });
+    if (c.speed < DRIFT_V) { D.on = false; D.t = 0; D.lo = 0; return (c.drifting = false); }
+    if (!D.on) { if (deg >= DRIFT_IN) { D.t += dt; if (D.t >= DRIFT_T) { D.on = true; D.lo = 0; } } else D.t = Math.max(0, D.t - dt * 2); }
+    else if (deg < DRIFT_HOLD) { D.lo += dt; if (D.lo > DRIFT_GRACE) { D.on = false; D.t = 0; } } else D.lo = 0;
+    return (c.drifting = D.on);
+  }
   function judgeTick(J, c, tr, dt) {
     const out = J.ev || (J.ev = []); out.length = 0; J.zs = J.zs || []; J.live = 0; J.liveZ = -1;
     if (!tr.zones) return out;
-    const deg = Math.abs(c.slip) * 57.3, drifting = deg > 12 && c.speed > 0.6, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw), hw = tr.width / 2, i = c.ti, N = tr.N, step = c.speed * dt;
+    const deg = Math.abs(c.slip) * 57.3, drifting = (J.drifting != null ? J.drifting : driftCheck(c, dt)) && deg >= DRIFT_HOLD, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw), hw = tr.width / 2, i = c.ti, N = tr.N, step = c.speed * dt;
     const rx = c.x - cs * (c.p.b + 0.085), ry = c.y - sn * (c.p.b + 0.085), fx = c.x + cs * (c.p.a + 0.075), fy = c.y + sn * (c.p.a + 0.075);
     tr.zones.forEach((z, k) => {
       const st = J.zs[k] || (J.zs[k] = { on: false, fill: 0, Q: 0, A: 0, G: 0, gap: 9, ang: 0 });
@@ -402,13 +413,13 @@ const SIM = (function () {
         if (d < z.n) { st.on = true; const gap = hw - tr.lateral(rx, ry, i) * z.side;
           if (drifting && gap < z.w) { const dep = clamp(1 - gap / z.w, 0, 1), q = angF(deg) * (0.35 + 0.65 * dep); st.fill += step; st.Q += q * step; st.A += deg * step; st.G += gap * step; J.live = q; J.liveZ = k; } }
         else if (st.on) { st.on = false; const f = Math.min(1, st.fill / z.len);
-          if (f > 0.12) { const qa = st.Q / st.fill; out.push({ type: 'outer', k, z, pct: f, ang: st.A / st.fill, gapCm: st.G / st.fill * 100, quality: qa, pts: Math.round(420 * f * (0.25 + 0.75 * qa)) }); }
+          if (f > 0.12 && st.Q / st.fill > 0.02) { const qa = st.Q / st.fill; out.push({ type: 'outer', k, z, pct: f, ang: st.A / st.fill, gapCm: st.G / st.fill * 100, quality: qa, pts: Math.round(420 * f * qa) }); }
           st.fill = st.Q = st.A = st.G = 0; }
       } else {
         const d = ((i - z.i) % N + N) % N, dd = Math.min(d, N - d) * tr.ds;
         if (dd < 0.4) { st.on = true; if (drifting) { const gap = hw - tr.lateral(fx, fy, i) * z.side; if (gap < st.gap) { st.gap = gap; st.ang = deg; } if (gap < z.d) { J.live = angF(deg) * (1 - gap / z.d); J.liveZ = k; } } }
         else if (st.on) { st.on = false;
-          if (st.gap < z.d) { const dep = clamp(1 - Math.max(0, st.gap) / z.d, 0, 1); out.push({ type: 'clip', k, z, gapCm: Math.max(0, st.gap) * 100, ang: st.ang, quality: dep * (0.3 + 0.7 * angF(st.ang)), pts: Math.round(520 * (0.3 + 0.7 * dep) * (0.35 + 0.65 * angF(st.ang))) }); }
+          if (st.gap < z.d && angF(st.ang) > 0.03) { const dep = clamp(1 - Math.max(0, st.gap) / z.d, 0, 1); out.push({ type: 'clip', k, z, gapCm: Math.max(0, st.gap) * 100, ang: st.ang, quality: dep * (0.3 + 0.7 * angF(st.ang)), pts: Math.round(520 * (0.3 + 0.7 * dep) * angF(st.ang)) }); }
           st.gap = 9; st.ang = 0; }
       }
     });
@@ -652,7 +663,7 @@ const SIM = (function () {
     return c.inp;
   }
 
-  return { G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
+  return { driftCheck, DRIFT_IN, G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
 })();
 SIM.K = SIM_K;
 if (typeof module !== 'undefined') module.exports = SIM;
@@ -2677,7 +2688,7 @@ const ONLINE = (() => {
   O.leaderboard = async (track, n) => { if (!O.sb) return []; const { data } = await O.sb.rpc('leaderboard', { p_track: track, p_limit: n || 25 }); return data || []; };
   O.trackLeaders = async () => { if (!O.sb) return []; const { data } = await O.sb.rpc('track_leaders'); return data || []; };
   O.myRanks = async () => { if (!O.profile) return []; const { data } = await O.sb.rpc('my_ranks'); return data || []; };
-  O.syncPbs = async pbs => { if (!O.profile || !pbs) return 0; const clean = {}; for (const k of Object.keys(pbs)) if (/^[a-z0-9_]{2,24}$/.test(k) && pbs[k] >= 1) clean[k] = Math.min(20000, Math.round(pbs[k])); if (!Object.keys(clean).length) return 0; try { const { data } = await O.sb.rpc('sync_pbs', { p_pbs: clean }); return data || 0; } catch (e) { return 0; } };
+  O.syncPbs = async pbs => { if (!O.profile || !pbs) return 0; const clean = {}; for (const k of Object.keys(pbs)) if (/^[a-z0-9_]{2,24}$/.test(k) && pbs[k] >= 1) clean[k] = Math.min(2000000, Math.round(pbs[k])); if (!Object.keys(clean).length) return 0; try { const { data } = await O.sb.rpc('sync_pbs', { p_pbs: clean }); return data || 0; } catch (e) { return 0; } };
   // ---- live counters + unread messages: one tiny call a minute ----
   O.live = null; O.unread = 0; O.blocked = new Set();
   // presence counts people per device: same device before and after sign-in is one row; signed-in devices merge by account
@@ -3046,7 +3057,7 @@ const ONLINE = (() => {
     if (carHit > 0.9) { sfxHit(carHit * 0.6); }
     // ---- scoring ----
     if (mode === 'drive') {
-      const ang = Math.abs(P.slip) * 57.3, drifting = ang > 12 && P.speed > 0.6; let near = 9;
+      const ang = Math.abs(P.slip) * 57.3, drifting = SIM.driftCheck(P, dt); let near = 9;
       for (const o of all) if (o !== player) { const d = Math.hypot(o.sim.x - P.x, o.sim.y - P.y); if (d < near && Math.abs(o.sim.slip) > 0.17) near = d; }
       score.tandem = drifting && near < 0.8; score.near = near;
       if (drifting) { score.driftT += dt; score.graceT = 0; score.mult = Math.min(5, 1 + Math.floor(score.driftT / 2.5)); score.run += Math.pow(Math.min(ang, 70), 1.25) * Math.min(1, P.speed / 1.5) * dt * 5.5 * score.mult * (score.tandem ? 1 + (0.8 - near) * 3 : 1);
@@ -3055,7 +3066,7 @@ const ONLINE = (() => {
       else if (score.run > 0) { score.graceT += dt; if (score.graceT > 1.1) bank(false); }
       // ---- judging zones (same judge the AI is tuned against): depth x angle x coverage ----
       if (track.zones) {
-        const J = score.J || (score.J = {}); J.zs = score.zs; const ev = SIM.judgeTick(J, P, track, dt);
+        const J = score.J || (score.J = {}); J.zs = score.zs; J.drifting = drifting; const ev = SIM.judgeTick(J, P, track, dt);
         score.inZone = J.liveZ >= 0; score.zoneQ = J.live;
         if (score.inZone && drifting) score.run += Math.pow(Math.min(ang, 70), 1.25) * Math.min(1, P.speed / 1.5) * dt * 3 * score.mult * (0.4 + J.live);
         for (const e of ev) { const b = Math.round(e.pts * score.mult); score.run += b;
