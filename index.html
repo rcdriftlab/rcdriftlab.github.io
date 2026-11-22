@@ -98,11 +98,11 @@ kbd{display:inline-block;min-width:26px;padding:2px 7px;margin-right:8px;border:
 .stick.on{opacity:1}.stick .knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 2px 10px rgba(0,0,0,.5)}
 #tthr .knob{background:var(--ac)}
 .stick .lbl{position:absolute;left:0;right:0;top:-22px;text-align:center;font-size:11px;letter-spacing:.18em;color:rgba(255,255,255,.7)}
-#tbtns{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
-#tbtns button{min-width:46px;height:38px;padding:0 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(10,11,15,.55);font-size:12px;font-weight:700;letter-spacing:.06em}
+#tbtns{position:absolute;top:12px;z-index:2;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+#tbtns button{min-width:52px;height:44px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;padding:0 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(10,11,15,.55);font-size:12px;font-weight:700;letter-spacing:.06em}
 #rotate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(8,9,12,.92);z-index:9;font-size:18px;font-weight:700;text-align:center;padding:30px}
 @media (orientation:portrait){.touch body:not(.inmenu) #rotate{display:flex}}
-html.rot #rotate{display:none!important}html.rot body.paused #menu{width:min(600px,100%)}#tbtns .rotOnly{display:none}html.rot #tbtns .rotOnly{display:inline-block}
+html.rot #rotate{display:none!important}.touch body:not(.inmenu) #hTL{pointer-events:auto;cursor:pointer}.touch body:not(.inmenu) #hud{z-index:4}html.narrow #tbtns{gap:5px;top:8px}html.narrow #tbtns button{min-width:42px;padding:0 7px;font-size:11px}html.narrow #hTL{min-width:0;max-width:150px}html.narrow #mini{width:130px;height:87px}html.rot body.paused #menu{width:min(600px,100%)}#tbtns .rotOnly{display:none}html.rot #tbtns .rotOnly{display:inline-block}
 html.rot #hTL{top:8px;left:8px;min-width:150px;padding:6px 10px}html.rot #hScore{font-size:26px}html.rot #hRunRow{height:22px;font-size:17px}html.rot #hLap{font-size:11px;margin-top:4px}
 html.rot #mini{width:150px;height:100px}html.rot #hTR{top:8px;right:8px}html.rot #hB{bottom:8px;width:min(260px,40vh);padding:6px 10px}html.rot #hAng{font-size:30px}html.rot #hBR{display:none}html.rot #chat{width:min(400px,62vh)}
 .touch #hBL{display:none}
@@ -3197,7 +3197,7 @@ const ONLINE = (() => {
   function tuneSSAO() { if (!ssao) return; const f = camera.far - camera.near; ssao.kernelRadius = 0.022; ssao.minDistance = 0.0006 / f; ssao.maxDistance = 0.045 / f; }
   let drs = 1, fEma = 1 / 60, drT = 0, fpsEl = null, fpsT = 0; const _v1 = new T.Vector3(), _v2 = new T.Vector3(), _v3 = new T.Vector3();
   function softResize() { const w = LW(), h = LH(), pr = Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); if (fxaa) fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); } }
-  function resize() { const w = LW(), h = LH(); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
+  function resize() { const w = LW(), h = LH(); fitBar(w); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
   addEventListener('resize', resize);
   // ---- sideways play with the phone's rotation lock on: iPhones ignore the manifest's landscape lock, and with Portrait Orientation Lock the page never turns.
   // When a touch device is still portrait while driving, the whole driving view is turned 90° here instead (menus stay upright). ⟲ flips it for the other hand. ----
@@ -3331,8 +3331,17 @@ const ONLINE = (() => {
       if (e.pointerId === TCH.tId) { TCH.tId = null; TCH.thr = 0; TCH.brk = 0; knob(th, 0, 0); th.classList.remove('on'); th.style.left = '84%'; th.style.top = '72%'; }
     };
     tz.addEventListener('pointerup', up); tz.addEventListener('pointercancel', up);
-    tz.querySelectorAll('#tbtns button').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); audioStart(); const a = b.dataset.a;
-      if (a === 'menu') openMenu('pause'); if (a === 'cam') nextCam(); if (a === 'reset') resetPlayer(); if (a === 'gm') gyroAdj(-5); if (a === 'gp') gyroAdj(5); if (a === 'chat') chatOpen(); if (a === 'flip') { S.opt.flip = !S.opt.flip; save(); applyRot(); } }));
+    // top-bar buttons fire when the finger lifts (pointerup), not on 'click': iOS Safari drops clicks during touch-heavy play, which left PAUSE and CAM dead on iPhones.
+    // The action runs before audio (an iOS audio hiccup can't block it), the stray click that follows is swallowed, and the lap-score box is a second pause button.
+    let swallowT = 0;
+    const act = a => { if (a === 'menu') openMenu('pause'); if (a === 'cam') nextCam(); if (a === 'reset') resetPlayer(); if (a === 'gm') gyroAdj(-5); if (a === 'gp') gyroAdj(5); if (a === 'chat') chatOpen(); if (a === 'flip') { S.opt.flip = !S.opt.flip; save(); applyRot(); } };
+    const fire = a => { swallowT = performance.now(); try { act(a); } catch (e) { console.error(e); } try { audioStart(); } catch (e) { } };
+    document.addEventListener('click', e => { if (performance.now() - swallowT < 450) { e.stopPropagation(); e.preventDefault(); } }, true);
+    const tapBtn = (b, a) => { let down = 0; b.addEventListener('pointerdown', ev => { ev.stopPropagation(); down = performance.now(); });
+      b.addEventListener('pointerup', ev => { ev.stopPropagation(); ev.preventDefault(); if (down && performance.now() - down < 1500) { down = 0; fire(a()); } });
+      b.addEventListener('pointercancel', () => { down = 0; }); };
+    tz.querySelectorAll('#tbtns button').forEach(b => tapBtn(b, () => b.dataset.a));
+    const tl = document.getElementById('hTL'); if (tl) tapBtn(tl, () => mode === 'drive' ? 'menu' : '');
     ['touchmove', 'gesturestart'].forEach(ev => document.addEventListener(ev, e => { if (mode === 'drive') e.preventDefault(); }, { passive: false }));
   })();
   function readInput(dt) {
@@ -3356,7 +3365,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v40', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v41', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3968,6 +3977,8 @@ const ONLINE = (() => {
   }
   // menu display order: Prodigy V2 sits right under the original Prodigy (TRACK_DEFS order stays put so saved track indices keep working)
   function TRK() { const a = SIM.TRACK_DEFS.map((d, i) => [d, i]), k = a.findIndex(x => x[0].id === 'prodigy2'), j = a.findIndex(x => x[0].id === 'prodigy'); if (k > j + 1 && j >= 0) { const [x] = a.splice(k, 1); a.splice(j + 1, 0, x); } return a; }
+  // narrow phones (and the sideways view): compact top-bar labels so the bar clears the lap-score box and the minimap (overlap made PAUSE/CAM untappable)
+  function fitBar(w) { const n = w < 900; document.documentElement.classList.toggle('narrow', n); const L = n ? { gm: 'G −', gp: 'G +', reset: 'RESET' } : { gm: 'GYRO −', gp: 'GYRO +', reset: 'RESET' }; document.querySelectorAll('#tbtns button').forEach(b => { if (L[b.dataset.a]) b.textContent = L[b.dataset.a]; }); }
   function bakeStatic(g) {
     try { g.updateMatrixWorld(true); const inv = new T.Matrix4().copy(g.matrixWorld).invert(), by = new Map(), dead = [];
       g.traverse(o => { if (!o.isMesh || Array.isArray(o.material) || o.isSkinnedMesh) return; let q = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); for (const a of Object.keys(q.attributes)) if (!['position', 'normal', 'uv'].includes(a)) q.deleteAttribute(a);
