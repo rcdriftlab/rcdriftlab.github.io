@@ -102,6 +102,9 @@ kbd{display:inline-block;min-width:26px;padding:2px 7px;margin-right:8px;border:
 #tbtns button{min-width:46px;height:38px;padding:0 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(10,11,15,.55);font-size:12px;font-weight:700;letter-spacing:.06em}
 #rotate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(8,9,12,.92);z-index:9;font-size:18px;font-weight:700;text-align:center;padding:30px}
 @media (orientation:portrait){.touch body:not(.inmenu) #rotate{display:flex}}
+html.rot #rotate{display:none!important}html.rot body.paused #menu{width:min(600px,100%)}#tbtns .rotOnly{display:none}html.rot #tbtns .rotOnly{display:inline-block}
+html.rot #hTL{top:8px;left:8px;min-width:150px;padding:6px 10px}html.rot #hScore{font-size:26px}html.rot #hRunRow{height:22px;font-size:17px}html.rot #hLap{font-size:11px;margin-top:4px}
+html.rot #mini{width:150px;height:100px}html.rot #hTR{top:8px;right:8px}html.rot #hB{bottom:8px;width:min(260px,40vh);padding:6px 10px}html.rot #hAng{font-size:30px}html.rot #hBR{display:none}html.rot #chat{width:min(400px,62vh)}
 .touch #hBL{display:none}
 @media (max-height:520px){.logo{width:min(250px,60vw)}.sub{display:none}#menu{padding-top:12px}.nav{padding:7px 9px 8px;font-size:12px}
  #hTL{top:8px;left:8px;min-width:150px;padding:6px 10px}#hScore{font-size:26px}#hRunRow{height:22px;font-size:17px}#hLap{font-size:11px;margin-top:4px}
@@ -178,7 +181,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <div id="touch"><div class="tz" id="tzL"></div><div class="tz" id="tzR"></div>
   <div class="stick" id="tsteer"><div class="lbl">STEER</div><div class="knob"></div></div>
   <div class="stick" id="tthr"><div class="lbl">THROTTLE</div><div class="knob"></div></div>
-  <div id="tbtns"><button data-a="menu">II</button><button data-a="cam">CAM</button><button data-a="reset">RESET</button><button data-a="gm">GYRO −</button><button data-a="gp">GYRO +</button><button data-a="chat">CHAT</button></div></div>
+  <div id="tbtns"><button data-a="menu">II</button><button data-a="cam">CAM</button><button data-a="reset">RESET</button><button data-a="gm">GYRO −</button><button data-a="gp">GYRO +</button><button data-a="chat">CHAT</button><button data-a="flip" class="rotOnly">⟲</button></div></div>
 <div id="chat"><div id="chatLog"></div><input id="chatIn" type="text" maxlength="160" placeholder="Chat to the room · Enter sends · Esc cancels" autocomplete="off"></div>
 <div id="rotate"><div style="font-size:42px">⟲</div>Turn your phone sideways to drive</div>
 <div id="toast"></div>
@@ -3179,7 +3182,7 @@ const ONLINE = (() => {
     composer = ssao = bloom = fxaa = grade = null;
     const q = S.opt.quality;
     if (q === 0 || !T.EffectComposer || !T.UnrealBloomPass) return;
-    const w = innerWidth, h = innerHeight, pr = renderer.getPixelRatio();
+    const w = LW(), h = LH(), pr = renderer.getPixelRatio();
     let rt; const gl2 = renderer.capabilities.isWebGL2, ext = renderer.extensions;
     // float targets only where the GPU can actually render to them (many phones can't -> garbage frames)
     const halfOK = gl2 ? ext.has('EXT_color_buffer_float') || ext.has('EXT_color_buffer_half_float') : ext.has('OES_texture_half_float') && ext.has('EXT_color_buffer_half_float');
@@ -3193,9 +3196,20 @@ const ONLINE = (() => {
   }
   function tuneSSAO() { if (!ssao) return; const f = camera.far - camera.near; ssao.kernelRadius = 0.022; ssao.minDistance = 0.0006 / f; ssao.maxDistance = 0.045 / f; }
   let drs = 1, fEma = 1 / 60, drT = 0, fpsEl = null, fpsT = 0; const _v1 = new T.Vector3(), _v2 = new T.Vector3(), _v3 = new T.Vector3();
-  function softResize() { const w = innerWidth, h = innerHeight, pr = Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); if (fxaa) fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); } }
-  function resize() { const w = innerWidth, h = innerHeight; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
+  function softResize() { const w = LW(), h = LH(), pr = Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); if (fxaa) fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); } }
+  function resize() { const w = LW(), h = LH(); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
   addEventListener('resize', resize);
+  // ---- sideways play with the phone's rotation lock on: iPhones ignore the manifest's landscape lock, and with Portrait Orientation Lock the page never turns.
+  // When a touch device is still portrait while driving, the whole driving view is turned 90° here instead (menus stay upright). ⟲ flips it for the other hand. ----
+  var ROT = false;
+  function LW() { return ROT ? innerHeight : innerWidth; } function LH() { return ROT ? innerWidth : innerHeight; }
+  function LP(e) { if (!ROT) return [e.clientX, e.clientY]; return S.opt.flip ? [innerHeight - e.clientY, e.clientX] : [e.clientY, innerWidth - e.clientX]; }
+  function applyRot() { const cl = document.body.classList, want = !!isTouch && innerHeight > innerWidth && (!cl.contains('inmenu') || cl.contains('paused')), b = document.body.style, was = ROT;
+    if (want) { b.position = 'fixed'; b.left = '0'; b.top = '0'; b.width = innerHeight + 'px'; b.height = innerWidth + 'px'; b.transformOrigin = '0 0'; b.transform = S.opt.flip ? 'translateY(' + innerHeight + 'px) rotate(-90deg)' : 'translateX(' + innerWidth + 'px) rotate(90deg)'; }
+    else if (was) { b.position = b.left = b.top = b.width = b.height = b.transformOrigin = b.transform = ''; }
+    ROT = want; document.documentElement.classList.toggle('rot', ROT); if (want !== was || want) resize();
+    if (want && !was && !S.opt.rotTold) { S.opt.rotTold = 1; save(); setTimeout(() => toast('Hold your phone sideways. Upside down? Tap ⟲ up top to flip it.'), 600); } }
+  addEventListener('resize', () => applyRot()); addEventListener('orientationchange', () => setTimeout(applyRot, 250));
 
   // ---------------- world / session ----------------
   let track, world, lights, skids, cars = [], player, mode = 'menu', simTime = 0, lampLights = [], lampT = 0;
@@ -3218,7 +3232,7 @@ const ONLINE = (() => {
     (world.propCars || []).forEach((p, k) => { const L = GFX.loadedBodies(), id = (L.find(b => b.id === p[4]) || L[(k + 3) % L.length]).id, c = GFX.buildStaticCar(id, p[3], 1); bakeStatic(c); c.position.set(p[0], p[5] || 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); });
     // polished-concrete reflections (High): live mirror under a semi-transparent floor
     if (S.opt.quality >= 2 && (!world.night || world.prodNight) && !world.dusk && world.env !== 'diamondback' && world.env !== 'tandem' && T.Reflector && world.floor) {   // Diamondback and Tandem tile is satin, not a mirror
-      const f = world.floor, pr = renderer.getPixelRatio(), refl = new T.Reflector(f.geometry.clone(), { textureWidth: innerWidth * pr * 0.45, textureHeight: innerHeight * pr * 0.45, color: world.env === 'prodigy' || world.env === 'prodigy2' ? (world.prodNight ? 0x8a8a8a : 0x5c5c5c) : world.env === 'diamondback' || world.env === 'tandem' ? 0x6a6a6a : 0x8a8a8a, clipBias: 0.0005 });
+      const f = world.floor, pr = renderer.getPixelRatio(), refl = new T.Reflector(f.geometry.clone(), { textureWidth: LW() * pr * 0.45, textureHeight: LH() * pr * 0.45, color: world.env === 'prodigy' || world.env === 'prodigy2' ? (world.prodNight ? 0x8a8a8a : 0x5c5c5c) : world.env === 'diamondback' || world.env === 'tandem' ? 0x6a6a6a : 0x8a8a8a, clipBias: 0.0005 });
       refl.rotation.copy(f.rotation); refl.position.copy(f.position); refl.position.y = -0.0006; refl.renderOrder = -3; world.group.add(refl);
       f.material.transparent = true; f.material.opacity = track.def.env === 'tile' ? 0.9 : track.def.env === 'prodigy' || track.def.env === 'prodigy2' ? (world.prodNight ? 0.87 : 0.9) : track.def.env === 'diamondback' ? 0.9 : track.def.env === 'tandem' ? 0.94 : 0.8; f.material.depthWrite = true; f.material.needsUpdate = true;
     }
@@ -3291,24 +3305,26 @@ const ONLINE = (() => {
   // ---------------- touch controls (floating sticks) ----------------
   const isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
   if (isTouch) document.documentElement.classList.add('touch');
+  try { new MutationObserver(() => applyRot()).observe(document.body, { attributes: true, attributeFilter: ['class'] }); } catch (e) { }
   const TCH = { steer: 0, thr: 0, brk: 0, sId: null, tId: null, sx: 0, ty: 0, last: 0 };
   (function setupTouch() {
     const tz = document.getElementById('touch'); if (!tz) return;
-    const st = document.getElementById('tsteer'), th = document.getElementById('tthr'), R = () => Math.min(58, innerHeight * 0.14);
+    const st = document.getElementById('tsteer'), th = document.getElementById('tthr'), R = () => Math.min(58, LH() * 0.14);
     const place = (el, x, y) => { el.style.left = x + 'px'; el.style.top = y + 'px'; el.classList.add('on'); };
     const knob = (el, dx, dy) => { el.querySelector('.knob').style.transform = `translate(${dx}px,${dy}px)`; };
     const rest = () => { st.style.left = '16%'; st.style.top = '72%'; th.style.left = '84%'; th.style.top = '72%'; };
     rest();
     tz.addEventListener('pointerdown', e => {
       if (e.target.closest('#tbtns')) return; e.preventDefault(); audioStart();
-      if (e.clientX < innerWidth / 2 && TCH.sId === null) { TCH.sId = e.pointerId; TCH.sx = e.clientX; place(st, e.clientX, e.clientY); knob(st, 0, 0); }
-      else if (e.clientX >= innerWidth / 2 && TCH.tId === null) { TCH.tId = e.pointerId; TCH.ty = e.clientY; place(th, e.clientX, e.clientY); knob(th, 0, 0); }
+      const [x, y] = LP(e);
+      if (x < LW() / 2 && TCH.sId === null) { TCH.sId = e.pointerId; TCH.sx = x; place(st, x, y); knob(st, 0, 0); }
+      else if (x >= LW() / 2 && TCH.tId === null) { TCH.tId = e.pointerId; TCH.ty = y; place(th, x, y); knob(th, 0, 0); }
       try { tz.setPointerCapture(e.pointerId); } catch (_) { }
     }, { passive: false });
     tz.addEventListener('pointermove', e => {
-      const r = R();
-      if (e.pointerId === TCH.sId) { const dx = clamp(e.clientX - TCH.sx, -r, r), a = Math.max(0, Math.abs(dx) / r - 0.05) / 0.95; TCH.steer = -Math.sign(dx) * a; knob(st, dx, 0); TCH.last = performance.now(); }
-      if (e.pointerId === TCH.tId) { const dy = clamp(e.clientY - TCH.ty, -r, r); TCH.thr = Math.max(0, -dy / r); TCH.brk = Math.max(0, dy / r); knob(th, 0, dy); TCH.last = performance.now(); }
+      const r = R(), [x, y] = LP(e);
+      if (e.pointerId === TCH.sId) { const dx = clamp(x - TCH.sx, -r, r), a = Math.max(0, Math.abs(dx) / r - 0.05) / 0.95; TCH.steer = -Math.sign(dx) * a; knob(st, dx, 0); TCH.last = performance.now(); }
+      if (e.pointerId === TCH.tId) { const dy = clamp(y - TCH.ty, -r, r); TCH.thr = Math.max(0, -dy / r); TCH.brk = Math.max(0, dy / r); knob(th, 0, dy); TCH.last = performance.now(); }
     }, { passive: false });
     const up = e => {
       if (e.pointerId === TCH.sId) { TCH.sId = null; TCH.steer = 0; knob(st, 0, 0); st.classList.remove('on'); st.style.left = '16%'; st.style.top = '72%'; }
@@ -3316,7 +3332,7 @@ const ONLINE = (() => {
     };
     tz.addEventListener('pointerup', up); tz.addEventListener('pointercancel', up);
     tz.querySelectorAll('#tbtns button').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); audioStart(); const a = b.dataset.a;
-      if (a === 'menu') openMenu('pause'); if (a === 'cam') nextCam(); if (a === 'reset') resetPlayer(); if (a === 'gm') gyroAdj(-5); if (a === 'gp') gyroAdj(5); if (a === 'chat') chatOpen(); }));
+      if (a === 'menu') openMenu('pause'); if (a === 'cam') nextCam(); if (a === 'reset') resetPlayer(); if (a === 'gm') gyroAdj(-5); if (a === 'gp') gyroAdj(5); if (a === 'chat') chatOpen(); if (a === 'flip') { S.opt.flip = !S.opt.flip; save(); applyRot(); } }));
     ['touchmove', 'gesturestart'].forEach(ev => document.addEventListener(ev, e => { if (mode === 'drive') e.preventDefault(); }, { passive: false }));
   })();
   function readInput(dt) {
@@ -3340,7 +3356,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v39', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v40', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
