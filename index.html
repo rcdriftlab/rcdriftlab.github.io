@@ -2754,7 +2754,7 @@ const ONLINE = (() => {
     ch.on('broadcast', { event: 'st' }, ({ payload: m }) => { C.stR++; if (m && m.from && m.from !== id && !(peers.get(m.from) || {}).ok) states.set(m.from, { drift: m.d, at: Date.now() }); });
     ch.on('presence', { event: 'sync' }, () => {
       const ps = ch.presenceState(), ids = Object.keys(ps).filter(k => k !== id).sort(); room.names = {}; for (const k of ids) { const p = ps[k] && ps[k][0]; room.names[k] = p && p.n ? String(p.n).slice(0, 16) : 'Driver'; }
-      room.count = ids.length + 1; for (const k of ids) mkPeer(k); for (const k of Array.from(peers.keys())) if (!ids.includes(k)) dropPeer(k);
+      const was = room.count; room.count = ids.length + 1; if (room.count !== was && room.beat) room.beat(); for (const k of ids) mkPeer(k); for (const k of Array.from(peers.keys())) if (!ids.includes(k)) dropPeer(k);
       if (onPeersFn) try { onPeersFn(); } catch (e) { } fire();
     });
     await new Promise(res => ch.subscribe(async s => {
@@ -2765,8 +2765,9 @@ const ONLINE = (() => {
       } else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') res();
     }));
     if (room.full) { O.sb.removeChannel(ch); return { err: 'That room is full (' + (lobby.max_players || 10) + ' drivers).' }; }
-    const beat = () => { if (O.signedIn() && (lobby.is_official || lobby.host === O.user.id)) O.sb.rpc('lobby_heartbeat', { p_code: lobby.code, p_players: room.count, p_track: null }).then(() => { }, () => { }); };
-    beat(); hbT = setInterval(beat, 30000);
+    // everyone in an always-open room reports the head count (guests too); a player-hosted room is reported by its host
+    const beat = (n) => { if (lobby.is_official || (O.signedIn() && lobby.host === O.user.id)) O.sb.rpc('lobby_heartbeat', { p_code: lobby.code, p_players: n == null ? room.count : n, p_track: null }).then(() => { }, () => { }); };
+    room.beat = () => beat(); beat(); hbT = setInterval(beat, 30000);
     // the interface the game's online code already speaks
     room.presence = obj => { const d = obj && obj.drift; if (!d || closed) return Promise.resolve(); const msg = JSON.stringify(d); let need = false;
       for (const P of peers.values()) { if (P.ok && P.dc && P.dc.readyState === 'open') { try { P.dc.send(msg); } catch (e) { need = true; } } else need = true; }
@@ -2779,7 +2780,7 @@ const ONLINE = (() => {
     room.chat = text => { if (!room.canChat()) return 'Sign in to chat.'; const t = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 160); if (!t) return ''; const now = Date.now(); chatT = chatT.filter(x => now - x < 10000); if (chatT.length >= 5) return 'Slow down a little.'; chatT.push(now);
       const msg = { from: id, n: O.profile.driver_name, t: O.mask(t), at: now, me: true }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); ch.send({ type: 'broadcast', event: 'chat', payload: { from: id, n: msg.n, t } }); return ''; };
     room.direct = () => { let n = 0; for (const P of peers.values()) if (P.ok) n++; return n; };
-    room.leave = () => { if (closed) return; closed = true; clearInterval(hbT); for (const k of Array.from(peers.keys())) dropPeer(k); try { ch.untrack(); } catch (e) { } O.sb.removeChannel(ch); if (O.room === room) { O.room = null; O.lobby = null; } if (onCloseFn) try { onCloseFn(); } catch (e) { } fire(); };
+    room.leave = () => { if (closed) return; closed = true; clearInterval(hbT); beat(Math.max(0, room.count - 1)); for (const k of Array.from(peers.keys())) dropPeer(k); try { ch.untrack(); } catch (e) { } O.sb.removeChannel(ch); if (O.room === room) { O.room = null; O.lobby = null; } if (onCloseFn) try { onCloseFn(); } catch (e) { } fire(); };
     O.room = room; O.lobby = lobby; fire(); return { room };
   };
   O.leave = () => { if (O.room) O.room.leave(); };
@@ -2863,7 +2864,8 @@ const ONLINE = (() => {
     // parked full-size cars (the RC shells at 1:1) in the lot, RC-scale display cars in the Prodigy infield
     const pal = ['#c8102e', '#e8e8ea', '#101114', '#1f5fff', '#8a8f98', '#f4e9d0', '#0b3d2e', '#ff5a1f', '#5b2be0'];
     (world.parkSpots || []).forEach((p, k) => { const c = GFX.buildStaticCar(GFX.loadedBodies()[k % GFX.loadedBodies().length].id, pal[(k * 3) % pal.length], p[3] || 10); c.position.set(p[0], 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); });
-    (world.displaySpots || []).forEach((p, k) => { for (let j = 0; j < 2; j++) { const c = GFX.buildStaticCar(GFX.loadedBodies()[(k * 2 + j + 1) % GFX.loadedBodies().length].id, ['#7a3cff', '#ff8a00', '#e8e8ea', '#1f5fff'][(k * 2 + j) % 4], 1); c.position.set(p[0] - 0.4 + j * 0.55, 0, -(p[1] + 0.15 * j)); c.rotation.y = 0.6 + j * 0.9; world.group.add(c); } });
+    // removed: parked RC display cars in the infield looked like idle online drivers
+    if (false) (world.displaySpots || []).forEach((p, k) => { for (let j = 0; j < 2; j++) { const c = GFX.buildStaticCar(GFX.loadedBodies()[(k * 2 + j + 1) % GFX.loadedBodies().length].id, ['#7a3cff', '#ff8a00', '#e8e8ea', '#1f5fff'][(k * 2 + j) % 4], 1); c.position.set(p[0] - 0.4 + j * 0.55, 0, -(p[1] + 0.15 * j)); c.rotation.y = 0.6 + j * 0.9; world.group.add(c); } });
     // scale props that use real body shells (e.g. the car up on the lift in the Diamondback garage)
     (world.propCars || []).forEach((p, k) => { const L = GFX.loadedBodies(), id = (L.find(b => b.id === p[4]) || L[(k + 3) % L.length]).id, c = GFX.buildStaticCar(id, p[3], 1); c.position.set(p[0], p[5] || 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); });
     // polished-concrete reflections (High): live mirror under a semi-transparent floor
@@ -2990,7 +2992,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v37', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v38', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3042,13 +3044,14 @@ const ONLINE = (() => {
       if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(look); scene.add(mesh);
         const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; mesh.add(sp);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
-      seen.add(p.peer); const s = nc.sim, age = clamp((now - p.updatedAt) / 1000, 0, 0.25), k = 1 - Math.exp(-dt * 14);
+      seen.add(p.peer); nc.seenAt = now; const s = nc.sim, age = clamp((now - p.updatedAt) / 1000, 0, 0.25), k = 1 - Math.exp(-dt * 14);
       s.vx = num(d.vx, -12, 12); s.vy = num(d.vy, -12, 12); s.r = num(d.r, -30, 30); const tx = num(d.x, -50, 50) + s.vx * age, ty = num(d.y, -50, 50) + s.vy * age, tyaw = num(d.yw, -1e4, 1e4) + s.r * age;
       if (Math.hypot(tx - s.x, ty - s.y) > 1.5) { s.x = tx; s.y = ty; s.yaw = tyaw; } else { s.x += (tx - s.x) * k; s.y += (ty - s.y) * k; s.yaw += wrap(tyaw - s.yaw) * k; }
       s.delta = num(d.d, -1.4, 1.4); s.w = num(d.w, -20, 20); s.slip = num(d.sl, -1.6, 1.6); s.speed = Math.hypot(s.vx, s.vy); s.u = s.speed; s.inp.brake = d.br ? 1 : 0; s.ti = track.nearest(s.x, s.y, s.ti); s.lat = track.lateral(s.x, s.y, s.ti);
       nc.tune = { camberF: num(d.cf, -12, 0), camberR: num(d.cr, -5, 0), offset: num(d.of, 0, 12), rideHeight: num(d.rh, 4, 9), toeF: 0, toeR: 0 }; nc.score = num(d.sc, 0, 1e9);
     }
-    for (const [id, nc] of netCars) if (!seen.has(id)) { GFX.disposeTree(nc.mesh); netCars.delete(id); }
+    // a late packet or two must not make a driver vanish and pop back: keep their car (coasting) for 3 s before removing it
+    for (const [id, nc] of netCars) if (!seen.has(id)) { const s = nc.sim; s.x += s.vx * dt * 0.5; s.y += s.vy * dt * 0.5; if (now - (nc.seenAt || 0) > 3000) { GFX.disposeTree(nc.mesh); netCars.delete(id); } }
     NET.count = netCars.size;
   }
 
@@ -3324,6 +3327,11 @@ const ONLINE = (() => {
         if (isTouchDev()) { const fb = el('button', 'ghost', 'Fullscreen'); fb.onclick = goFull; br.appendChild(fb); } add(br);
       }
       { const s = statStrip(); if (s && web) add(s); }
+      if (web && !inRoom && mode !== 'pause' && O.status === 'ready') { const live = (O.lobbies || []).filter(l => (l.players || 0) > 0);
+        if (live.length) { h('Live now', live.reduce((a, l) => a + (l.players || 0), 0) + ' drifting together');
+          for (const lb of live.slice(0, 3)) { const i = SIM.TRACK_DEFS.findIndex(x => x.id === lb.track), b = el('button', 'chip trk'); const im = el('img'); im.alt = ''; im.src = i >= 0 ? trackThumb(i) : ''; b.appendChild(im);
+            const tx = el('div'); tx.appendChild(el('div', '', lb.name)); tx.appendChild(el('small', '', (i >= 0 ? SIM.TRACK_DEFS[i].name : lb.track) + ' · ' + lb.players + ' driver' + (lb.players > 1 ? 's' : '') + ' in now · tap to join')); b.appendChild(tx);
+            b.onclick = async () => { b.disabled = true; const e = await joinLobby(lb); b.disabled = false; if (e) toast(e, 'bad'); else drive(false); }; add(b); } } }
       if (inRoom) { h('Online room', O.room.code); msg('You are in ' + O.lobby.name + ' on ' + track.def.name + ' with ' + O.room.count + ' driver' + (O.room.count > 1 ? 's' : '') + '. AI cars are off in rooms.'); const br = el('div', 'btnrow'), rb = el('button', 'ghost', 'Room + chat'), lv = el('button', 'ghost', 'Leave room'); rb.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; lv.onclick = () => { leaveLobby(); renderPanel(); }; br.append(rb, lv); add(br); }
       h('Track', SIM.TRACK_DEFS.length + ' tracks'); if (inRoom) msg('Leave the room to switch tracks.');
       add(trackChips(S.opt.track, i => { if (i !== S.opt.track) { loadTrack(i); applyTune(); save(); if (mode === 'pause') openMenu('main', 'drive'); else renderPanel(); } }, { disabled: inRoom }));
