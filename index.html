@@ -51,6 +51,11 @@ button,input{font:inherit;color:inherit}
 #tour .tbody{font-size:15px;line-height:1.45;color:#d9dde5}#tour .tbody b{color:#fff}#tour ol,#tour ul{margin:6px 0 8px;padding-left:20px}#tour li{margin:3px 0}#tour .tmut{color:var(--mut);font-size:13px}
 #tour .tkeys{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:4px 0 10px;font-size:13px;color:var(--mut)}#tour kbd{background:#1b1e26;border:1px solid var(--ln);border-radius:4px;padding:2px 7px;color:#fff;font-family:inherit;font-size:12px}
 #tour .tbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}#tour .tbtns .big,#tour .tbtns .ghost{display:inline-block;width:auto;margin:0;font-size:15px;padding:10px 16px}#tour .tbtns button{min-width:84px}#tour .tbtns button:empty{display:none}
+#hWrong{position:fixed;left:50%;top:34%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:6;display:none}
+#hWrong.on{display:block;animation:wwf .55s steps(2,jump-none) infinite}
+#hWrong b{display:block;font-size:clamp(30px,7vw,64px);font-weight:800;letter-spacing:.12em;color:#fff;background:#e0182d;padding:6px 26px;border-radius:6px;box-shadow:0 0 40px rgba(224,24,45,.6)}
+#hWrong small{display:block;margin-top:6px;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ffd0d4;text-shadow:0 1px 3px #000}
+@keyframes wwf{0%{opacity:1}50%{opacity:.25}}
 #toast{position:fixed;left:50%;top:17%;transform:translate(-50%,-8px);padding:8px 18px;background:rgba(10,11,15,.8);border:1px solid var(--ln);border-radius:4px;font-weight:700;letter-spacing:.1em;font-size:15px;opacity:0;transition:.18s;pointer-events:none;z-index:5}
 #toast.show{opacity:1;transform:translate(-50%,0)}#toast.good{color:#5dff9c}#toast.bad{color:#ff6b5a}
 /* ---------- menu ---------- */
@@ -147,6 +152,9 @@ em.tagdev,em.tagsup{font-style:normal;font-size:9px;font-weight:700;letter-spaci
 em.tagdev{background:var(--ac);color:#140a04}
 em.tagsup{background:rgba(255,206,80,.18);color:#ffce50}
 .inbox{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}
+.dres{max-height:340px;overflow-y:auto;margin-top:6px}
+.conv u{text-decoration:none;color:var(--ac)}
+input[type=search]{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:4px;color:var(--tx);font:inherit;font-size:14px;-webkit-appearance:none}
 .chips.subtabs{margin:2px 0 6px}
 textarea{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:4px;color:var(--tx);font:inherit;font-size:14px;resize:vertical;min-height:64px;margin:4px 0}
 .ftitle{font-size:17px;font-weight:700;line-height:1.3;margin:8px 0 2px}
@@ -186,7 +194,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <g transform="skewX(-14)">
 <rect x="34" y="20" width="54" height="34" rx="3" fill="#eef0f4"/><text x="61" y="46" text-anchor="middle" font-size="26" font-weight="700" fill="#0b0c10" font-family="Chakra Petch,system-ui,sans-serif">RC</text>
 <text x="98" y="54" font-size="46" font-weight="700" fill="#eef0f4" letter-spacing="1" font-family="Chakra Petch,system-ui,sans-serif">DRIFT</text>
-<rect x="268" y="16" width="104" height="42" rx="3" fill="url(#lgA2)"/><text x="320" y="51" text-anchor="middle" font-size="38" font-weight="700" fill="#140a04" letter-spacing="2" font-family="Chakra Petch,system-ui,sans-serif">LAB</text>
+<rect x="268" y="16" width="104" height="42" rx="3" fill="url(#lgA2)"/><text x="320" y="51" text-anchor="middle" font-size="38" font-weight="700" fill="#140a04" letter-spacing="2" font-family="Chakra Petch,system-ui,sans-serif">LAB</text><g transform="rotate(-8 412 30)"><rect x="384" y="19" width="58" height="22" rx="3" fill="none" stroke="#35e0ff" stroke-width="2"/><text x="413" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#35e0ff" letter-spacing="3" font-family="Chakra Petch,system-ui,sans-serif">BETA</text></g>
 <rect x="34" y="64" width="338" height="3" fill="#ff5a1f"/><rect x="380" y="64" width="22" height="3" fill="#ff5a1f" opacity=".6"/><rect x="408" y="64" width="10" height="3" fill="#ff5a1f" opacity=".3"/>
 </g>
 <text x="22" y="94" font-size="14.5" font-weight="600" letter-spacing="4.2" fill="#a3abb8" font-family="Chakra Petch,system-ui,sans-serif">BY <tspan fill="#35e0ff" font-weight="700">STRANGER KREATIONS</tspan></text>
@@ -206,6 +214,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <div id="chat"><div id="chatLog"></div><input id="chatIn" type="text" maxlength="160" placeholder="Chat to the room · Enter sends · Esc cancels" autocomplete="off"></div>
 <div id="rotate"><div style="font-size:42px">⟲</div>Turn your phone sideways to drive</div>
 <div id="toast"></div>
+<div id="hWrong"><b>WRONG WAY</b><small>turn around · no points this way</small></div>
 <div id="menu"><h1><svg class="logo" viewBox="0 0 460 132" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RC Drift Lab by Stranger Kreations">
 <defs><linearGradient id="lgS" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
 <linearGradient id="lgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a3d"/><stop offset="1" stop-color="#e8400c"/></linearGradient></defs>
@@ -214,7 +223,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <g transform="skewX(-14)">
 <rect x="34" y="20" width="54" height="34" rx="3" fill="#eef0f4"/><text x="61" y="46" text-anchor="middle" font-size="26" font-weight="700" fill="#0b0c10" font-family="Chakra Petch,system-ui,sans-serif">RC</text>
 <text x="98" y="54" font-size="46" font-weight="700" fill="#eef0f4" letter-spacing="1" font-family="Chakra Petch,system-ui,sans-serif">DRIFT</text>
-<rect x="268" y="16" width="104" height="42" rx="3" fill="url(#lgA)"/><text x="320" y="51" text-anchor="middle" font-size="38" font-weight="700" fill="#140a04" letter-spacing="2" font-family="Chakra Petch,system-ui,sans-serif">LAB</text>
+<rect x="268" y="16" width="104" height="42" rx="3" fill="url(#lgA)"/><text x="320" y="51" text-anchor="middle" font-size="38" font-weight="700" fill="#140a04" letter-spacing="2" font-family="Chakra Petch,system-ui,sans-serif">LAB</text><g transform="rotate(-8 412 30)"><rect x="384" y="19" width="58" height="22" rx="3" fill="none" stroke="#35e0ff" stroke-width="2"/><text x="413" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#35e0ff" letter-spacing="3" font-family="Chakra Petch,system-ui,sans-serif">BETA</text></g>
 <rect x="34" y="64" width="338" height="3" fill="#ff5a1f"/><rect x="380" y="64" width="22" height="3" fill="#ff5a1f" opacity=".6"/><rect x="408" y="64" width="10" height="3" fill="#ff5a1f" opacity=".3"/>
 </g>
 <text x="22" y="94" font-size="14.5" font-weight="600" letter-spacing="4.2" fill="#a3abb8" font-family="Chakra Petch,system-ui,sans-serif">BY <tspan fill="#35e0ff" font-weight="700">STRANGER KREATIONS</tspan></text>
@@ -233,7 +242,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <script>
 // ===================== SIM: tracks, car physics, AI drivers =====================
 // Units: meters, seconds, radians. 1/10 scale RWD drift chassis. x fwd, y left, yaw CCW.
-const SIM_K = { muF: 1.72, muR: 1.3, a0F: 0.097, s0R: 0.5, s0X: 0.9, yawD: 0.0085, kapW: 1.0, gyroK: 0.8, gFilt: 0.0045, J: 0.22, lat: 0.006 };
+const SIM_K = { muF: 2.2929, muR: 1.5798, a0F: 0.109, s0R: 0.5937, s0X: 0.2, yawD: 0.012, kapW: 1, gyroK: 0.5923, gFilt: 0.0045, J: 0.22, lat: 0.006, kin: 0.751, fA: 1.2174, fW: 1.5, dX: 1.1449, Iz0: 0.018, grip: 1.3763, bite: 1.2598, gTr: 0.7788, dSpin: 0 };   // v46 retune (feelopt.js): grip peaks at low wheelspin, quicker transitions, tighter entries
 const SIM = (function () {
   const G = 9.81, MASS = 1.45, WB = 0.257;
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -256,7 +265,7 @@ const SIM = (function () {
   const DEF_TUNE = {
     gyroGain: 76, steerLock: 68, dualRate: 100, steerExpo: 30, servoSpeed: 0.05,
     ackermann: 25, camberF: -7, camberR: -2, caster: 8, toeF: 1, toeR: 1.5,
-    weightRear: 57, rideHeight: 6, springF: 50, springR: 45, tireF: 2, tireR: 2, offset: 6,
+    weightRear: 57, weight: 1450, rideHeight: 6, springF: 50, springR: 45, tireF: 2, tireR: 2, offset: 6,
     topSpeed: 100, motor: 1, fdr: 10.5, punch: 75, throttleExpo: 25, dragBrake: 15, brake: 60,
   };
   const PRESETS = {
@@ -268,15 +277,17 @@ const SIM = (function () {
 
   // Tune -> physical parameters
   function derive(tune, surfKey) {
-    const t = Object.assign({}, DEF_TUNE, tune), mu = (SURFACES[surfKey] || SURFACES.concrete).mu;
+    const t = Object.assign({}, DEF_TUNE, tune), mu = (SURFACES[surfKey] || SURFACES.concrete).mu * SIM_K.grip;
     const wr = clamp(t.weightRear, 40, 70) / 100, p = {};
     p.a = WB * wr; p.b = WB * (1 - wr);          // CG -> front / rear axle
     p.h = 0.020 + t.rideHeight * 0.0016;         // CG height
-    p.Iz = 0.0195 + Math.abs(wr - 0.5) * 0.012;   // a touch more yaw inertia: calmer, less twitchy rotation
+    p.m = clamp(t.weight || 1450, 1100, 2100) / 1000;   // v46: all-up weight (ballast). Heavier = more momentum, slower to bite and to rotate;
+    const mr = p.m / MASS, ls = Math.pow(mr, -0.14);       // lighter = snappier. Tires are load-sensitive: grip per kg drops as weight goes up.
+    p.Iz = (SIM_K.Iz0 + Math.abs(wr - 0.5) * 0.012) * mr;   // a touch more yaw inertia: calmer, less twitchy rotation
     const camF = 1 - 0.0025 * Math.pow(t.camberF + 8, 2);
     const K = SIM_K;
     p.muF = mu * K.muF * TIRES[t.tireF].k * camF * (1 + (t.caster - 8) * 0.006) * (1 + (50 - t.springF) * 0.0022) * (1 + t.ackermann * 0.0008);
-    p.muR = mu * K.muR * TIRES[t.tireR].k * (1 + (50 - t.springR) * 0.0022);
+    p.muR = mu * K.muR * TIRES[t.tireR].k * (1 + (50 - t.springR) * 0.0022) * ls; p.muF *= ls;
     p.a0F = K.a0F * (1 - clamp(t.toeF, -3, 4) * 0.04);
     p.s0R = K.s0R;
     p.yawD = K.yawD;
@@ -353,13 +364,16 @@ const SIM = (function () {
     };
     tr.lateral = (x, y, i) => (x - X[i]) * -TY[i] + (y - Y[i]) * TX[i]; // + = left of centerline
     tr.ahead = (i, dist) => ((i + Math.round(dist / tr.ds)) % N + N) % N;
-    buildZones(tr);
+    // v46: more zones, same score scale. Build the old (v45) zone set to get the lap's point budget, then share that budget over the
+    // new zones (swing zones count 0.6 of a corner zone), so lap scores stay in line with the PBs people already posted.
+    buildZones(tr, true); const pot = zs => zs.reduce((a, z) => a + (z.type === 'clip' ? 520 : 420) * (z.swing ? 0.6 : 1), 0), budget = pot(tr.zones);
+    buildZones(tr); const k = budget / Math.max(1, pot(tr.zones)); tr.zoneK = k; for (const z of tr.zones) z.k = k * (z.swing ? 0.6 : 1);
     return tr;
   }
 
   // ---------------- judging zones: outer zones (rear fills along the outside wall) + inner clipping points (nose to the apex) ----------------
   // and the qualifying line through them, which the AI drives
-  function buildZones(tr) {
+  function buildZones(tr, legacy) {
     const N = tr.N, ds = tr.ds, hw = tr.width / 2, Kw = new Float32Array(N), win = Math.max(2, Math.round(0.9 / ds));
     for (let i = 0; i < N; i++) { let s = 0; for (let d = -win; d <= win; d++) s += tr.K[(i + d + N) % N]; Kw[i] = s / (2 * win + 1); }
     // corners = runs of |curvature| above threshold with one sign
@@ -376,9 +390,9 @@ const SIM = (function () {
     const zw = clamp(tr.width * 0.45, 0.85, 1.15);
     corners.forEach((c, ci) => {
       const L = c.n * ds; if (L < 1.4 || c.ang < 0.5) return; const tight = c.kmax > 0.28;
-      const outer = (f0, f1) => { const a = Math.round(f0 * L / ds), n = Math.max(Math.round(1.1 / ds), Math.round((f1 - f0) * L / ds)); zones.push({ type: 'outer', i0: (c.i0 + a + N) % N, n: Math.min(n, Math.round(3.2 / ds)), side: -c.sg, L, c: ci }); };
+      const outer = (f0, f1) => { const a = Math.round(f0 * L / ds), n = Math.max(Math.round(1.1 / ds), Math.round((f1 - f0) * L / ds)); zones.push({ type: 'outer', i0: (c.i0 + a + N) % N, n: Math.min(n, Math.round((legacy ? 3.2 : 4.2) / ds)), side: -c.sg, L, c: ci }); };
       const clip = (f, hp) => zones.push({ type: 'clip', i: (c.i0 + Math.round(f * L / ds)) % N, side: c.sg, L, e0: c.i0, tight: hp, c: ci });
-      if (tight) { const hp = c.kmax > 0.5 && c.ang > 2.6; if (c.ang > 1.4 && L >= 3) outer(-0.05, Math.min(0.4, 2.6 / L)); clip(hp ? 0.55 : 0.5, hp); }
+      if (tight) { const hp = c.kmax > 0.5 && c.ang > 2.6; if (c.ang > 1.4 && L >= 3) outer(-0.05, Math.min(0.4, 2.6 / L)); clip(hp ? 0.55 : 0.5, hp); if (!legacy && L >= 7 && c.ang > 2.2) outer(0.8, 1.05); }   // v46: long hairpins also judge the exit on the outside
       else if (L >= 8 && c.ang > 1.6 && c.kmax > 0.15) { outer(0.0, 0.42); clip(0.78, false); }
       else outer(0.02, 0.6);   // sweepers: the zone sits where you arrive wide; a held slide always tightens through the corner
     });
@@ -399,6 +413,15 @@ const SIM = (function () {
       if (!changed) break;
     }
     zones.sort((p, q) => sOf(p)[0] - sOf(q)[0]);
+    // v46: no long dead stretches. Any gap over ~6.5 m gets swing zones on alternating walls, working back from the next zone
+    // (the one right before it on the OTHER wall, so you transition into it) — something to hit everywhere, and a guide to the next spot.
+    if (!legacy && zones.length > 1) { const T = Math.max(2.2, tr.width * 0.9) + 0.3, ZL = 2.6, add = [];
+      for (let k = 0; k < zones.length; k++) { const A = zones[k], B = zones[(k + 1) % zones.length], [a0, an] = sOf(A), [b0] = sOf(B), gap = ((b0 - (a0 + an)) % N + N) % N * ds;
+        if (gap < 6.5) continue; let end = gap - T, side = -B.side;
+        while (true) { const st0 = end - ZL, need = side === A.side ? 0.8 : T; if (st0 < need) break;
+          add.push({ type: 'outer', i0: (a0 + an + Math.round(st0 / ds)) % N, n: Math.round(ZL / ds), side, L: ZL, c: -1 - add.length, swing: true });
+          end = st0 - T; side = -side; } }
+      zones.push(...add); zones.sort((p, q) => sOf(p)[0] - sOf(q)[0]); }
     let cn = 0; for (const z of zones) { z.w = zw; z.d = clamp(tr.width * 0.28, 0.6, 0.85); if (z.type === 'clip') z.n = ++cn; else z.len = z.n * ds; }
     // 3) the qualifying line the AI follows, built from the final zones
     for (const z of zones) {
@@ -430,8 +453,11 @@ const SIM = (function () {
     return (c.drifting = D.on);
   }
   function judgeTick(J, c, tr, dt) {
-    const out = J.ev || (J.ev = []); out.length = 0; J.zs = J.zs || []; J.live = 0; J.liveZ = -1;
+    const out = J.ev || (J.ev = []); out.length = 0; J.zs = J.zs || []; J.live = 0; J.liveZ = -1; J.liveK = 1;
     if (!tr.zones) return out;
+    // v46: wrong way, or re-driving ground already covered (backed up / turned around) -> nothing scores, and any zone you were
+    // in the middle of is voided, so no zone can be farmed by going back and forth.
+    if (J.block) { for (const st of J.zs) if (st) { st.on = false; st.fill = st.Q = st.A = st.G = 0; st.gap = 9; st.ang = 0; } return out; }
     const deg = Math.abs(c.slip) * 57.3, drifting = (J.drifting != null ? J.drifting : driftCheck(c, dt)) && deg >= DRIFT_HOLD, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw), hw = tr.width / 2, i = c.ti, N = tr.N, step = c.speed * dt;
     const rx = c.x - cs * (c.p.b + 0.085), ry = c.y - sn * (c.p.b + 0.085), fx = c.x + cs * (c.p.a + 0.075), fy = c.y + sn * (c.p.a + 0.075);
     tr.zones.forEach((z, k) => {
@@ -439,15 +465,15 @@ const SIM = (function () {
       if (z.type === 'outer') {
         const d = ((i - z.i0) % N + N) % N;
         if (d < z.n) { st.on = true; const gap = hw - tr.lateral(rx, ry, i) * z.side;
-          if (drifting && gap < z.w) { const dep = clamp(1 - gap / z.w, 0, 1), q = angF(deg) * (0.35 + 0.65 * dep); st.fill += step; st.Q += q * step; st.A += deg * step; st.G += gap * step; J.live = q; J.liveZ = k; } }
+          if (drifting && gap < z.w) { const dep = clamp(1 - gap / z.w, 0, 1), q = angF(deg) * (0.35 + 0.65 * dep); st.fill += step; st.Q += q * step; st.A += deg * step; st.G += gap * step; J.live = q; J.liveZ = k; J.liveK = z.k || 1; } }
         else if (st.on) { st.on = false; const f = Math.min(1, st.fill / z.len);
-          if (f > 0.12 && st.Q / st.fill > 0.02) { const qa = st.Q / st.fill; out.push({ type: 'outer', k, z, pct: f, ang: st.A / st.fill, gapCm: st.G / st.fill * 100, quality: qa, pts: Math.round(420 * f * qa) }); }
+          if (f > 0.12 && st.Q / st.fill > 0.02) { const qa = st.Q / st.fill; out.push({ type: 'outer', k, z, pct: f, ang: st.A / st.fill, gapCm: st.G / st.fill * 100, quality: qa, pts: Math.round(420 * f * qa * (z.k || 1)) }); }
           st.fill = st.Q = st.A = st.G = 0; }
       } else {
         const d = ((i - z.i) % N + N) % N, dd = Math.min(d, N - d) * tr.ds;
-        if (dd < 0.4) { st.on = true; if (drifting) { const gap = hw - tr.lateral(fx, fy, i) * z.side; if (gap < st.gap) { st.gap = gap; st.ang = deg; } if (gap < z.d) { J.live = angF(deg) * (1 - gap / z.d); J.liveZ = k; } } }
+        if (dd < 0.4) { st.on = true; if (drifting) { const gap = hw - tr.lateral(fx, fy, i) * z.side; if (gap < st.gap) { st.gap = gap; st.ang = deg; } if (gap < z.d) { J.live = angF(deg) * (1 - gap / z.d); J.liveZ = k; J.liveK = z.k || 1; } } }
         else if (st.on) { st.on = false;
-          if (st.gap < z.d && angF(st.ang) > 0.03) { const dep = clamp(1 - Math.max(0, st.gap) / z.d, 0, 1); out.push({ type: 'clip', k, z, gapCm: Math.max(0, st.gap) * 100, ang: st.ang, quality: dep * (0.3 + 0.7 * angF(st.ang)), pts: Math.round(520 * (0.3 + 0.7 * dep) * angF(st.ang)) }); }
+          if (st.gap < z.d && angF(st.ang) > 0.03) { const dep = clamp(1 - Math.max(0, st.gap) / z.d, 0, 1); out.push({ type: 'clip', k, z, gapCm: Math.max(0, st.gap) * 100, ang: st.ang, quality: dep * (0.3 + 0.7 * angF(st.ang)), pts: Math.round(520 * (0.3 + 0.7 * dep) * angF(st.ang) * (z.k || 1)) }); }
           st.gap = 9; st.ang = 0; }
       }
     });
@@ -478,11 +504,16 @@ const SIM = (function () {
     const err = wrap(dir + tgtC - c.yaw), fSlip = Math.atan2(c.v + p.a * c.r, Math.max(0.2, c.u));
     const dRate = c._dt && c._dirP != null ? wrap(dir - c._dirP) / c._dt : 0; c._dirP = dir; c._bR = (c._bR || 0) + ((c.r - dRate) - (c._bR || 0)) * 0.08;   // how fast the drift ANGLE is changing (yaw rate minus path turn rate)
     const req = fSlip + clamp(err * 1.3 - c.r * 0.1 - c._bR * 0.22, -0.24, 0.24);   // keep the fronts at/below their grip peak (~5.5°): car pivots off planted fronts
-    return clamp((req + p.gyroK * c.gyroR) / Math.max(0.15, p.lock * p.dual), -1, 1);
+    const Lk = Math.max(0.15, (c.stL || p.lock) * p.dual), gq = p.gyroK * c.gyroR; let sRaw = (req + gq) / Lk;
+    if (sRaw * Math.sign(c.gyroR) > 0 && SIM_K.gTr) sRaw = (req + gq) / (Lk + p.gyroK * SIM_K.gTr * Math.abs(c.gyroR));
+    return clamp(sRaw, -1, 1);
   }
   function stepCar(c, dt, tr) {
     const p = c.p, inp = c.inp, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
     let u = c.vx * cs + c.vy * sn, v = -c.vx * sn + c.vy * cs;
+    // v46: big-lock chassis (up to 90°). The gyro always has the full lock; the STICK only gets past ~68° once the car is sideways
+    // enough to use it (like a driver's thumb): full lock while going straight would just plough the fronts.
+    c.stL = p.lock > 1.19 ? Math.min(p.lock, Math.max(1.19, Math.abs(c.slip || 0) + 0.6)) : p.lock;
     // --- steering: radio expo/dual-rate + gyro mixed in, then servo slew ---
     let st;
     const raw = clamp(inp.steer, -1, 1), direct = raw * (1 - p.expo) + raw * raw * raw * p.expo;
@@ -492,14 +523,17 @@ const SIM = (function () {
       st = direct * (1 - mix) + angleControl(c, inp.angle) * mix;
     } else st = direct;
     c.gyroR += (c.r - c.gyroR) * Math.min(1, dt / SIM_K.gFilt);
-    const cmd = clamp(st * p.lock * p.dual - p.gyroK * c.gyroR, -p.lock, p.lock);
+    // drift gyro "speed": when the driver steers WITH the rotation (asking for it, e.g. flicking into a transition) the gyro
+    // backs off so the car swings quickly; hands off or steering against the rotation it gives full countersteer.
+    const gF = 1 - SIM_K.gTr * clamp(st * Math.sign(c.gyroR), 0, 1);
+    const cmd = clamp(st * c.stL * p.dual - p.gyroK * gF * c.gyroR, -p.lock, p.lock);
     if (!c.dq) { c.dq = new Float32Array(64); c.dqi = 0; c.dqt = 0; }
     c.dqt += dt; while (c.dqt >= 0.001) { c.dqt -= 0.001; c.dq[c.dqi = (c.dqi + 1) & 63] = cmd; }
     const lagN = Math.round(SIM_K.lat * 1000), dcmd = c.dq[(c.dqi - lagN + 64) & 63];
     const dmax = p.servoRate * dt; c.delta += clamp(dcmd - c.delta, -dmax, dmax);
     // --- loads with longitudinal weight transfer ---
-    const L = p.a + p.b, wt = MASS * c.ax * p.h / L;
-    const Nf = Math.max(0.5, MASS * G * p.b / L - wt), Nr = Math.max(0.5, MASS * G * p.a / L + wt);
+    const M = p.m || MASS, L = p.a + p.b, wt = M * c.ax * p.h / L;
+    const Nf = Math.max(0.5, M * G * p.b / L - wt), Nr = Math.max(0.5, M * G * p.a / L + wt);
     const sp0 = Math.hypot(u, v), lowG = Math.min(1, sp0 / 0.45), vref = Math.max(0.5, Math.abs(u));
     // --- front axle: free rolling; lateral force from slip ANGLE (progressive, controllable) ---
     const cd = Math.cos(c.delta), sd = Math.sin(c.delta), fv = v + p.a * c.r;
@@ -515,10 +549,13 @@ const SIM = (function () {
     // pushes along the chassis (into the corner) instead of down the road, and its side grip collapses ->
     // the tail swings wider, the angle grows and the car scrubs speed rather than taking off.
     const vg = Math.max(0.45, Math.hypot(u, rv), 0.5 * vref);
-    const nx = (c.w - u) / vg * p.kLonR / p.s0X, ny = -rv / vg * p.kLatR / p.s0R, nm = Math.hypot(nx, ny) + 1e-6;
-    const fall = 1 - 0.22 * Math.min(1, Math.max(0, (nm - 2.2) / 4));   // plastic on tile: a hard-spinning tire grips less than one at the edge
-    const sat = Math.tanh(nm) * p.muR * Nr * fall;
-    const beta = Math.abs(Math.atan2(rv, Math.max(0.3, Math.abs(u)))); c.slide = Math.min(1, Math.max(0, (beta - 0.08) / 0.3)); const kw = 1.6 + (p.kapW - 1.6) * c.slide;   // drive bite: brisk straight-line launch, but sideways the drive stays inside the tire's grip
+    // magnitude: how far past the grip threshold the contact patch is (plastic on tile: peak grip at LOW wheelspin, then it falls
+    // toward sliding friction — feather it and it hooks up, smash it and it lets go). Direction: against the slip, lateral-weighted.
+    const mx = (c.w - u) / vg * p.kLonR / p.s0X, ny = -rv / vg * p.kLatR / p.s0R, nmM = Math.hypot(mx, ny) + 1e-6;
+    const nx = (c.w - u) / vg * p.kLonR / SIM_K.dX * (1 + SIM_K.dSpin * Math.min(1, Math.max(0, (nmM - 2) / 3))), nm = Math.hypot(nx, ny) + 1e-6;   // smashed: the spinning rear drives along the chassis (holds speed at big angle)
+    const fall = 1 - (1 - SIM_K.kin) * Math.min(1, Math.max(0, (nmM - SIM_K.fA) / SIM_K.fW));
+    const sat = Math.tanh(nmM) * p.muR * Nr * fall;
+    const beta = Math.abs(Math.atan2(rv, Math.max(0.3, Math.abs(u)))); c.slide = Math.min(1, Math.max(0, (beta - 0.08) / 0.3)); const kw = SIM_K.bite + (p.kapW - SIM_K.bite) * c.slide;   // drive bite: brisk straight-line launch, but sideways the drive stays inside the tire's grip
     const Fxr = sat * nx / nm * kw, Fyr = sat * ny / nm * p.stab * (0.35 + 0.65 * lowG);
     const sx = c.w - u, sy = -rv;
     // --- ESC / motor: throttle sets wheel-speed target, punch limits torque ---
@@ -533,7 +570,7 @@ const SIM = (function () {
     c.w += (Fm - Fxr) / SIM_K.J * dt;
     // --- integrate body ---
     const Fx = Fxf + Fxr - 0.05 * u, Fy = Fyf + Fyr - 0.05 * v, Mz = p.a * Fyf - p.b * Fyr - c.r * p.yawD;
-    const axb = Fx / MASS, ayb = Fy / MASS;
+    const axb = Fx / M, ayb = Fy / M;
     c.ax += (axb - c.ax) * Math.min(1, dt / 0.05); c.ay += (ayb - c.ay) * Math.min(1, dt / 0.05);
     c.vx += (axb * cs - ayb * sn) * dt; c.vy += (axb * sn + ayb * cs) * dt;
     c.r += Mz / p.Iz * dt;
@@ -567,10 +604,10 @@ const SIM = (function () {
         c.x -= nx * pen; c.y -= ny * pen;
         const vpx = c.vx - c.r * ry, vpy = c.vy + c.r * rx, vn = vpx * nx + vpy * ny;
         if (vn <= 0) continue;
-        const rn = rx * ny - ry * nx, J = (1 + 0.15) * vn / (1 / MASS + rn * rn / p.Iz);
-        c.vx -= J * nx / MASS; c.vy -= J * ny / MASS; c.r -= rn * J / p.Iz;
-        const tx = -ny, ty = nx, vt = vpx * tx + vpy * ty, rt = rx * ty - ry * tx, Jt = clamp(vt / (1 / MASS + rt * rt / p.Iz), -0.22 * J, 0.22 * J);
-        c.vx -= Jt * tx / MASS; c.vy -= Jt * ty / MASS; c.r -= rt * Jt / p.Iz;
+        const rn = rx * ny - ry * nx, J = (1 + 0.15) * vn / (1 / M + rn * rn / p.Iz);
+        c.vx -= J * nx / M; c.vy -= J * ny / M; c.r -= rn * J / p.Iz;
+        const tx = -ny, ty = nx, vt = vpx * tx + vpy * ty, rt = rx * ty - ry * tx, Jt = clamp(vt / (1 / M + rt * rt / p.Iz), -0.22 * J, 0.22 * J);
+        c.vx -= Jt * tx / M; c.vy -= Jt * ty / M; c.r -= rt * Jt / p.Iz;
         c.hit = Math.max(c.hit, vn);
       }
     }
@@ -606,7 +643,7 @@ const SIM = (function () {
   // It reads the judged line (wide into outer zones, nose to the clipping points), carries real angle and holds it with
   // countersteer, and uses the throttle the way you would: more trigger for more angle, lift to tighten the line.
   // ctx: { lead: car|null (car to chase), follower: car|null (car chasing me), hold }
-  const AIG = { lA: 2.2201, lB: 0.4099, bMax: 0.8672, k0: 1.9884, bStr: 0.314, kL: 1.737, kS: 4.9554, kD: 0.4132, aMax: 0.2487, w0: 45.0586, kW: 9.9732, kV: 45.3663, kO: 23.6087, kP: 12.7316, aLat: 4.998, vMax: 40.7775, vMin: 0.2303, comp: 0.0193, asst: 0, kE: -6.4608, kI: 12.6635, cc: 0.22, kOI: 0.0313, aFl: 0.1285 };   // tuned by CMA-ES against the strict drift judge on every track (aicma3.js): stays sideways through links (aFl)
+  const AIG = { lA: 0.3851,  lB: 0.7453,  bMax: 0.75,  k0: 3.1797,  bStr: 0.1991,  kL: 3.465,  kS: 0.8578,  kD: 0.3413,  aMax: 0.1479,  w0: 118.9656,  kW: 40.1211,  kV: 237.4501,  kO: 36.2552,  kP: 12.6662,  aLat: 10.4292,  vMax: 95.9384,  vMin: 0.8598,  comp: 0.0806,  asst: 0,  kE: -0.9487,  kI: 15.1001,  cc: 0.09,  kOI: 0.0813,  aFl: 0.0422 };   // v46: retuned by CMA-ES (aicma.js) for the new tires, gyro and swing zones: 0 stuck, 3 wall taps in 27 laps, 77% of zones   // tuned by CMA-ES against the strict drift judge on every track (aicma3.js): stays sideways through links (aFl)
   function makeAI(skill) { return { skill, stuck: 0, mimic: 0, gapI: 0, mode: 'line', pace: 1 }; }
   const unExpo = (y, e) => { y = clamp(y, -1, 1); if (e <= 0.001) return y; let x = y; for (let k = 0; k < 6; k++) { const f = x * (1 - e) + e * x * x * x - y, d = (1 - e) + 3 * e * x * x; x = clamp(x - f / d, -1, 1); } return x; };
   function aiDrive(c, ai, tr, ctx, dt) {
@@ -666,7 +703,9 @@ const SIM = (function () {
     const yawT = velDir + betaT + latErr * g.kL, e = wrap(yawT - c.yaw);
     const fAng = sp > 0.4 ? Math.atan2(c.v + c.p.a * c.r, Math.max(0.2, c.u)) : 0;
     const dDes = fAng + clamp(e * g.kS - c.r * g.kD, -g.aMax, g.aMax);
-    const stick = unExpo((dDes + c.p.gyroK * c.gyroR) / (c.p.lock * c.p.dual), c.p.expo || 0);
+    const Lk = (c.stL || c.p.lock) * c.p.dual, gq = c.p.gyroK * c.gyroR; let sRaw = (dDes + gq) / Lk;   // undo the gyro the way the car mixes it
+    if (sRaw * Math.sign(c.gyroR) > 0 && SIM_K.gTr) sRaw = (dDes + gq) / (Lk + c.p.gyroK * SIM_K.gTr * Math.abs(c.gyroR));   // gyro backs off when steering with the rotation
+    const stick = unExpo(sRaw, c.p.expo || 0);
     // ---- throttle: wheel speed sets the angle (spin the rear past the ground speed), speed error and line error trim it ----
     const ang = Math.abs(c.slip), over = c.slip * Math.sign(betaT || 1) - Math.abs(betaT), tight = latErr * Math.sign(betaT || 0);
     // line holding: inside the line -> more trigger (the slide runs wider), outside -> lift (it tightens); integral kills the steady offset
@@ -3100,8 +3139,9 @@ const ONLINE = (() => {
   O.report = async (id, reason, context) => { const r = await rpc('report_user', { p_id: id, p_reason: String(reason || '').slice(0, 300), p_context: context ? String(context).slice(0, 600) : null }); return r ? (r.ok ? '' : r.why) : 'Could not send the report.'; };
   O.playerCard = async (id, name) => rpc('player_card', id ? { p_id: id } : { p_name: name });
   // ---- who's online + community forum (v45) ----
+  O.searchDrivers = async (q, n) => (await rpc('search_drivers', { p_q: String(q || '').slice(0, 24), p_limit: n || 30 })) || [];
   O.onlineDrivers = async () => (await rpc('online_drivers')) || { drivers: [], guests: 0 };
-  O.FORUM_CATS = [['howto', 'How to play'], ['tuning', 'Tuning help'], ['bugs', 'Bugs & problems'], ['ideas', 'Ideas & upgrades'], ['general', 'General']];
+  O.FORUM_CATS = [['feedback', 'Game feedback'], ['howto', 'How to play'], ['tuning', 'Tuning help'], ['bugs', 'Bugs & problems'], ['ideas', 'Ideas & upgrades'], ['general', 'General']];
   O.forum = {
     counts: async () => (await rpc('forum_counts')) || {},
     list: async (cat, q, mine) => (await rpc('forum_list', { p_cat: cat || null, p_q: q || null, p_mine: !!mine, p_limit: 50 })) || [],
@@ -3233,10 +3273,10 @@ const ONLINE = (() => {
   // ---------------- saved state ----------------
   const KEY = 'rcdrift_v1';
   function isTouchDev() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || false; }
-  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
-    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
+  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, v20: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
+    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, angleAssistPad: true, angleAssistKb: true, voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
     pad: { mode: 'auto', steerAxis: 0, thrAxis: 1, steerInv: false, thrInv: true, cS: 0, cT: 0, dead: 4 }, best: {}, bestPts: {}, pb: {}, slots: {} };
-  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
+  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v20) { S.opt.angleAssistPad = true; S.opt.angleAssistKb = true; } /* v46: assist default for controllers + keyboard, phones stay Direct */ if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
   let saveT = 0; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 300); if (window.ONLINE && ONLINE.profile) ONLINE.saveGarage({ look: S.look, tune: S.tune, pb: S.pb, opt: { cam: S.opt.cam, kbThrottle: S.opt.kbThrottle, kbAssist: S.opt.kbAssist, angleMix: S.opt.angleMix, angleAssist: S.opt.angleAssist, angleAssistPad: S.opt.angleAssistPad }, slots: S.slots }); };
 
   // ---------------- renderer ----------------
@@ -3339,7 +3379,7 @@ const ONLINE = (() => {
       const look = { body: b.id, color: GFX.PAINTS[(k * 3 + 2) % GFX.PAINTS.length], color2: GFX.PAINTS[(k * 5 + 1) % GFX.PAINTS.length], finish: GFX.FINISHES[k % 4].id, livery: GFX.LIVERIES[(k + 1) % GFX.LIVERIES.length].id, num: 10 + k * 7, plate: 'DRF ' + (21 + k * 13), wheel: GFX.WHEELS[(k + 1) % GFX.WHEELS.length].id, wheelColor: ['#e8e8ea', '#101114', '#c9a227', '#c8102e'][k % 4], wing: k % 4 === 2 ? 'gt' : 'none', glow: world.night && k % 2 ? GFX.PAINTS[(k * 2 + 6) % GFX.PAINTS.length] : '' };
       const c = makeCarObj('ai', look, {}, AI_NAMES[k % AI_NAMES.length]); c.ai = SIM.makeAI(sk); c.ai.laneBias = (rnd() - 0.5) * 0.2; cars.push(c);
     }
-    resetGrid(); Object.assign(score, { run: 0, mult: 1, total: 0, lapPts: 0, lastPts: null, driftT: 0, graceT: 0, lapStart: null, lastLap: 0, laps: 0, zs: [] }); if (skids) skids.clear();
+    resetGrid(); Object.assign(score, { run: 0, mult: 1, total: 0, lapPts: 0, lastPts: null, driftT: 0, graceT: 0, lapStart: null, lastLap: 0, laps: 0, zs: [], maxProg: undefined, lapN: undefined, wwT: 0, wrong: false, stale: false }); if (skids) skids.clear();
   }
   function resetGrid() {
     const n = cars.length, order = cars.slice(1), pi = S.opt.start === 'front' ? 0 : S.opt.start === 'back' ? n - 1 : Math.floor((n - 1) / 2);
@@ -3348,7 +3388,7 @@ const ONLINE = (() => {
     // online room: everyone has their own grid box (from their player id) so drivers joining don't spawn inside each other
     if (ONLINE.room && cars.length === 1) { let h = 0; for (const ch of String(ONLINE.myId ? ONLINE.myId() : Math.random())) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const slot = h % 10; SIM.placeCar(player.sim, track, -6 - slot * 7, slot % 2 ? 0.32 : -0.32); }
   }
-  function resetPlayer() { const s = player.sim; SIM.placeCar(s, track, s.ti < 0 ? 0 : s.ti, 0); s.lap = Math.floor(s.prog); player.skid = [null, null]; bank(true); toast('Reset to track'); }
+  function resetPlayer() { const s = player.sim, L = s.lap; SIM.placeCar(s, track, s.ti < 0 ? 0 : s.ti, 0); s.lap = L; s.prog = L + s.ti / track.N; /* same spot, same lap */ player.skid = [null, null]; bank(true); toast('Reset to track'); }
 
   // ---------------- input ----------------
   const keys = {}, inp = { steer: 0, throttle: 0, brake: 0, kbS: 0, kbT: 0, src: 'kb' };
@@ -3441,19 +3481,19 @@ const ONLINE = (() => {
     const touching = TCH.sId !== null || TCH.tId !== null;
     if (touching) { st = TCH.steer; th = TCH.thr; br = TCH.brk; inp.src = 'touch'; }
     else if (pad && (Math.abs(pad.st) > 0.03 || pad.th > 0.03 || pad.br > 0.03 || !(L || R || U || D))) { st = pad.st; th = pad.th; br = pad.br; inp.src = 'pad'; }
-    if (S.opt.angleAssist === false && (touching ? S.opt.touchAssist !== false : !pad && S.opt.kbAssist) && player) { // keyboard / touch: don't push the fronts past useful slip angle (stops over-correcting)
+    if ((touching ? S.opt.angleAssist === false && S.opt.touchAssist !== false : !pad && !S.opt.angleAssistKb && S.opt.kbAssist) && player) { // keyboard / touch: don't push the fronts past useful slip angle (stops over-correcting)
       const c = player.sim, p = c.p; if (c.speed > 0.8) { const fa = Math.atan2(c.v + p.a * c.r, Math.max(0.3, c.u)), lim = 0.5, g = p.gyroK * c.gyroR, lo = (fa - lim + g) / p.lock, hi = (fa + lim + g) / p.lock; st = clamp(st, Math.min(lo, 0), Math.max(hi, 0)); } }
     if (inp.src === 'kb' && S.opt.kbThrAssist && player && !keys['shift']) th *= clamp(1 - (Math.abs(player.sim.slip) - 0.5) * 2.5, 0.25, 1); // ease off as the angle gets deep
     inp.steer = st; inp.throttle = th; inp.brake = br;
     // drift-angle steering (default for touch + keyboard): the stick asks for a slide angle, a controller works the wheel
-    const useAng = inp.src === 'pad' ? S.opt.angleAssistPad : S.opt.angleAssist !== false;
+    const useAng = inp.src === 'pad' ? !!S.opt.angleAssistPad : inp.src === 'kb' ? !!S.opt.angleAssistKb : S.opt.angleAssist !== false;
     inp.angle = useAng ? st : null; inp.angleMix = clamp(S.opt.angleMix / 100, 0, 1);
   }
 
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v45', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3539,7 +3579,7 @@ const ONLINE = (() => {
       let lead = null, ld = 1e9, fol = null, fd = 1e9; const s = c.sim;
       for (const o of all) { if (o === c) continue; const d = ((o.sim.ti - s.ti) % N + N) % N * track.ds; if (d < 4.5 && d < ld && Math.hypot(o.sim.x - s.x, o.sim.y - s.y) < 5) { ld = d; lead = o.sim; } const b = track.len - d; if (o.kind !== 'ai' && b < 5 && b < fd) { fd = b; fol = o.sim; } }
       SIM.aiDrive(s, c.ai, track, { lead, follower: fol }, dt);
-      if (c.ai.stuck > 2.2) { SIM.placeCar(s, track, s.ti, 0); s.lap = Math.floor(s.prog); c.ai.stuck = 0; c.skid = [null, null]; }
+      if (c.ai.stuck > 2.2) { const L = s.lap; SIM.placeCar(s, track, s.ti, 0); s.lap = L; s.prog = L + s.ti / track.N; c.ai.stuck = 0; c.skid = [null, null]; }
     }
     const n = Math.max(1, Math.ceil(dt / H)), h = dt / n; let wallHit = 0, carHit = 0;
     for (let i = 0; i < n; i++) {
@@ -3551,31 +3591,37 @@ const ONLINE = (() => {
     if (carHit > 0.9) { sfxHit(carHit * 0.6); }
     // ---- scoring ----
     if (mode === 'drive') {
-      const ang = Math.abs(P.slip) * 57.3, drifting = SIM.driftCheck(P, dt); let near = 9;
+      // ---- wrong way / fresh ground (v46): points only count going the right way, on track you haven't already covered ----
+      { const tx = track.TX[P.ti] || 0, ty = track.TY[P.ti] || 0, along = P.speed > 0.05 ? (P.vx * tx + P.vy * ty) / P.speed : 0;
+        if (P.speed > 0.4 && along < -0.35) score.wwT = (score.wwT || 0) + dt; else if (along > 0.2 || P.speed < 0.15) score.wwT = Math.max(0, (score.wwT || 0) - dt * 2.5);
+        if (score.maxProg === undefined || P.prog > score.maxProg) score.maxProg = P.prog;
+        score.wrong = score.wwT > 0.45; score.stale = P.prog < score.maxProg - 0.7 / track.len; }
+      const blocked = score.wrong || score.stale;
+      const ang = Math.abs(P.slip) * 57.3, drifting = SIM.driftCheck(P, dt) && !blocked; let near = 9;
       for (const o of all) if (o !== player) { const d = Math.hypot(o.sim.x - P.x, o.sim.y - P.y); if (d < near && Math.abs(o.sim.slip) > 0.17) near = d; }
       score.tandem = drifting && near < 0.8; score.near = near;
       if (drifting) { score.driftT += dt; score.graceT = 0; score.mult = Math.min(5, 1 + Math.floor(score.driftT / 2.5)); score.run += Math.pow(Math.min(ang, 70), 1.25) * Math.min(1, P.speed / 1.5) * dt * 5.5 * score.mult * (score.tandem ? 1 + (0.8 - near) * 3 : 1);
         // transitions: flicking from one side to the other without losing the slide is the real skill
         const sg = Math.sign(P.slip); if (ang > 15) { if (score.side && sg !== score.side && simTime - score.sideT < 1.0) { const b = Math.round(250 * score.mult); score.run += b; toast('TRANSITION +' + b, 'good'); } score.side = sg; score.sideT = simTime; } }
-      else if (score.run > 0) { score.graceT += dt; if (score.graceT > 1.1) bank(false); }
+      else if (score.run > 0) { score.graceT += dt; if (score.graceT > 1.1 || score.wrong) bank(!!score.wrong); }
       // ---- judging zones (same judge the AI is tuned against): depth x angle x coverage ----
       if (track.zones) {
-        const J = score.J || (score.J = {}); J.zs = score.zs; J.drifting = drifting; const ev = SIM.judgeTick(J, P, track, dt);
+        const J = score.J || (score.J = {}); J.zs = score.zs; J.drifting = drifting; J.block = blocked; const ev = SIM.judgeTick(J, P, track, dt);
         score.inZone = J.liveZ >= 0; score.zoneQ = J.live;
-        if (score.inZone && drifting) score.run += Math.pow(Math.min(ang, 70), 1.25) * Math.min(1, P.speed / 1.5) * dt * 3 * score.mult * (0.4 + J.live);
+        if (score.inZone && drifting) score.run += Math.pow(Math.min(ang, 70), 1.25) * Math.min(1, P.speed / 1.5) * dt * 3 * score.mult * (0.4 + J.live) * (J.liveK || 1);
         for (const e of ev) { const b = Math.round(e.pts * score.mult); score.run += b;
           if (e.type === 'outer') toast('OZ' + e.z.n2 + ' · ' + Math.round(e.pct * 100) + '% · ' + Math.round(e.ang) + '° · ' + Math.round(e.gapCm) + ' cm off wall  +' + b, 'good');
           else toast('CP' + e.z.n + ' · ' + Math.round(e.gapCm) + ' cm · ' + Math.round(e.ang) + '°  +' + b, 'good');
           secure(); }
       }
       const lp = Math.floor(P.prog); if (score.lapN === undefined) score.lapN = lp;
-      if (lp > score.lapN) {   // every lap: bank the running chain (no need to stop), score the lap, start fresh
+      if (lp > score.lapN && !score.wrong) {   // every lap (only the furthest lap reached counts — no back-and-forth over the line): bank the running chain (no need to stop), score the lap, start fresh
         if (score.run > 0) { score.lapPts += score.run; if (score.run > score.best) score.best = score.run; score.run = 0; }
         const pts = Math.round(score.lapPts), k0 = track.def.id; score.total += pts; score.lastPts = pts; S.pb = S.pb || {};
         if (pts > 0) { if (!S.pb[k0] || pts > S.pb[k0]) { S.pb[k0] = pts; save(); toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' · NEW BEST', 'good'); } else toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' pts', 'good'); }
         if (pts > 0 && score.lapStart !== null && ONLINE.profile) { const isPb = S.pb[k0] === pts; ONLINE.submitLap(k0, pts, S.look.body, (simTime - score.lapStart) * 1000).then(r => { BC.t = 0; if (r && r.pb) toast('LEADERBOARD · ' + pts.toLocaleString() + ' saved', 'good'); else if (r && !r.ok && /update the game/.test(r.why || '')) toast('Reload the page to post laps (new version)', 'bad'); else if (isPb && !(r && r.ok)) ONLINE.syncPbs({ [k0]: pts }); }); }
         score.lapPts = 0; score.zs = [];
-        if (score.lapStart !== null) { score.lastLap = simTime - score.lapStart; score.laps++; const k = track.def.id, b = S.best[k]; if (!b || score.lastLap < b) { S.best[k] = score.lastLap; save(); toast('BEST LAP ' + score.lastLap.toFixed(2) + 's'); } } score.lapStart = simTime; } score.lapN = lp;
+        if (score.lapStart !== null) { score.lastLap = simTime - score.lapStart; score.laps++; const k = track.def.id, b = S.best[k]; if (!b || score.lastLap < b) { S.best[k] = score.lastLap; save(); toast('BEST LAP ' + score.lastLap.toFixed(2) + 's'); } } score.lapStart = simTime; score.lapN = lp; } else if (lp > score.lapN) score.lapN = lp;
     }
     // ---- skid marks ----
     for (const c of all) { const s = c.sim, sl = Math.abs(s.slip) > 0.14 || Math.abs((s.w || 0) - (s.u || 0)) > 1.2; c.skidN = (c.skidN + 1) % 2; if (c.skidN) continue;
@@ -3587,7 +3633,7 @@ const ONLINE = (() => {
   // a finished zone or clip locks the chain so far into the lap score; the combo (multiplier) keeps running.
   // A wall tap only costs what you've earned since the last zone.
   function secure() { if (score.run > 0) { score.lapPts += score.run; if (score.run > score.best) score.best = score.run; score.run = 0; } }
-  function bank(crash) { if (score.run > 0) { if (crash) { toast('WALL TAP — combo lost', 'bad'); } else { score.lapPts += score.run; if (score.run > score.best) score.best = score.run; if (score.run > 400) toast('+' + Math.round(score.run) + ' banked', 'good'); } } score.run = 0; score.mult = 1; score.driftT = 0; score.graceT = 0; }
+  function bank(crash) { if (score.run > 0) { if (crash) { toast(score.wrong ? 'WRONG WAY — combo lost' : 'WALL TAP — combo lost', 'bad'); } else { score.lapPts += score.run; if (score.run > score.best) score.best = score.run; if (score.run > 400) toast('+' + Math.round(score.run) + ' banked', 'good'); } } score.run = 0; score.mult = 1; score.driftT = 0; score.graceT = 0; }
 
   // ---------------- cameras ----------------
   const CAMS = ['Chase', 'Far chase', 'In-car FPV', 'Bumper', 'Driver stand', 'Drone'];
@@ -3652,7 +3698,7 @@ const ONLINE = (() => {
   function sfxHit(v) { if (!AC || !S.opt.sound) return; const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); s.buffer = A.noise; f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = Math.min(0.6, v * 0.25); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.14); s.connect(f); f.connect(g); g.connect(A.master); s.start(); s.stop(AC.currentTime + 0.15); }
 
   // ---------------- HUD ----------------
-  const hud = { score: $('#hScore'), run: $('#hRun'), mult: $('#hMult'), ang: $('#hAng'), spd: $('#hSpd'), bar: $('#hBar'), gyro: $('#hGyro'), lap: $('#hLap'), tand: $('#hTand'), zone: $('#hZone'), net: $('#hNet'), thr: $('#hThr'), src: $('#hSrc'), cam: $('#hCam'), unit: $('#hUnit') };
+  const hud = { score: $('#hScore'), run: $('#hRun'), mult: $('#hMult'), ang: $('#hAng'), spd: $('#hSpd'), bar: $('#hBar'), gyro: $('#hGyro'), lap: $('#hLap'), tand: $('#hTand'), zone: $('#hZone'), net: $('#hNet'), thr: $('#hThr'), src: $('#hSrc'), cam: $('#hCam'), unit: $('#hUnit'), ww: $('#hWrong') };
   const mini = $('#mini'), mg = mini.getContext('2d'); let miniBase = null, mS = 1, mOx = 0, mOy = 0;
   function drawMiniBase() { const w = mini.width, h = mini.height, c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
     mS = Math.min((w - 24) / (world.maxX - world.minX + track.width), (h - 24) / (world.maxY - world.minY + track.width)); mOx = w / 2 - world.cx * mS; mOy = h / 2 + world.cy * mS;
@@ -3667,15 +3713,16 @@ const ONLINE = (() => {
     hud.gyro.textContent = S.tune.gyroGain + '%'; hud.thr.style.height = (c.inp.throttle * 100) + '%'; hud.tand.className = score.tandem ? 'on' : ''; if (score.inZone) { if (c.drifting) { hud.zone.className = 'on'; hud.zone.textContent = 'IN ZONE · ' + Math.round((score.zoneQ || 0) * 100) + '%'; } else { hud.zone.className = 'on warn'; hud.zone.textContent = 'ZONE · GET SIDEWAYS'; } } else hud.zone.className = ''; hud.cam.textContent = CAMS[S.opt.cam];
     const bp = (S.pb || {})[track.def.id]; hud.lap.textContent = (score.lapStart !== null ? 'LAP ' + (score.laps + 1) + ' · ' + (simTime - score.lapStart).toFixed(1) + 's' : 'OUT LAP') + (score.lastPts != null ? ' · last ' + score.lastPts.toLocaleString() : '') + (bp ? ' · best ' + bp.toLocaleString() : '') + (score.total ? ' · session ' + Math.round(score.total).toLocaleString() : '');
     hud.net.textContent = NET.room ? 'ONLINE' + (ONLINE.room ? ' · ' + ONLINE.room.code : '') + ' · ' + (NET.count + 1) + (NET.count ? ' drivers here' : ' driver (waiting for others)') : 'SOLO SESSION'; hud.net.className = NET.room ? 'on' : ''; document.documentElement.classList.toggle('inroom', !!ONLINE.room);
+    if (hud.ww) hud.ww.className = mode === 'drive' && score.wrong ? 'on' : '';
     hud.src.textContent = inp.src === 'pad' ? 'CONTROLLER' : inp.src === 'touch' ? 'TOUCH' : 'KEYBOARD';
   }
 
   // ---------------- menu UI ----------------
   const TUNE_UI = [
     ['Gyro', [['gyroGain', 'Gyro gain', '%', 0, 100, 1, 'How hard the gyro counter-steers for you. Too low and the car spins; too high and it steers for you and wags on straights. Change it while driving with [ and ].']]],
-    ['Steering', [['steerLock', 'Steering lock', '°', 45, 75, 1, 'Max front wheel angle. More lock holds deeper angle before spinning.'], ['dualRate', 'Dual rate (EPA)', '%', 50, 100, 1, 'Scales your stick only. The gyro still gets full lock.'], ['steerExpo', 'Steering expo', '%', 0, 60, 1, 'Softens the stick around center for smoother hands.'], ['servoSpeed', 'Servo speed', 's/60°', 0.04, 0.2, 0.01, 'Lower is faster. A slow servo makes the gyro late and the car wobble.'], ['ackermann', 'Ackermann', '%', 0, 100, 1, '0 = parallel steering: fast, free-flowing. More Ackermann scrubs speed at lock and makes the car calmer and easier to place.']]],
+    ['Steering', [['steerLock', 'Steering lock', '°', 45, 90, 1, 'Max front wheel angle (inside wheel). Comp chassis run 70–90°. More lock holds deeper angle before spinning.'], ['dualRate', 'Dual rate (EPA)', '%', 50, 100, 1, 'Scales your stick only. The gyro still gets full lock.'], ['steerExpo', 'Steering expo', '%', 0, 60, 1, 'Softens the stick around center for smoother hands.'], ['servoSpeed', 'Servo speed', 's/60°', 0.04, 0.2, 0.01, 'Lower is faster. A slow servo makes the gyro late and the car wobble.'], ['ackermann', 'Ackermann', '%', 0, 100, 1, '0 = parallel steering: fast, free-flowing. More Ackermann scrubs speed at lock and makes the car calmer and easier to place.']]],
     ['Alignment', [['camberF', 'Front camber', '°', -12, 0, 0.5, 'Front grip at lock peaks around -7° to -9° with drift caster.'], ['camberR', 'Rear camber', '°', -5, 0, 0.5, 'More negative = more side bite, less forward bite.'], ['caster', 'Caster', '°', 4, 12, 0.5, 'More caster adds front bite at lock and helps the car self-steer.'], ['toeF', 'Front toe-out', '°', -2, 4, 0.5, 'Toe-out sharpens initiation. Toe-in (negative) calms it.'], ['toeR', 'Rear toe-in', '°', 0, 4, 0.5, 'More rear toe-in = more rear side grip and stability, less angle.'], ['offset', 'Wheel offset', 'mm', 0, 12, 1, 'Wider track is a touch more stable — and fills the arches.']]],
-    ['Chassis', [['weightRear', 'Rear weight bias', '%', 45, 65, 1, 'Rear-heavy drives forward harder and is steadier in drift. More front weight rotates faster.'], ['rideHeight', 'Ride height', 'mm', 4, 9, 0.5, 'Higher CG = more weight transfer under throttle and brake.'], ['springF', 'Front spring', '', 0, 100, 5, 'Softer front = more front grip.'], ['springR', 'Rear spring', '', 0, 100, 5, 'Softer rear = more rear grip and forward bite. Stiffer rear slides easier.']]],
+    ['Chassis', [['weight', 'Car weight', 'g', 1200, 2000, 10, 'All-up weight with ballast. Lighter = snappy, bites and flicks quicker. Heavier = more momentum, smoother and slower to rotate. Stock 1450 g.'], ['weightRear', 'Rear weight bias', '%', 45, 65, 1, 'Rear-heavy drives forward harder and is steadier in drift. More front weight rotates faster.'], ['rideHeight', 'Ride height', 'mm', 4, 9, 0.5, 'Higher CG = more weight transfer under throttle and brake.'], ['springF', 'Front spring', '', 0, 100, 5, 'Softer front = more front grip.'], ['springR', 'Rear spring', '', 0, 100, 5, 'Softer rear = more rear grip and forward bite. Stiffer rear slides easier.']]],
     ['Tires', [['tireF', 'Front compound', 'sel:TIRES', 0, 4, 1, 'Plastic drift tire hardness. Softer grips more. Match it to the surface.'], ['tireR', 'Rear compound', 'sel:TIRES', 0, 4, 1, 'Less rear grip than front = looser, more angle. More = faster, more forward drive.']]],
     ['Power', [['topSpeed', 'ESC speed limit', '%', 60, 160, 5, 'Caps your speed on the straights without cutting power in a slide. Lower = slower, more technical.'], ['motor', 'Motor', 'sel:MOTORS', 0, 4, 1, 'Fewer turns = more wheel speed and punch.'], ['fdr', 'Final drive ratio', ':1', 8.5, 13, 0.1, 'Lower FDR = more wheel speed. Higher = more torque, less top end.'], ['punch', 'ESC punch', '%', 20, 100, 5, 'How hard the ESC lets the motor hit.'], ['throttleExpo', 'Throttle expo', '%', 0, 60, 5, 'Softens the bottom of the trigger for finer wheel-speed control.'], ['dragBrake', 'Drag brake', '%', 0, 50, 1, 'Braking when you are off throttle. More helps the rear step out on lift.'], ['brake', 'Brake strength', '%', 0, 100, 5, 'Rear-only braking, like the real thing.']]]];
   let menuKind = 'main', tab = 'drive';
@@ -3711,10 +3758,11 @@ const ONLINE = (() => {
       ['Welcome to RC Drift Lab', '<p>A 1/10 RC drift sim on real P-tile. Made by <b>Stranger Kreations</b>, Las Vegas.</p><p>Want the 30-second tour? You can skip it and find it later on the Drive tab.</p>'],
       ['Save it like an app', isApp() ? '<p>You\'re already running it as an app. Nice.</p>' : (installEv ? '<p>Tap <b>Install app</b> below. It goes on your home screen and opens full screen, like any other app.</p>' : save) + '<p class="tmut">Then it opens from your home screen with one tap, full screen, and solo mode even works offline.</p>'],
       ['Controls', ctrl],
-      ['How to drift it', '<p>This isn\'t a race. <b>Throttle swings the tail and sets the angle</b>, it doesn\'t just add speed. Rev it before turn-in to break the rear loose, then hold angle with the throttle.</p><p><b>Direct</b> (the default): you steer like the real car and the gyro helps. <b>Angle assist</b>: the stick asks for a drift angle instead. Switch under <b>Tuning → Steering feel</b>.</p>'],
+      ['How to drift it', '<p>This isn\'t a race. <b>Throttle swings the tail and sets the angle</b>, it doesn\'t just add speed. Rev it before turn-in to break the rear loose, then hold angle with the throttle.</p><p>Rolling on the throttle builds speed with grip; smash it to break the rear loose. Lift a touch to tighten the line.</p>'],
+      ['Steering modes', '<p>Two ways to steer, set separately for each thing you play with (<b>Tuning → Steering feel</b>):</p><ul><li><b>Direct</b>: the stick turns the front wheels, like a real radio, and the gyro catches the countersteer. <b>Default on phones</b>: tilt and thumb steering feel the most real this way.</li><li><b>Angle assist</b>: the stick asks for a drift angle (about 55° at full stick, more with throttle) and the car holds it. <b>Default on controllers</b> (closest to a gyro drift car on a thumbstick) <b>and keyboards</b> (on/off keys can\'t feather the wheels).</li></ul><p class="tmut">Not feeling it? Flip it. The game switches modes automatically when you change from phone to controller to keyboard.</p>'],
       ['Tracks', '<ul>' + tracks + '</ul><p>Pick one on the <b>Drive</b> tab.</p><p><b>Yellow hatched zones score.</b> Outer zones (OZ): get your <b>rear bumper</b> into the band by the outside wall while sliding. Clip points (CP): get your <b>nose</b> into the box on the inside. Each zone pays for how much of it you fill, <b>how deep</b> you get (closer to the wall = more) and <b>how much angle</b> you carry (50°+ = full). The yellow IN ZONE tag shows how you\'re doing live.</p>'],
       ['Garage + Tuning', '<p><b>Garage</b>: drift cars and movie cars, paint, wheels, wings, liveries.</p><p><b>Tuning</b>: gyro gain, steering lock, power, gearing. Too twitchy? Turn the gyro up or lower <b>Sim speed</b> (Settings tab).</p>'],
-      ['Go drive', '<p>That\'s it. Replay this any time: <b>Drive tab → How to play</b>.</p>'],
+      ['Go drive', '<p>That\'s it. Replay this any time: <b>Drive tab → How to play</b>.</p><p>RC Drift Lab is in <b>beta</b>: physics, tracks and scoring are still being tuned. Tell us what you think in <b>Social → Forum → Game feedback</b> (or the <b>Leave feedback</b> button on the Drive tab).</p>'],
     ];
     let i = start || 0; const ov = el('div'); ov.id = 'tour'; document.body.appendChild(ov);
     const done = () => { ov.remove(); try { localStorage.setItem('rcdl_tour', '1'); } catch (e) { } };
@@ -3779,9 +3827,26 @@ const ONLINE = (() => {
       if (extra && extra.room && !(ONLINE.room && ONLINE.room.code === extra.room)) mk('Join their room', 'big', async () => { close(); const lb = await ONLINE.findLobby(extra.room); if (!lb) { toast('That room just closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else drive(false); });
     });
   }
+  // ---------- driver search: type 1+ letters, results update as you type (v46) ----------
+  function driverSearch(add, label, onPick) {
+    const wrap = el('div', 'dsearch'), qi = el('input'); qi.type = 'search'; qi.maxLength = 24; qi.placeholder = 'Start typing a name…'; qi.autocomplete = 'off'; qi.spellcheck = false; qi.value = F.find || '';
+    const box = el('div', 'inbox dres'); wrap.append(qi, box); add(label ? row(label, wrap) : wrap);
+    let seq = 0, tm = 0;
+    const run = async () => { const q = qi.value.trim(), my = ++seq; F.find = qi.value; const list = await ONLINE.searchDrivers(q, q ? 20 : 40); if (my !== seq || !box.isConnected) return; box.textContent = '';
+      if (!list.length) { box.appendChild(el('p', 'tip', q ? 'Nobody matches "' + q + '".' : 'No drivers yet.')); return; }
+      for (const d of list) { const b = el('button', 'conv'), top = el('div'), nm = el('b'); const dt = el('span', 'cdot'); dt.style.background = /^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#888'; nm.appendChild(dt);
+        const name = String(d.name), lo = name.toLowerCase(), i = q ? lo.indexOf(q.toLowerCase()) : -1;
+        if (i >= 0) { nm.appendChild(document.createTextNode(name.slice(0, i))); nm.appendChild(el('u', '', name.slice(i, i + q.length))); nm.appendChild(document.createTextNode(name.slice(i + q.length))); } else nm.appendChild(document.createTextNode(name));
+        if (d.dev) nm.appendChild(el('em', 'tagdev', 'DEV')); if (d.supporter) nm.appendChild(el('em', 'tagsup', '★'));
+        top.appendChild(nm); top.appendChild(el('small', '', d.online ? '● online' : d.seen ? 'seen ' + ago(d.seen) : '')); b.appendChild(top);
+        b.appendChild(el('span', '', (d.laps ? fmt(d.laps) + ' laps posted' : 'no laps yet'))); b.onclick = () => onPick(d); box.appendChild(b); } };
+    qi.oninput = () => { clearTimeout(tm); tm = setTimeout(run, 180); }; qi.onkeydown = e => { if (e.key === 'Enter') { clearTimeout(tm); const f = box.querySelector('button.conv'); if (f) f.click(); else run(); } };
+    box.textContent = 'Loading…'; run(); return qi;
+  }
   // ---------- community forum (v45) ----------
   const fSeen = (() => { let m = {}; try { m = JSON.parse(localStorage.getItem('rcdl_fseen') || '{}') || {}; } catch (e) { } return { get: id => m[id], set: (id, at) => { m[id] = at; const k = Object.keys(m); if (k.length > 400) delete m[k[0]]; try { localStorage.setItem('rcdl_fseen', JSON.stringify(m)); } catch (e) { } } }; })();
   const catName = c => (ONLINE.FORUM_CATS.find(x => x[0] === c) || [c, c])[1];
+  function openFeedback() { tab = 'community'; F.cv = 'forum'; F.ft = null; F.fth = null; F.fcat = 'feedback'; F.fmine = false; F.fq = ''; F.fd.cat = 'feedback'; F.fnew = !!ONLINE.profile; if (mode === 'drive') openMenu('pause', 'community'); else { renderNav(); renderPanel(); } }
   function forumOpen(id) { F.ft = id; F.fth = null; F.freply = ''; renderPanel(); ONLINE.forum.thread(id).then(t => { if (F.ft !== id) return; F.fth = t || { gone: true, id }; if (t) fSeen.set(id, t.last_at); if (tab === 'community' && F.cv === 'forum' && mode !== 'drive') renderPanel(); }); }
   function forumView({ h, add, msg, signInBtn, badges }) {
     const O = ONLINE, canPost = !!O.profile, admin = !!O.isAdmin;
@@ -3825,7 +3890,7 @@ const ONLINE = (() => {
       add(go); add(cn); add(out); return;
     }
     // -- thread list --
-    h('Forum', 'how to play · tuning · bugs · ideas');
+    h('Forum', 'feedback · tips · tuning · bugs');
     add(chips([{ id: 'all', name: 'All' }].concat(O.FORUM_CATS.map(([id, name]) => ({ id, name })), canPost ? [{ id: 'mine', name: 'My threads' }] : []), F.fmine ? 'mine' : (F.fcat || 'all'), v => { if (v === 'mine') { F.fmine = true; F.fcat = 'all'; } else { F.fmine = false; F.fcat = v; } }));
     const qi = el('input'); qi.type = 'text'; qi.maxLength = 40; qi.placeholder = 'Search titles…'; qi.value = F.fq; qi.oninput = () => F.fq = qi.value; qi.onkeydown = e => { if (e.key === 'Enter') renderPanel(); }; add(qi);
     if (canPost) { const nb = el('button', 'big', '+ New thread'); nb.onclick = () => { F.fnew = true; if (F.fcat && F.fcat !== 'all') F.fd.cat = F.fcat; renderPanel(); }; add(nb); } else sign();
@@ -3873,7 +3938,7 @@ const ONLINE = (() => {
         const br = el('div', 'btnrow'), r1 = el('button', 'ghost', 'Restart session'), r2 = el('button', 'ghost', 'Main menu'); r1.onclick = () => drive(true); r2.onclick = () => { newSession(); openMenu('main', 'drive'); }; br.append(r1, r2); add(br);
       } else {
         const b = el('button', 'big', inRoom ? 'DRIVE · ROOM ' + O.room.code : 'DRIVE'); b.onclick = () => { if (isTouchDev()) goFull(); drive(true); }; add(b);
-        const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'); tb.onclick = () => tour(1); br.appendChild(tb);
+        const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), fbk = el('button', 'ghost', 'Leave feedback'); tb.onclick = () => tour(1); fbk.onclick = openFeedback; br.appendChild(tb); if (!inClaude) br.appendChild(fbk);
         if (web) { const ob = el('button', 'ghost', 'Drive online'); ob.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; br.appendChild(ob); }
         if (isTouchDev()) { const fb = el('button', 'ghost', 'Fullscreen'); fb.onclick = goFull; br.appendChild(fb); } add(br);
       }
@@ -3923,9 +3988,11 @@ const ONLINE = (() => {
 
     if (tab === 'tune') {
       h('Steering feel', 'driver aids');
-      add(row('Keyboard & phone', chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], S.opt.angleAssist === false ? 0 : 1, v => { S.opt.angleAssist = !!v; save(); })));
-      add(row('Controller & radio', chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], S.opt.angleAssistPad ? 1 : 0, v => { S.opt.angleAssistPad = !!v; save(); })));
-      const anyA = S.opt.angleAssist !== false || !!S.opt.angleAssistPad;
+      const mChips = (cur, fn) => chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], cur ? 1 : 0, v => { fn(!!v); save(); });
+      add(row('Phone (touch / tilt)', mChips(S.opt.angleAssist !== false, v => S.opt.angleAssist = v), 'Default Direct: tilt and thumb steering feel most like a real radio.'));
+      add(row('Keyboard', mChips(!!S.opt.angleAssistKb, v => S.opt.angleAssistKb = v), 'Default Angle assist: on/off keys can\'t feather the wheels, so let the stick ask for angle.'));
+      add(row('Controller & radio', mChips(!!S.opt.angleAssistPad, v => S.opt.angleAssistPad = v), 'Default Angle assist: feels closest to a gyro drift car on a thumbstick.'));
+      const anyA = S.opt.angleAssist !== false || !!S.opt.angleAssistPad || !!S.opt.angleAssistKb;
       add(row('Assist strength', slider(0, 100, 5, S.opt.angleMix, v => v + '%', v => { S.opt.angleMix = v; save(); }), anyA ? 'Only affects inputs set to Angle assist. 100% = full angle hold. 50% = half angle hold, half direct steering, for a more natural feel. 0% = direct.' : 'Both inputs are on Direct, so this does nothing right now.'));
       msg('Angle assist: the stick asks for a drift angle, about 55° at full stick, and throttle swings it deeper (75% keyboard throttle gets about 75°, Shift about 85°). Direct: you steer the front wheels like a real radio and the gyro catches the countersteer.');
       const isP = n => Object.entries(Object.assign({}, SIM.DEF_TUNE, SIM.PRESETS[n])).every(([k, v]) => S.tune[k] === v);
@@ -4069,10 +4136,9 @@ const ONLINE = (() => {
           if (g) box.appendChild(el('p', 'tip', '+ ' + g + ' guest' + (g > 1 ? 's' : '') + ' playing without an account.')); });
         msg('Tap a driver to see their profile and stats, message them, or join their room. Only drivers active in the last couple of minutes show up.');
         const rf = el('button', 'ghost', 'Refresh'); rf.onclick = () => renderPanel(); add(rf);
-        h('Find a driver');
-        const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Their driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
-        const fb = el('button', 'ghost', 'Find driver'); const find = async () => { const n = fi.value.trim(); if (n.length < 3) { fo.textContent = 'Type their driver name.'; return; } const p = await O.playerCard(null, n); if (!p) fo.textContent = 'No driver called ' + n + '.'; else { F.find = ''; playerCard(p.id, p.name); } };
-        fb.onclick = find; fi.onkeydown = e => { if (e.key === 'Enter') find(); }; add(row('Driver name', fi)); add(fb); add(fo);
+        h('All drivers', 'search');
+        driverSearch(add, null, d => playerCard(d.id, String(d.name)));
+        msg('Type a few letters, any part of the name works. Tap a driver for their profile, to message or to block them.');
         if (!O.signedIn()) { h('Your account'); msg('Sign in to show up here, message drivers and post in the forum.'); add(signInBtn()); }
       }
       // ---- messages ----
@@ -4091,12 +4157,10 @@ const ONLINE = (() => {
         } else {
           h('Messages', O.unread ? O.unread + ' unread' : '');
           const box = el('div', 'inbox'); box.textContent = 'Loading…'; add(box);
-          O.inbox().then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No messages yet. Tap any name on the leaderboards or in a room to message them, or look someone up below.')); return; }
+          O.inbox().then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No messages yet. Pick a driver below, or tap any name on the leaderboards or in a room.')); return; }
             for (const c of list) { const r = el('button', 'conv' + (c.unread ? ' new' : '')); const top = el('div'); top.appendChild(el('b', '', (c.online ? '● ' : '') + c.other_name)); top.appendChild(el('small', '', ago(c.last_at))); r.appendChild(top);
               r.appendChild(el('span', '', (c.last_from_me ? 'You: ' : '') + O.mask(c.last_body))); if (c.unread) r.appendChild(el('i', '', String(c.unread))); r.onclick = () => openThread(c.other_id, String(c.other_name)); box.appendChild(r); } });
-          const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Their driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
-          const fb = el('button', 'ghost', 'Find driver'); const find = async () => { const n = fi.value.trim(); if (n.length < 3) { fo.textContent = 'Type their driver name.'; return; } const p = await O.playerCard(null, n); if (!p) fo.textContent = 'No driver called ' + n + '.'; else { F.find = ''; playerCard(p.id, p.name); } };
-          fb.onclick = find; fi.onkeydown = e => { if (e.key === 'Enter') find(); }; add(row('Message someone', fi)); add(fb); add(fo);
+          h('Message someone'); driverSearch(add, null, d => openThread(d.id, String(d.name)));
         }
               }
       }
@@ -4153,7 +4217,7 @@ const ONLINE = (() => {
       add(row('Volume', slider(0, 100, 5, S.opt.vol ?? 100, v => v + '%', v => { S.opt.vol = v; if (A.master) A.master.gain.value = 0.5 * v / 100; save(); })));
       h('Voice chat'); voiceRows();
       h('Gameplay'); add(row('Sim speed', slider(60, 100, 5, S.opt.simSpeed || 100, v => v + '%', v => { S.opt.simSpeed = v; save(); }), 'Slows the whole world down (cars, AI, physics). 85% is the default and reads more like a real 1/10 car on a small screen. 100% is real time. Online rooms run at your own setting.'));
-      h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', installEv ? 'big' : 'ghost', isApp() ? 'Installed as an app' : installEv ? 'Install app' : 'Add to home screen'); tb.onclick = () => tour(1); sv.disabled = isApp(); sv.onclick = async () => { if (!(await doInstall())) tour(1); renderPanel(); }; br.append(tb, sv); add(br);
+      h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', installEv ? 'big' : 'ghost', isApp() ? 'Installed as an app' : installEv ? 'Install app' : 'Add to home screen'); tb.onclick = () => tour(1); sv.disabled = isApp(); sv.onclick = async () => { if (!(await doInstall())) tour(1); renderPanel(); }; br.append(tb, sv); add(br); if (web) { const fb = el('button', 'ghost', 'Leave feedback · it\'s a beta'); fb.onclick = openFeedback; add(fb); }
       if (web) { const pv = el('a', 'ghost', 'Privacy policy'); pv.href = 'privacy.html'; pv.target = '_blank'; pv.rel = 'noopener'; pv.style.textDecoration = 'none'; pv.style.color = 'inherit'; pv.style.textAlign = 'center'; add(pv); }
       msg('RC Drift Lab ' + VERSION + ' · made in Las Vegas by Stranger Kreations.');
     }
