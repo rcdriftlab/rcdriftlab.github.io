@@ -56,6 +56,7 @@ button,input{font:inherit;color:inherit}
 #hWrong b{display:block;font-size:clamp(30px,7vw,64px);font-weight:800;letter-spacing:.12em;color:#fff;background:#e0182d;padding:6px 26px;border-radius:6px;box-shadow:0 0 40px rgba(224,24,45,.6)}
 #hWrong small{display:block;margin-top:6px;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ffd0d4;text-shadow:0 1px 3px #000}
 @keyframes wwf{0%{opacity:1}50%{opacity:.25}}
+.updbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;padding:11px 18px;border-radius:8px;border:0;background:#35e0ff;color:#06141a;font-weight:700;letter-spacing:.05em;box-shadow:0 6px 24px rgba(0,0,0,.5);cursor:pointer}
 #toast{position:fixed;left:50%;top:17%;transform:translate(-50%,-8px);padding:8px 18px;background:rgba(10,11,15,.8);border:1px solid var(--ln);border-radius:4px;font-weight:700;letter-spacing:.1em;font-size:15px;opacity:0;transition:.18s;pointer-events:none;z-index:5}
 #toast.show{opacity:1;transform:translate(-50%,0)}#toast.good{color:#5dff9c}#toast.bad{color:#ff6b5a}
 /* ---------- menu ---------- */
@@ -3493,7 +3494,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3740,6 +3741,10 @@ const ONLINE = (() => {
   // ---------- install as an app (Android / desktop Chrome, Edge) ----------
   let installEv = null, installed = false;
   if (!inClaude && 'serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js'); } catch (e) { } }
+  // v46.1: notice a newer version while the game is open (or reopened from cache) and offer a one-tap update
+  if (!inClaude && location.protocol === 'https:') { let told = false; const chk = () => { if (told || document.hidden) return; fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
+      if (!j || !j.v || j.v === VERSION || told) return; told = true; const b = el('button', 'updbar', 'New version ' + j.v + ' ready · tap to update'); b.onclick = () => { try { navigator.serviceWorker && navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(x => x.update())); } catch (e) { } setTimeout(() => location.reload(), 150); }; document.body.appendChild(b); }).catch(() => { }); };
+    setTimeout(chk, 4000); setInterval(chk, 5 * 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) chk(); }); }
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; if (mode !== 'drive' && (tab === 'settings')) renderPanel(); });
   addEventListener('appinstalled', () => { installEv = null; installed = true; toast('Installed. Open RC Drift Lab from your home screen', 'good'); });
   const isApp = () => (window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches)) || navigator.standalone === true;
