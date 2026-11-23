@@ -1910,11 +1910,10 @@ const SCN = (function () {
     const cone = (x, y, s = 1) => { Bg(BOX, coneM, x, y, 0.003, 0, 0.034 * s, 0.006, 0.034 * s); Bg(CONE, coneM, x, y, 0.026 * s, 0, 0.028 * s, 0.046 * s, 0.028 * s); Bg(CYL, whiteM, x, y, 0.03 * s, 0, 0.017 * s, 0.008 * s, 0.017 * s); };
     const skins = [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d];
     // action figure (1/10): pose 'up' = cheering, 'down' = standing, 'out' = arms forward; dir = facing (game radians)
-    const fig = (x, y, dir, col, pose = 'down', s = 1, pants) => { const F = frame(x, y, dir), sk = mc(skins[(rnd() * skins.length) | 0], 0.7), cm = mc(col, 0.65), pm = mc(pants || [0x1c1d22, 0x2a3a5a, 0x111111, 0x5a2a1a][(rnd() * 4) | 0], 0.8);
-      for (const b of [-0.014, 0.014]) { const p = F(0, b); Bg(BOX, pm, p[0], p[1], 0.04 * s, dir, 0.02 * s, 0.08 * s, 0.018 * s); }
-      Bg(BOX, cm, x, y, 0.108 * s, dir, 0.026 * s, 0.058 * s, 0.05 * s); Bg(SPH, sk, x, y, 0.152 * s, 0, 0.032 * s, 0.036 * s, 0.032 * s);
-      for (const b of [-0.031, 0.031]) { const p = F(pose === 'out' ? 0.018 : 0, b); if (pose === 'up') Bg(BOX, sk, p[0], p[1], 0.16 * s, dir, 0.014 * s, 0.07 * s, 0.014 * s, b * 6); else Bg(BOX, b < 0 ? cm : sk, p[0], p[1], 0.1 * s, dir, 0.014 * s, 0.06 * s, 0.014 * s, 0, pose === 'out' ? -1.1 : 0); } };
-    const stick = (x, y, dir, col) => { const m = mc(col, 0.5); Bg(CYL, m, x, y, 0.06, 0, 0.014, 0.12, 0.014); Bg(SPH, m, x, y, 0.145, 0, 0.042, 0.042, 0.042); const F = frame(x, y, dir); for (const b of [-1, 1]) { const p = F(0, b * 0.02); Bg(BOX, m, p[0], p[1], 0.095, dir, 0.012, 0.06, 0.012, b * 0.5); const q = F(0, b * 0.012); Bg(BOX, m, q[0], q[1], 0.03, dir, 0.013, 0.06, 0.013, b * 0.2); } Bg(SPH, blackM, x, y, 0.162, 0, 0.044, 0.02, 0.044); };
+    // v49: 1/10 crowd figures + the old stick figures are now real scanned people (props/*.bin, merged into one mesh after the build)
+    const PPL = GFX.PROP_SETS ? GFX.PROP_SETS.people : null;
+    const fig = (x, y, dir, col, pose = 'down', s = 1) => { if (!PPL) return; (info.props || (info.props = [])).push({ id: PPL[(rnd() * PPL.length) | 0], x, y, z: 0, ry: dir + (rnd() - 0.5) * 0.6, s: 0.1 * s * (0.93 + rnd() * 0.12), seed: 1 + ((rnd() * 1e6) | 0) }); };
+    const stick = (x, y, dir, col) => fig(x, y, dir, col);
     const canopy = (x, y, dir, roof, val, s = 1, ledCol) => { const F = frame(x, y, dir), hh = 0.26 * s, ww = 0.36 * s; for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const p = F(a * ww / 2, b * ww / 2); Bg(CYL, fenceM, p[0], p[1], hh / 2, 0, 0.007, hh, 0.007); }
       Bg(PYR, roof, x, y, hh + 0.04 * s, dir, ww * 1.02, 0.08 * s, ww * 1.02); Bg(BOX, val, x, y, hh - 0.01 * s, dir, ww * 1.03, 0.035 * s, ww * 1.03);
       if (ledCol) { const led = new T.MeshBasicMaterial({ color: ledCol }); Bg(BOX, led, x, y, hh - 0.03 * s, dir, ww * 1.05, 0.006, ww * 1.05); } };
@@ -1934,11 +1933,8 @@ const SCN = (function () {
       xmas(kx + 0.85, ky + 0.6); xmas(kx - 0.75, ky - 0.85); xmas(kx + 0.7, ky - 0.75, 0.3);
       const deer = mc(0x7a5030, 0.8); Bg(BOX, deer, kx - 0.6, ky - 0.4, 0.06, 0.6, 0.11, 0.045, 0.04); Bg(BOX, deer, kx - 0.55, ky - 0.37, 0.095, 0.6, 0.03, 0.05, 0.025, 0.5); for (const [a, b] of [[-0.04, -0.012], [-0.04, 0.012], [0.04, -0.012], [0.04, 0.012]]) { const p = frame(kx - 0.6, ky - 0.4, 0.6)(a, b); Bg(BOX, deer, p[0], p[1], 0.02, 0.6, 0.008, 0.04, 0.008); }
       flag(8.1, -1.45, Math.PI / 2, flagT('#d4202a', '#ffffff', 'VALOR'), 0.5);
-      // grey square-body Blazer with a white cap, towing a tandem-axle flatbed with ramps and a roll-cage on the deck
-      const bz = frame(7.25, -1.75, 0), bodyG = mc(0x5d6066, 0.45, 0.35), capW = mc(0xf2f2f0, 0.4), glass = mc(0x1a2230, 0.1, 0.2);
-      const BZ = (a, b, h, sx, sy, sz, m) => { const p = bz(a, b); Bg(BOX, m, p[0], p[1], h, 0, sx, sy, sz); };
-      BZ(0, 0, 0.11, 0.46, 0.1, 0.2, bodyG); BZ(-0.04, 0, 0.19, 0.3, 0.07, 0.19, capW); BZ(0.12, 0, 0.19, 0.012, 0.06, 0.17, glass); BZ(0.24, 0, 0.1, 0.02, 0.06, 0.2, chromeM); BZ(-0.235, 0, 0.09, 0.02, 0.04, 0.2, chromeM);
-      for (const b of [-0.07, 0.07]) BZ(0.235, b, 0.12, 0.01, 0.02, 0.03, new T.MeshBasicMaterial({ color: 0xfff6e0 })); for (const [a, b] of [[0.14, -0.105], [0.14, 0.105], [-0.14, -0.105], [-0.14, 0.105]]) { const p = bz(a, b); Bg(WHEEL, tireM, p[0], p[1], 0.05, 0, 0.1, 0.1, 0.05); }
+      // the grey K5 Blazer (real body shell, v49), towing a tandem-axle flatbed with ramps and a roll-cage on the deck
+      pcar(7.25, -1.75, 0, '#5d6066', 'k5');
       const tb = frame(6.75, -1.75, 0), dk = mc(0x2a2b2e, 0.5, 0.5);
       const TB = (a, b, h, sx, sy, sz, m, rz) => { const p = tb(a, b); Bg(BOX, m, p[0], p[1], h, 0, sx, sy, sz, rz); };
       TB(0, 0, 0.06, 0.48, 0.015, 0.22, mc(0x7a5a3a, 0.8)); TB(0.27, 0, 0.055, 0.1, 0.012, 0.012, dk); for (const b of [-0.11, 0.11]) TB(0, b, 0.055, 0.48, 0.02, 0.012, dk);
@@ -2464,7 +2460,18 @@ const GFX = (function () {
     { id: 'body2', name: 'Classic Coupe', tag: 'Old-school box flares', cls: 'drift' },
     { id: 'body1', name: 'GT Sedan', tag: 'Wide four-door missile', cls: 'drift' },
     { id: 'body0', name: 'Fastback Sedan', tag: 'Sleek four-door', cls: 'drift' },
-    { id: 'hilux', name: 'Hilux', tag: 'Double-cab drift truck', cls: 'drift', ds: 1 },
+    { id: 'a85', name: 'AE85 Wide', tag: 'Tuned hatch on boxed flares', cls: 'drift', ds: 1 },
+    { id: 'evo', name: 'Evo Wide', tag: 'Tuned rally sedan, big wing', cls: 'drift', ds: 1 },
+    { id: 'chaser', name: 'Chaser', tag: 'Four-door drift sedan', cls: 'drift', ds: 1 },
+    { id: 'camaro', name: 'Camaro 70', tag: 'Split-bumper muscle coupe', cls: 'drift', ds: 1 },
+    { id: 'golf', name: 'Mk1 Hatch', tag: 'Boxy 80s hot hatch', cls: 'drift', ds: 1 },
+    { id: 'beetle', name: 'Beetle', tag: 'Air-cooled bug', cls: 'drift', ds: 1 },
+    // v49 trucks (same drift chassis)
+    { id: 'hilux', name: 'Hilux', tag: 'Double-cab drift truck', cls: 'truck', ds: 1 },
+    { id: 'jaban', name: 'Crew Cab', tag: 'Slammed square-body crew cab', cls: 'truck', ds: 1 },
+    { id: 'sr5', name: 'SR5 Pickup', tag: 'Xtracab with a roll bar', cls: 'truck', ds: 1 },
+    { id: 'k5', name: 'K5 Blazer', tag: 'Square-body two-door 4x4', cls: 'truck', ds: 1 },
+    { id: 'cyber', name: 'Cyber Truck', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
     { id: 'ecto', name: 'Ecto Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
     { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie' },
     { id: 'kitt', name: 'Knight Car', tag: '82 T-top, red scanner', cls: 'movie' },
@@ -2528,6 +2535,56 @@ const GFX = (function () {
   function loadBodies(ids, onProgress) {
     ids = ids || BODIES.map(b => b.id); let done = 0;
     return Promise.all(ids.map(id => ensureBody(id).then(() => { done++; if (onProgress) onProgress(done / ids.length); })));
+  }
+  // ---------------- v49 props: people, scenes, trees, big rigs (tools/props.py -> props/<id>.bin, real metres) ----------------
+  // each vertex carries a palette band, so every placed copy gets its own colours (shirt / pants / skin, trunk / leaves, body / running gear)
+  const PROP = {}, propPend = {};
+  const PROP_SETS = {
+    people: ['p_tommy', 'p_bad', 'p_reach', 'p_hips', 'p_walk', 'ep_woman', 'ep0', 'ep1', 'ep2', 'ep3', 'ep4', 'ep5', 'ep6', 'ep7'],
+    groups: ['ep_pair', 'ep_duo', 'p_family', 'p_hug', 'ep8'],
+    scenes: ['p_brawl', 'p_street', 'p_trash', 'p_kneel'],
+    trees: ['tree1', 'tree2', 'tree3'],
+    rigs: ['limo', 'trash', 'dozer', 'semi', 'box20', 'box40', 'box10'] };
+  const PROP_PAL = {
+    person: [[0x1c2333, 0x2a3a5a, 0x111214, 0x4a4a40, 0x6b5a40, 0x3a3f47, 0x23324f], [0xc8202a, 0xf2f2f2, 0x111214, 0x2a4dd4, 0x0f5a3a, 0xc8a050, 0x7a1f1f, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0x1f8a8a, 0xe8c840], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d]],
+    tree: [[0x5a3c22, 0x6a4a2a, 0x4a3018], [0x3f7a2c, 0x2f6a2a, 0x5a8a30, 0x4a7a3a, 0x6a9a3a]],
+    vehicle: [[0x16171a], [0xf2f2f0, 0x111214, 0xc8141c, 0x2a4dd4, 0x9aa0a8, 0x1f6a3a]],
+    dozer: [[0x1a1b1d], [0xf2b81a, 0xe8a010]],
+    solid: [[0x222222], [0xb3261e, 0x1f4fa8, 0x2a7a3a, 0xd8661c, 0x8a8f98, 0xe8e8e2, 0x6a2a7a]] };
+  function decodeProp(buf) {
+    const dv = new DataView(buf), hl = dv.getUint32(0, true), hdr = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))); let o = 4 + hl; const nv = hdr.nv, nf = hdr.nf;
+    const q = new Uint16Array(buf.slice(o, o + nv * 6)); o += nv * 6; const n8 = new Int8Array(buf.slice(o, o + nv * 3)); o += nv * 3; const band = new Uint8Array(buf.slice(o, o + nv)); o += nv; o += (4 - (nv * 10) % 4) % 4;
+    const idx = hdr.i32 ? new Uint32Array(buf.slice(o, o + nf * 12)) : new Uint16Array(buf.slice(o, o + nf * 6));
+    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3);
+    for (let i = 0; i < nv; i++) for (let k = 0; k < 3; k++) { pos[i * 3 + k] = hdr.lo[k] + q[i * 3 + k] / 65535 * (hdr.hi[k] - hdr.lo[k]); nor[i * 3 + k] = n8[i * 3 + k] / 127; }
+    return { hdr, pos, nor, band, idx };
+  }
+  function ensureProp(id) {
+    if (PROP[id]) return Promise.resolve(PROP[id]); if (propPend[id]) return propPend[id];
+    return (propPend[id] = fetch('props/' + id + '.bin').then(r => { if (!r.ok) throw new Error('prop ' + id); return r.arrayBuffer(); }).then(b => { const d = decodeProp(b); PROP[id] = d; delete propPend[id]; return d; }, e => { delete propPend[id]; throw e; }));
+  }
+  // list: [{ id, x, y (game, north +), z (lift), ry (radians, yaw), s (scale, 0.1 = 1/10), seed }] -> one merged mesh (one draw call)
+  let propMat = null;
+  function buildProps(list) {
+    const ids = [...new Set(list.map(p => p.id))];
+    return Promise.all(ids.map(id => ensureProp(id).catch(() => null))).then(() => {
+      const L = list.filter(p => PROP[p.id]); let nv = 0, ni = 0; for (const p of L) { nv += PROP[p.id].hdr.nv; ni += PROP[p.id].idx.length; }
+      if (!nv) return null;
+      const P = new Float32Array(nv * 3), Nn = new Float32Array(nv * 3), C = new Float32Array(nv * 3), I = new Uint32Array(ni); let vo = 0, io = 0; const col = new T.Color();
+      for (const p of L) {
+        const d = PROP[p.id], k = d.hdr.kind, pal = PROP_PAL[k] || PROP_PAL.solid, s = p.s || 1, c = Math.cos(p.ry || 0), sn = Math.sin(p.ry || 0); let seed = (p.seed || 1) * 9301 + 49297;
+        const pick = arr => { seed = (seed * 9301 + 49297) % 233280; return arr[Math.floor(seed / 233280 * arr.length)]; };
+        const cols = pal.map(a => { col.setHex(pick(a)); return [col.r, col.g, col.b]; });
+        for (let i = 0; i < d.hdr.nv; i++) { const x = d.pos[i * 3] * s, y = d.pos[i * 3 + 1] * s, z = d.pos[i * 3 + 2] * s, j = (vo + i) * 3;
+          P[j] = p.x + x * c + z * sn; P[j + 1] = (p.z || 0) + y; P[j + 2] = -p.y - x * sn + z * c;
+          const nx = d.nor[i * 3], nz = d.nor[i * 3 + 2]; Nn[j] = nx * c + nz * sn; Nn[j + 1] = d.nor[i * 3 + 1]; Nn[j + 2] = -nx * sn + nz * c;
+          const cc = cols[Math.min(d.band[i], cols.length - 1)]; C[j] = cc[0]; C[j + 1] = cc[1]; C[j + 2] = cc[2]; }
+        for (let i = 0; i < d.idx.length; i++) I[io + i] = d.idx[i] + vo; vo += d.hdr.nv; io += d.idx.length;
+      }
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(P, 3)); g.setAttribute('normal', new T.BufferAttribute(Nn, 3)); g.setAttribute('color', new T.BufferAttribute(C, 3)); g.setIndex(new T.BufferAttribute(I, 1)); g.computeBoundingSphere();
+      if (!propMat) propMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.05, side: T.DoubleSide });
+      const m = new T.Mesh(g, propMat); m.castShadow = true; m.receiveShadow = true; return m;
+    });
   }
   const loadedBodies = () => BODIES.filter(b => BODY[b.id]);
   const bodyInfo = id => BODIES.find(b => b.id === id) || BODIES[0];
@@ -2756,7 +2813,7 @@ const GFX = (function () {
       for (const sd of [1, -1]) { box2(0.012, hgt, 0.0025, m.dark, wx, wy + hgt / 2, sd * 0.05); box2(big ? 0.044 : 0.032, big ? 0.026 : 0.015, 0.002, big ? paint2 : m.dark, wx - 0.008, wy + hgt + 0.002, sd * ww / 2); } }
     // drift kit (drift bodies): front lip splitter + tow straps, the club-car look
     const info = bodyInfo(h.id), fw = Math.max(h.fender[0], h.fender[1]);
-    if (info.cls === 'drift' && look.kit !== 0) {
+    if (info.cls !== 'movie' && look.kit !== 0) {
       const lipY = (h.noseLo != null ? h.noseLo : 0.02) - 0.0012, lip = box2(0.05, 0.0018, fw * 1.72, m.dark, h.xf - 0.022, lipY, 0); lip.receiveShadow = true;
       const strap = new T.MeshStandardMaterial({ color: new T.Color(look.strap || '#ff2a1a'), roughness: 0.7 });
       box2(0.0035, 0.016, 0.009, strap, h.xf + 0.0006, (h.noseLo || 0.02) + 0.01, fw * 0.48);
@@ -3101,7 +3158,7 @@ const GFX = (function () {
     if (o.parent) o.parent.remove(o);
   }
 
-  return { TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
+  return { PROP_SETS, PROP, ensureProp, buildProps, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
 })();
 
 </script>
@@ -3322,10 +3379,10 @@ const ONLINE = (() => {
   // ---------------- saved state ----------------
   const KEY = 'rcdrift_v1';
   function isTouchDev() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || false; }
-  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, v20: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
-    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, angleAssistPad: true, angleAssistKb: true, voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
+  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, v20: 1, v21: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
+    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, angleAssistPad: true, angleAssistKb: true, physTouch: 'classic', physPad: 'new', physKb: 'new', voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
     pad: { mode: 'auto', steerAxis: 0, thrAxis: 1, steerInv: false, thrInv: true, cS: 0, cT: 0, dead: 4 }, best: {}, bestPts: {}, pb: {}, slots: {} };
-  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v20) { S.opt.angleAssistPad = true; S.opt.angleAssistKb = true; } /* v46: assist default for controllers + keyboard, phones stay Direct */ if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
+  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v21) { S.opt.physTouch = 'classic'; S.opt.physPad = 'new'; S.opt.physKb = 'new'; S.opt.angleAssist = false; S.opt.angleAssistPad = true; }   /* v49: physics + steering follow the device */ if (j && !j.v20) { S.opt.angleAssistPad = true; S.opt.angleAssistKb = true; } /* v46: assist default for controllers + keyboard, phones stay Direct */ if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
   let saveT = 0; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 300); if (window.ONLINE && ONLINE.profile) ONLINE.saveGarage({ look: S.look, tune: S.tune, pb: S.pb, opt: { cam: S.opt.cam, kbThrottle: S.opt.kbThrottle, kbAssist: S.opt.kbAssist, angleMix: S.opt.angleMix, angleAssist: S.opt.angleAssist, angleAssistPad: S.opt.angleAssistPad }, slots: S.slots }); };
 
   // ---------------- renderer ----------------
@@ -3402,7 +3459,13 @@ const ONLINE = (() => {
     // removed: parked RC display cars in the infield looked like idle online drivers
     if (false) (world.displaySpots || []).forEach((p, k) => { for (let j = 0; j < 2; j++) { const c = GFX.buildStaticCar(GFX.loadedBodies()[(k * 2 + j + 1) % GFX.loadedBodies().length].id, ['#7a3cff', '#ff8a00', '#e8e8ea', '#1f5fff'][(k * 2 + j) % 4], 1); c.position.set(p[0] - 0.4 + j * 0.55, 0, -(p[1] + 0.15 * j)); c.rotation.y = 0.6 + j * 0.9; world.group.add(c); } });
     // scale props that use real body shells (e.g. the car up on the lift in the Diamondback garage)
-    (world.propCars || []).forEach((p, k) => { const L = GFX.loadedBodies(), id = (L.find(b => b.id === p[4]) || L[(k + 3) % L.length]).id, c = GFX.buildStaticCar(id, p[3], 1); bakeStatic(c); c.position.set(p[0], p[5] || 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); });
+    // parked cars: a named body (the van, the Blazer...) waits for its own shell instead of borrowing whatever is loaded (v49)
+    (world.propCars || []).forEach((p, k) => { const put = id => { const c = GFX.buildStaticCar(id, p[3], 1); bakeStatic(c); c.position.set(p[0], p[5] || 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); }, L = GFX.loadedBodies(), fb = () => L[(k + 3) % L.length].id;
+      if (p[4] && !GFX.BODY[p[4]] && GFX.BODIES.some(b => b.id === p[4])) { const wg = world.group; GFX.ensureBody(p[4]).then(() => { if (world.group === wg) put(p[4]); }, () => { if (world.group === wg) put(fb()); }); }
+      else put(p[4] && GFX.BODY[p[4]] ? p[4] : fb()); });
+    // v49 props: scanned people / scenes / trees / big rigs, merged into one mesh. Venue figures (world.props) + pit dressing inside the infield gate.
+    { const plist = (world.props || []).slice(), pd = pitDress(track); plist.push(...pd);
+      if (plist.length) { const wg = world.group; GFX.buildProps(plist).then(m => { if (m && world.group === wg) world.group.add(m); }, () => {}); } }
     // polished-concrete reflections (High): live mirror under a semi-transparent floor
     if (S.opt.quality >= 2 && (!world.night || world.prodNight) && !world.dusk && world.env !== 'diamondback' && world.env !== 'tandem' && T.Reflector && world.floor) {   // Diamondback and Tandem tile is satin, not a mirror
       const f = world.floor, pr = renderer.getPixelRatio(), refl = new T.Reflector(f.geometry.clone(), { textureWidth: LW() * pr * 0.45, textureHeight: LH() * pr * 0.45, color: world.env === 'prodigy' || world.env === 'prodigy2' ? (world.prodNight ? 0x8a8a8a : 0x5c5c5c) : world.env === 'diamondback' || world.env === 'tandem' ? 0x6a6a6a : 0x8a8a8a, clipBias: 0.0005 });
@@ -3534,6 +3597,8 @@ const ONLINE = (() => {
       const c = player.sim, p = c.p; if (c.speed > 0.8) { const fa = Math.atan2(c.v + p.a * c.r, Math.max(0.3, c.u)), lim = 0.5, g = p.gyroK * c.gyroR, lo = (fa - lim + g) / p.lock, hi = (fa + lim + g) / p.lock; st = clamp(st, Math.min(lo, 0), Math.max(hi, 0)); } }
     if (inp.src === 'kb' && S.opt.kbThrAssist && player && !keys['shift']) th *= clamp(1 - (Math.abs(player.sim.slip) - 0.5) * 2.5, 0.25, 1); // ease off as the angle gets deep
     inp.steer = st; inp.throttle = th; inp.brake = br;
+    { const act = touching ? 'touch' : inp.src === 'pad' && pad && (Math.abs(pad.st) > 0.1 || pad.th > 0.1 || pad.br > 0.1) ? 'pad' : (L || R || U || D) ? 'kb' : null;
+      if (act && act !== devOf()) { const was = physOf(devOf()); devNow = act; if (player && physOf(act) !== was) { applyTune(); toast((act === 'touch' ? 'Phone' : act === 'pad' ? 'Controller' : 'Keyboard') + ': ' + (physOf(act) === 'classic' ? 'Classic' : 'New') + ' physics'); } else devNow = act; } }
     // drift-angle steering (default for touch + keyboard): the stick asks for a slide angle, a controller works the wheel
     const useAng = inp.src === 'pad' ? !!S.opt.angleAssistPad : inp.src === 'kb' ? !!S.opt.angleAssistKb : S.opt.angleAssist !== false;
     inp.angle = useAng ? st : null; inp.angleMix = clamp(S.opt.angleMix / 100, 0, 1);
@@ -3542,7 +3607,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v48', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v49', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -3830,7 +3895,31 @@ const ONLINE = (() => {
   function drive(fresh) { if (locked(S.opt.track)) { loadTrack(SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2')); applyTune(); fresh = true; toast('Trial: Prodigy RC V2 · free account unlocks every track'); }
     if (fresh) { newSession(); score.lapN = undefined; } mode = 'drive'; document.body.className = S.opt.hud === false ? 'nohud' : ''; audioStart(); camInit = false; camYaw = player.sim.yaw; }
   function goFull() { try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f && !document.fullscreenElement) { const p = f.call(d); if (p && p.then) p.then(() => { try { screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } } catch (e) { } }
-  function physK() { return S.opt.physics === 'classic' ? SIM.K_CLASSIC : undefined; }
+  // v49 pit dressing: just inside each track's infield gate, a seeded mix of a scene (fight, trash diggers, family...), a few people, a tree and one big
+  // 1/10 rig (limo, garbage truck, dozer, semi, container). Every spot is checked against the track and the venue's own infield colliders.
+  function pitDress(tr) {
+    const P = GFX.PROP_SETS; if (!P || !tr.gate) return [];
+    let seed = 0; for (const ch of tr.def.id) seed = (seed * 31 + ch.charCodeAt(0)) % 100003; const rr = () => (seed = (seed * 9301 + 49297) % 233280) / 233280, pick = a => a[(rr() * a.length) | 0];
+    const N = tr.N, hw = tr.width / 2, g = tr.gate, ic = g.ic, s = g.s, out = [], taken = [];
+    const at = (i, o) => { i = ((i % N) + N) % N; return [tr.X[i] - tr.TY[i] * o, tr.Y[i] + tr.TX[i] * o]; };
+    const dTrack = (x, y) => { let d = 1e9; for (let i = 0; i < N; i += 2) d = Math.min(d, Math.hypot(tr.X[i] - x, tr.Y[i] - y)); return d; };
+    const cols = tr.colliders || (tr.colliders = []);
+    const free = (x, y, r) => dTrack(x, y) > hw + 0.25 + r && taken.every(t => Math.hypot(t[0] - x, t[1] - y) > t[2] + r + 0.06) && !cols.some(b => x + r > b[0] - 0.05 && x - r < b[2] + 0.05 && y + r > b[1] - 0.05 && y - r < b[3] + 0.05);
+    const spot = (along, deep, r) => { for (let k = 0; k < 6; k++) { const di = Math.round((along + (k ? (rr() - 0.5) * 1.2 : 0)) / tr.ds), q = at(ic + di, s * (hw + deep + k * 0.15)); if (free(q[0], q[1], r)) return q; } return null; };
+    const face = (x, y) => Math.atan2(tr.Y[ic] - y, tr.X[ic] - x);   // look back toward the gate / the track
+    const put = (id, q, r, s10, solid) => { const ry = face(q[0], q[1]) + (rr() - 0.5) * 0.8; out.push({ id, x: q[0], y: q[1], z: 0, ry, s: s10, seed: 1 + ((rr() * 1e6) | 0) }); taken.push([q[0], q[1], r]); if (solid) cols.push([q[0] - r * 0.75, q[1] - r * 0.75, q[0] + r * 0.75, q[1] + r * 0.75]); };
+    let q = spot(0.0, 0.9, 0.2); if (q) put(pick(P.scenes), q, 0.2, 0.1, true);
+    for (let k = 0; k < 3; k++) { q = spot((k - 1) * 0.9 + (rr() - 0.5) * 0.3, 0.45 + rr() * 0.6, 0.06); if (q) put(pick(k === 1 ? P.groups : P.people), q, k === 1 ? 0.12 : 0.06, 0.1, false); }
+    q = spot(-1.4, 1.6, 0.25); if (q) put(pick(P.trees), q, 0.25, 0.07 + rr() * 0.03, true);
+    const rig = pick(P.rigs), rl = { limo: 0.46, trash: 0.48, dozer: 0.42, semi: 0.36, box20: 0.31, box40: 0.61, box10: 0.16 }[rig] || 0.4;
+    q = spot(1.6, 1.4 + rl * 0.5, rl); if (q) { put(rig, q, rl, 0.1, true); if (rig === 'semi' && rr() < 0.7) { const a = out[out.length - 1].ry, b = [q[0] - Math.cos(a) * 0.95, q[1] - Math.sin(a) * 0.95]; if (free(b[0], b[1], 0.5)) { put('trailer', b, 0.5, 0.1, true); out[out.length - 1].ry = a; } } }
+    if (!cols.length) tr.colliders = null;
+    return out;
+  }
+  // v49: physics follow the device you're driving with (phone = Classic, controller/keyboard = New by default); sticky, only flips on real input
+  let devNow = null; const devOf = () => devNow || (isTouchDev() ? 'touch' : 'kb');
+  const physOf = d => (d === 'touch' ? S.opt.physTouch : d === 'pad' ? S.opt.physPad : S.opt.physKb) || 'new';
+  function physK() { return physOf(devOf()) === 'classic' ? SIM.K_CLASSIC : undefined; }
   function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface, physK()); player.tune = S.tune; }
   // guests drive the one standard car: the stock S15 in the Stranger Kreations sticker kit (their own garage comes back when they sign in)
   const GUEST_LOOK = Object.assign({}, GFX.DEF_LOOK, { body: 's15', color: '#ff5a1f', color2: '#101114', livery: 'sponsor', finish: 'gloss', wheel: 'five', wheelColor: '#e8e8ea', wing: 'none', glow: '' });
@@ -3868,6 +3957,7 @@ const ONLINE = (() => {
       ['Controls', ctrl],
       ['How to drift it', '<p>This isn\'t a race. <b>Throttle swings the tail and sets the angle</b>, it doesn\'t just add speed. Rev it before turn-in to break the rear loose, then hold angle with the throttle.</p><p>Rolling on the throttle builds speed with grip; smash it to break the rear loose. Lift a touch to tighten the line.</p>'],
       ['Steering modes', '<p>Two ways to steer, set separately for each thing you play with (<b>Tuning → Steering feel</b>):</p><ul><li><b>Direct</b>: the stick turns the front wheels, like a real radio, and the gyro catches the countersteer. <b>Default on phones</b>: tilt and thumb steering feel the most real this way.</li><li><b>Angle assist</b>: the stick asks for a drift angle (about 55° at full stick, more with throttle) and the car holds it. <b>Default on controllers</b> (closest to a gyro drift car on a thumbstick) <b>and keyboards</b> (on/off keys can\'t feather the wheels).</li></ul><p class="tmut">Not feeling it? Flip it. The game switches modes automatically when you change from phone to controller to keyboard.</p>'],
+      ['Physics by device', '<p>The car physics also follow your device (<b>Tuning → Car physics</b>):</p><ul><li><b>Phone</b>: <b>Classic</b> physics + Direct steering. Softer and more forgiving under a thumb.</li><li><b>Controller or RC radio</b>: <b>New</b> physics + Angle assist. Clicky and precise, the closest thing to a real gyro drift car.</li><li><b>Keyboard</b>: New physics + Angle assist.</li></ul><p class="tmut">Same scoring either way. Try both and tell us what you like in the forum.</p>'],
       ['Tracks', '<ul>' + tracks + '</ul><p>Pick one on the <b>Drive</b> tab.</p><p><b>Yellow hatched zones score.</b> Outer zones (OZ): get your <b>rear bumper</b> into the band by the outside wall while sliding. Clip points (CP): get your <b>nose</b> into the box on the inside. Each zone pays for how much of it you fill, <b>how deep</b> you get (closer to the wall = more) and <b>how much angle</b> you carry (50°+ = full). The yellow IN ZONE tag shows how you\'re doing live.</p>'],
       ['Garage + Tuning', '<p><b>Garage</b>: drift cars and movie cars, paint, wheels, wings, liveries.</p><p><b>Tuning</b>: gyro gain, steering lock, power, gearing. Too twitchy? Turn the gyro up or lower <b>Sim speed</b> (Settings tab).</p>'],
       ['Go drive', '<p>That\'s it. Replay this any time: <b>Drive tab → How to play</b>.</p><p>RC Drift Lab is in <b>beta</b>: physics, tracks and scoring are still being tuned. Tell us what you think in <b>Social → Forum → Game feedback</b> (or the <b>Leave feedback</b> button on the Drive tab).</p>'],
@@ -4088,7 +4178,8 @@ const ONLINE = (() => {
         else { delete S.look.chrome; if (was === 'movie' && S.driftLook) { const d = S.driftLook; Object.assign(S.look, { color: d.color, color2: d.color2, finish: d.finish, livery: d.livery, wheel: d.wheel, wheelColor: d.wheelColor, wing: d.wing }); } }
         S.look.body = v; const tk = (pickBody.tk = (pickBody.tk || 0) + 1); toast('Loading ' + GFX.bodyInfo(v).name + '…');
         GFX.ensureBody(v).then(() => { if (tk === pickBody.tk) { rebuildPlayer(); toast(GFX.bodyInfo(v).name, 'good'); } }, () => toast('Could not load that body', 'bad')); };
-      h('Drift cars', GFX.BODIES.filter(b => b.cls !== 'movie').length); add(chips(GFX.BODIES.filter(b => b.cls !== 'movie').map(b => ({ id: b.id, name: b.name, sub: b.tag })), S.look.body, pickBody, 'grid'));
+      h('Drift cars', GFX.BODIES.filter(b => b.cls === 'drift').length); add(chips(GFX.BODIES.filter(b => b.cls === 'drift').map(b => ({ id: b.id, name: b.name, sub: b.tag })), S.look.body, pickBody, 'grid'));
+      h('Trucks', GFX.BODIES.filter(b => b.cls === 'truck').length); add(chips(GFX.BODIES.filter(b => b.cls === 'truck').map(b => ({ id: b.id, name: b.name, sub: b.tag })), S.look.body, pickBody, 'grid'));
       h('Movie cars'); add(chips(GFX.BODIES.filter(b => b.cls === 'movie').map(b => ({ id: b.id, name: b.name, sub: b.tag })), S.look.body, pickBody, 'grid'));
       msg('Movie cars keep their screen look and stock stance but run the same drift chassis. Repaint them below if you want.');
       h('Paint'); add(row('Colour', swatches(S.look.color, v => { S.look.color = v; rebuildPlayer(); })));
@@ -4104,8 +4195,13 @@ const ONLINE = (() => {
     }
 
     if (tab === 'tune') {
-      h('Car physics', S.opt.physics === 'classic' ? 'classic' : 'new');
-      add(row('Physics', chips([{ id: 'new', name: 'New (v46)', sub: 'grip builds, quicker swings' }, { id: 'classic', name: 'Classic (v45)', sub: 'the old feel' }], S.opt.physics === 'classic' ? 'classic' : 'new', v => { S.opt.physics = v; applyTune(); save(); toast(v === 'classic' ? 'Classic physics (v45)' : 'New physics (v46)'); }), 'Flip between them on the same track and tell us which bits you like in Social → Forum → Game feedback. AI cars always run the new physics.'));
+      h('Car physics', 'by device');
+      msg('The two physics feel very different depending on what you drive with. Our picks: phone = Classic + Direct steering (forgiving under a thumb). Controller or RC radio = New + Angle assist (snappy, feels like a real gyro car). Keyboard = New + Angle assist. The game switches on its own when you pick up a different device.');
+      const pChips = (cur, fn) => chips([{ id: 'new', name: 'New (v46)', sub: 'grip builds, quick swings' }, { id: 'classic', name: 'Classic (v45)', sub: 'softer, easier' }], cur === 'classic' ? 'classic' : 'new', v => { fn(v); applyTune(); save(); renderPanel(); });
+      add(row('Phone (touch / tilt)', pChips(S.opt.physTouch, v => S.opt.physTouch = v), 'Default Classic: easier to hold a slide with your thumbs.'));
+      add(row('Keyboard', pChips(S.opt.physKb, v => S.opt.physKb = v)));
+      add(row('Controller & radio', pChips(S.opt.physPad, v => S.opt.physPad = v), 'Default New: clicky and precise on a real stick.'));
+      msg('Right now you\'re on ' + ({ touch: 'phone', pad: 'controller', kb: 'keyboard' })[devOf()] + ' → ' + (physOf(devOf()) === 'classic' ? 'Classic' : 'New') + ' physics. AI cars always run New. Tell us what you think in Social → Forum → Game feedback.');
       h('Steering feel', 'driver aids');
       const mChips = (cur, fn) => chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], cur ? 1 : 0, v => { fn(!!v); save(); });
       add(row('Phone (touch / tilt)', mChips(S.opt.angleAssist !== false, v => S.opt.angleAssist = v), 'Default Direct: tilt and thumb steering feel most like a real radio.'));
