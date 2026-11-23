@@ -153,6 +153,8 @@ em.tagdev,em.tagsup{font-style:normal;font-size:9px;font-weight:700;letter-spaci
 em.tagdev{background:var(--ac);color:#140a04}
 em.tagsup{background:rgba(255,206,80,.18);color:#ffce50}
 .inbox{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}
+.chip.trk.lockd{opacity:.55}
+.chip.trk.lockd small{color:#ffd21a}
 .dres{max-height:340px;overflow-y:auto;margin-top:6px}
 .conv u{text-decoration:none;color:var(--ac)}
 input[type=search]{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:4px;color:var(--tx);font:inherit;font-size:14px;-webkit-appearance:none}
@@ -3102,17 +3104,20 @@ const ONLINE = (() => {
       await loadLib(); O.sb = window.supabase.createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }, realtime: { timeout: 25000 } });
       const st = await Promise.race([O.sb.rpc('game_stats'), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 15000))]);
       if (st.error) throw st.error; O.stats = st.data; O.status = 'ready';
-      const { data } = await O.sb.auth.getSession(); await setUser(data && data.session ? data.session.user : null);
+      const { data } = await O.sb.auth.getSession(); await setUser(data && data.session ? data.session.user : null); O.authKnown = true; fire();
       O.sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; setTimeout(() => setUser(u), 0); });   // never call the API inside the auth callback (supabase-js lock)
       O.refreshLobbies(); setInterval(() => { if (!O.room) O.refreshLobbies(); }, 20000);
     } catch (e) { O.tries = (O.tries || 0) + 1; if (O.tries < 4 && !(e && e.message === 'lib' && O.tries > 1)) { O.status = 'off'; setTimeout(O.init, 2500 * O.tries); } else { O.status = 'unavailable'; O.err = 'Online is not reachable from this copy of the game.'; } }
     fire();
   };
+  // guest trial (v46.4): everything is free; a free account (Google + a driver name) unlocks all tracks, the garage, saved setups and rooms
+  O.TRIAL = ['prodigy2', 'warehouse'];
+  O.isGuest = () => O.status === 'ready' && O.authKnown && !O.pLoading && !(O.profile && O.profile.driver_name);
   let pSeq = 0;   // newest profile lookup wins; a stale "no profile yet" answer can never wipe a profile that was just claimed
   async function setUser(u) {
     const was = O.user && O.user.id; O.user = u; if (!u) { pSeq++; O.profile = null; fire(); return; }
     if (was === u.id && O.profile) return;
-    const my = ++pSeq; let data = null; try { ({ data } = await O.sb.rpc('my_profile')); } catch (e) { }
+    const my = ++pSeq; let data = null; O.pLoading = true; try { ({ data } = await O.sb.rpc('my_profile')); } catch (e) { } if (my === pSeq) O.pLoading = false;
     if (my !== pSeq || !O.user || O.user.id !== u.id) return; const p = data && data.id ? data : null; if (!p && O.profile && O.profile.id === u.id) return; O.profile = p; fire();
     if (O.profile) { O.loadBlocks(); O.ping(); O.checkAdmin(); } if (O.profile && O.onProfile) O.onProfile(O.profile);
   }
@@ -3148,6 +3153,8 @@ const ONLINE = (() => {
   O.report = async (id, reason, context) => { const r = await rpc('report_user', { p_id: id, p_reason: String(reason || '').slice(0, 300), p_context: context ? String(context).slice(0, 600) : null }); return r ? (r.ok ? '' : r.why) : 'Could not send the report.'; };
   O.playerCard = async (id, name) => rpc('player_card', id ? { p_id: id } : { p_name: name });
   // ---- who's online + community forum (v45) ----
+  O.setEmailUpdates = async on => { const r = await rpc('set_email_updates', { p_on: !!on }); if (r !== null && O.profile) O.profile.email_updates = !!r; fire(); return r; };
+  O.adminEmailList = async () => (await rpc('admin_email_list')) || [];
   O.searchDrivers = async (q, n) => (await rpc('search_drivers', { p_q: String(q || '').slice(0, 24), p_limit: n || 30 })) || [];
   O.onlineDrivers = async () => (await rpc('online_drivers')) || { drivers: [], guests: 0 };
   O.FORUM_CATS = [['feedback', 'Game feedback'], ['howto', 'How to play'], ['tuning', 'Tuning help'], ['bugs', 'Bugs & problems'], ['ideas', 'Ideas & upgrades'], ['general', 'General']];
@@ -3503,7 +3510,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46.3', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46.4', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3740,7 +3747,8 @@ const ONLINE = (() => {
   let menuKind = 'main', tab = 'drive';
   const menu = $('#menu'), panel = $('#panel'), nav = $('#nav');
   function openMenu(kind, t) { mode = kind === 'pause' ? 'pause' : 'menu'; menuKind = kind; if (t) tab = t; else if (kind === 'pause') tab = 'drive'; document.body.className = 'inmenu ' + (kind === 'pause' ? 'paused' : ''); camInit = kind === 'pause'; renderNav(); renderPanel(); }
-  function drive(fresh) { if (fresh) { newSession(); score.lapN = undefined; } mode = 'drive'; document.body.className = S.opt.hud === false ? 'nohud' : ''; audioStart(); camInit = false; camYaw = player.sim.yaw; }
+  function drive(fresh) { if (locked(S.opt.track)) { loadTrack(SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2')); applyTune(); fresh = true; toast('Trial: Prodigy RC V2 · free account unlocks every track'); }
+    if (fresh) { newSession(); score.lapN = undefined; } mode = 'drive'; document.body.className = S.opt.hud === false ? 'nohud' : ''; audioStart(); camInit = false; camYaw = player.sim.yaw; }
   function goFull() { try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f && !document.fullscreenElement) { const p = f.call(d); if (p && p.then) p.then(() => { try { screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } } catch (e) { } }
   function physK() { return S.opt.physics === 'classic' ? SIM.K_CLASSIC : undefined; }
   function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface, physK()); player.tune = S.tune; }
@@ -3806,10 +3814,18 @@ const ONLINE = (() => {
     g.fillStyle = '#ff5a1f'; g.beginPath(); g.arc(ox + tr.X[0] * s, oy - tr.Y[0] * s, 3.6, 0, 6.3); g.fill();
     return (thumbs[i] = c.toDataURL());
   }
+  const locked = i => ONLINE.isGuest && ONLINE.isGuest() && !ONLINE.TRIAL.includes(SIM.TRACK_DEFS[i].id);
+  function freeCard(what) {   // the "it's free, the account is just for scoring" pitch
+    const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard'; document.body.appendChild(ov); const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov) close(); };
+    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', '100% FREE')); card.appendChild(el('h2', '', 'Unlock ' + what));
+    const body = el('div', 'tbody'); card.appendChild(body);
+    body.innerHTML = '<p>Everything in RC Drift Lab is <b>free</b>. No paywalls, nothing to buy.</p><p>A free account (sign in with Google, about 10 seconds, then pick a driver name) is just so your <b>scores count</b>: your name on the leaderboards, your garage and tunes saved, and it unlocks <b>every track</b>, the <b>garage</b> and <b>online rooms</b>.</p><p class="tmut">Without one you can try Prodigy RC V2 and The Warehouse with the stock car.</p>';
+    const btns = el('div', 'tbtns'); card.appendChild(btns); const nb = el('button', 'ghost', 'Not now'), gb = el('button', 'big', 'Sign in with Google'); nb.onclick = close; gb.onclick = () => ONLINE.signInGoogle(); btns.append(nb, gb); }
   const trackChips = (cur, fn, opt) => { opt = opt || {}; const w = el('div', 'chips trks' + (opt.two ? ' two' : ''));
     TRK().forEach(([d, i]) => { const b = el('button', 'chip trk' + (i === cur ? ' act' : '')); if (opt.disabled) b.disabled = true; const im = el('img'); im.alt = ''; im.src = trackThumb(i); b.appendChild(im);
       const tx = el('div'), nm = el('div', '', d.name); if (d.isNew) { const nb = el('span', 'newb', 'NEW'); nm.appendChild(nb); } tx.appendChild(nm); const sm = el('small'), pb = (S.pb || {})[d.id]; if (pb && !opt.noPb) { sm.appendChild(el('span', 'pb', 'PB ' + fmt(pb))); sm.appendChild(document.createTextNode(' · ')); } sm.appendChild(document.createTextNode(d.sub)); tx.appendChild(sm); b.appendChild(tx);
-      b.onclick = () => { if (!b.disabled) fn(i); }; w.appendChild(b); }); return w; };
+      if (locked(i) && !opt.noLock) { b.classList.add('lockd'); sm.textContent = '🔒 free account · ' + d.sub; }
+      b.onclick = () => { if (b.disabled) return; if (locked(i) && !opt.noLock) { freeCard('every track'); return; } fn(i); }; w.appendChild(b); }); return w; };
   const statStrip = () => { const L = ONLINE.live || ONLINE.stats; if (!L) return null; const w = el('div', 'stats');
     const it = (n, lab, live) => { const d = el('div', 'st' + (live ? ' live' : '')); d.appendChild(el('b', '', fmt(n))); d.appendChild(el('span', '', lab)); w.appendChild(d); };
     it(L.online || 0, 'online now', true); it(L.today || 0, 'played today'); it(L.drivers || 0, 'signed up'); it(L.laps || 0, 'laps posted');
@@ -3983,6 +3999,7 @@ const ONLINE = (() => {
     }
 
     if (tab === 'garage') {
+      if (web && O.isGuest()) { h('Garage', 'free account'); msg('Paint, bodies, wheels, wings and liveries are all free. Make a free account (Google, 10 seconds) so your garage saves to you and your scores count. Right now you\'re driving the stock car.'); add(signInBtn('Sign in free with Google')); return; }
       const pickBody = v => { const was = GFX.bodyInfo(S.look.body).cls, now = GFX.bodyInfo(v).cls;
         if (now === 'movie') { if (was !== 'movie') S.driftLook = Object.assign({}, S.look); Object.assign(S.look, GFX.MOVIE[v] || {}); }
         else { delete S.look.chrome; if (was === 'movie' && S.driftLook) { const d = S.driftLook; Object.assign(S.look, { color: d.color, color2: d.color2, finish: d.finish, livery: d.livery, wheel: d.wheel, wheelColor: d.wheelColor, wing: d.wing }); } }
@@ -4019,7 +4036,8 @@ const ONLINE = (() => {
       add(chips(Object.keys(SIM.PRESETS).map(n => ({ id: n, name: n === 'Baseline' ? 'Stock' : n, sub: n === 'Baseline' ? 'reset everything' : '' })), Object.keys(SIM.PRESETS).find(isP), n => { Object.assign(S.tune, SIM.DEF_TUNE, SIM.PRESETS[n]); applyTune(); save(); toast('Setup: ' + (n === 'Baseline' ? 'Stock' : n)); }));
       msg('Changes apply instantly. While driving, press T (or pause) to tweak, then resume.');
       h('My setups', O.profile ? 'saved to your account' : 'saved on this device');
-      for (const n of [1, 2, 3]) { const s = S.slots[n], r = el('div', 'slot'), lab = el('div'); lab.appendChild(el('b', '', s ? s.name : 'Slot ' + n));
+      if (web && O.isGuest()) msg('Saving setups needs a free account (it\'s just so they follow you). You can still tune everything above.');
+      if (!(web && O.isGuest())) for (const n of [1, 2, 3]) { const s = S.slots[n], r = el('div', 'slot'), lab = el('div'); lab.appendChild(el('b', '', s ? s.name : 'Slot ' + n));
         lab.appendChild(el('small', '', s ? 'gyro ' + s.tune.gyroGain + '% · lock ' + s.tune.steerLock + '° · ' + ((SIM.MOTORS[s.tune.motor] || {}).name || '') + ' · FDR ' + s.tune.fdr : 'Empty. Save your current tune here.')); r.appendChild(lab);
         const ld = el('button', 'ghost', 'Load'); ld.disabled = !s; ld.onclick = () => { Object.assign(S.tune, SIM.DEF_TUNE, s.tune); applyTune(); save(); renderPanel(); toast('Loaded ' + s.name, 'good'); };
         const sv = el('button', 'ghost', s ? 'Overwrite' : 'Save'); let armed = false;
@@ -4067,6 +4085,7 @@ const ONLINE = (() => {
         sv.onclick = async () => { sv.disabled = true; const e = await O.claimName(ni.value, S.look); sv.disabled = false; if (e) out.textContent = e; else { S.opt.name = O.profile.driver_name; if (player) player.name = S.opt.name; save(); out.textContent = 'Saved. You are ' + O.profile.driver_name + '.'; } };
         ni.onkeydown = e => { if (e.key === 'Enter') sv.click(); };
         add(row('Driver name', ni)); add(sv); add(out);
+        if (O.profile) add(row('Update emails', onOff(!!O.profile.email_updates, v => { O.setEmailUpdates(v).then(() => renderPanel()); }), 'A few emails a year about new tracks, features and events. Never sold or shared. Turn it off any time.'));
         if (O.profile) { const br = el('div', 'btnrow'), mp = el('button', 'ghost', 'My profile'), so = el('button', 'ghost', 'Sign out'); mp.onclick = () => playerCard(O.profile.id); so.onclick = () => { thread = null; O.signOut(); }; br.append(mp, so); add(br); }
         else { const so = el('button', 'ghost', 'Sign out'); so.onclick = () => O.signOut(); add(so); }
       }
@@ -4086,6 +4105,7 @@ const ONLINE = (() => {
           sp.onclick = async () => { await O.adminSet(u.id, null, !u.supporter); toast(u.supporter ? 'Supporter badge removed' : u.name + ' is now a supporter ★', 'good'); look(); };
           d.append(bn, sp); ao.appendChild(d); };
         ab.onclick = look; ai.onkeydown = e => { if (e.key === 'Enter') look(); }; add(row('Driver', ai)); add(ab); add(ao);
+        { const ex = el('button', 'ghost', 'Export update-email list (CSV)'); ex.onclick = async () => { const L = await O.adminEmailList(); if (!L.length) { toast('Nobody has opted in yet'); return; } const csv = 'driver_name,email,opted_in_at\n' + L.map(r => [r.driver_name, r.email, r.opted_in_at].map(x => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"').join(',')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'rcdl-update-emails.csv'; a.click(); toast(L.length + ' drivers exported'); }; add(ex); }
         msg('Ban: hidden from every leaderboard, and can\'t post laps, message, chat or host rooms. Supporter: puts a ★ on their profile (for Venmo chip-ins).'); }
       // ---- messages moved to the Social tab ----
       if (O.profile) { h('Messages', O.unread ? O.unread + ' unread' : ''); const ob = el('button', O.unread ? 'big' : 'ghost', O.unread ? 'Open messages · ' + O.unread + ' unread' : 'Open messages'); ob.onclick = () => { tab = 'community'; F.cv = 'messages'; renderNav(); renderPanel(); }; add(ob); msg('Messages, who\'s online and the forum are on the Social tab.'); }
