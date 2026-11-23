@@ -140,6 +140,27 @@ html.rot #mini{width:150px;height:100px}html.rot #hTR{top:8px;right:8px}html.rot
 .bub{max-width:82%;align-self:flex-start;background:rgba(255,255,255,.07);border-radius:10px 10px 10px 3px;padding:6px 10px;font-size:13px;line-height:1.35;word-wrap:break-word}.bub.me{align-self:flex-end;background:rgba(53,224,255,.16);border-radius:10px 10px 3px 10px}.bub small{display:block;font-size:10px;color:var(--mut);margin-top:2px}
 .inbox{display:grid;gap:4px;margin:6px 0}.conv{position:relative;display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);border:1px solid transparent;border-radius:6px;padding:8px 10px;cursor:pointer}.conv:hover{border-color:rgba(255,255,255,.2)}
 .conv>div{display:flex;justify-content:space-between}.conv b{font-size:13px}.conv small{color:var(--mut);font-size:11px}.conv span{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:26px}.conv.new{border-color:rgba(255,90,31,.5)}.conv.new span{color:var(--tx)}
+.conv.me{border-color:rgba(53,224,255,.35)}
+.conv .fprev{white-space:normal;max-height:2.8em;overflow:hidden;margin-top:2px;color:var(--mut);opacity:.85}
+.conv .cdot,.cdot{display:inline-block;padding:0;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+em.tagdev,em.tagsup{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.06em;margin-left:6px;padding:1px 4px;border-radius:3px;vertical-align:1px}
+em.tagdev{background:var(--ac);color:#140a04}
+em.tagsup{background:rgba(255,206,80,.18);color:#ffce50}
+.inbox{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}
+.chips.subtabs{margin:2px 0 6px}
+textarea{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:4px;color:var(--tx);font:inherit;font-size:14px;resize:vertical;min-height:64px;margin:4px 0}
+.ftitle{font-size:17px;font-weight:700;line-height:1.3;margin:8px 0 2px}
+.fposts{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px}
+.fpost{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px}
+.fpost.me{border-color:rgba(53,224,255,.25)}
+.fpost.hid{opacity:.5}
+.fhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
+.fhead b{font-size:13px;cursor:pointer}
+.fhead small{color:var(--mut);font-size:11px;white-space:nowrap}
+.fbody{font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.facts{display:flex;gap:12px;margin-top:6px}
+.flink{background:none;border:0;padding:2px 0;color:var(--mut);font-size:11px;cursor:pointer;text-decoration:underline}
+.flink:hover{color:var(--tx)}
 .conv i{position:absolute;right:10px;bottom:9px;font-style:normal;font-size:10px;font-weight:700;background:var(--ac);color:#140a04;border-radius:8px;padding:0 5px;line-height:16px}
 .pcard .tcard{border-top-color:var(--ac2)}.pcard .lbr{font-size:13px}
 #chat{position:fixed;left:18px;bottom:128px;width:min(400px,62vw);z-index:4;pointer-events:none}.inmenu #chat{display:none}
@@ -3067,7 +3088,7 @@ const ONLINE = (() => {
   // presence counts people per device: same device before and after sign-in is one row; signed-in devices merge by account
   const devId = () => String(gid || 'gnone00').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
   O.pingOff = () => { try { fetch(URL + '/rest/v1/rpc/ping_off', { method: 'POST', keepalive: true, headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_gid: devId() }) }); } catch (e) { } };
-  O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping', { p_gid: devId(), p_track: track || null, p_room: !!inRoom }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
+  O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping2', { p_gid: devId(), p_track: track || null, p_room: !!inRoom, p_code: inRoom && O.room ? O.room.code : null }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
   // ---- messages, blocks, reports, player cards ----
   const rpc = async (fn, args) => { if (!O.sb) return null; try { const { data, error } = await O.sb.rpc(fn, args || {}); return error ? null : data; } catch (e) { return null; } };
   O.sendMessage = async (to, body) => { const b = String(body || '').replace(/\s+/g, ' ').trim().slice(0, 500); if (!b) return 'Type a message first.'; const r = await rpc('send_message', { p_to: to, p_body: b }); return r ? (r.ok ? '' : r.why) : 'Could not send. Check your connection.'; };
@@ -3078,6 +3099,19 @@ const ONLINE = (() => {
   O.unblock = async id => { const ok = await rpc('unblock_user', { p_id: id }); O.blocked.delete(id); await O.loadBlocks(); fire(); return ok; };
   O.report = async (id, reason, context) => { const r = await rpc('report_user', { p_id: id, p_reason: String(reason || '').slice(0, 300), p_context: context ? String(context).slice(0, 600) : null }); return r ? (r.ok ? '' : r.why) : 'Could not send the report.'; };
   O.playerCard = async (id, name) => rpc('player_card', id ? { p_id: id } : { p_name: name });
+  // ---- who's online + community forum (v45) ----
+  O.onlineDrivers = async () => (await rpc('online_drivers')) || { drivers: [], guests: 0 };
+  O.FORUM_CATS = [['howto', 'How to play'], ['tuning', 'Tuning help'], ['bugs', 'Bugs & problems'], ['ideas', 'Ideas & upgrades'], ['general', 'General']];
+  O.forum = {
+    counts: async () => (await rpc('forum_counts')) || {},
+    list: async (cat, q, mine) => (await rpc('forum_list', { p_cat: cat || null, p_q: q || null, p_mine: !!mine, p_limit: 50 })) || [],
+    thread: async id => rpc('forum_thread', { p_id: id }),
+    post: async (cat, title, body) => { const r = await rpc('forum_new', { p_cat: cat, p_title: String(title || '').slice(0, 80), p_body: String(body || '').slice(0, 2000) }); return r || { ok: false, why: 'Could not post. Check your connection.' }; },
+    reply: async (id, body) => { const r = await rpc('forum_reply', { p_thread: id, p_body: String(body || '').slice(0, 2000) }); return r ? (r.ok ? '' : r.why) : 'Could not post. Check your connection.'; },
+    del: async postId => !!(await rpc('forum_delete', { p_post: postId })),
+    report: async (postId, reason) => { const r = await rpc('forum_report', { p_post: postId, p_reason: String(reason || '').slice(0, 300) }); return r ? (r.ok ? '' : r.why) : 'Could not send the report.'; },
+    mod: async (kind, id, action) => !!(await rpc('forum_mod', { p_kind: kind, p_id: id, p_action: action })),
+  };
   // ---- admin (Shaun): reports, bans, supporter badges ----
   O.isAdmin = false;
   O.checkAdmin = async () => { O.isAdmin = !!(await rpc('is_admin')); O.banned = !!(await rpc('is_banned')); fire(); };
@@ -3419,14 +3453,14 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v44', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v45', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
     if (invite && !inviteTried && ONLINE.status === 'ready' && player) { inviteTried = true; try { history.replaceState(null, '', location.pathname); } catch (e) { }
       ONLINE.findLobby(invite).then(async lb => { if (!lb) { toast('Room ' + invite + ' is closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else { toast('Joined room ' + lb.code, 'good'); tab = 'online'; if (mode !== 'drive') { renderNav(); renderPanel(); } } }); }
     if (mode !== 'drive' && nav) renderNav(); const a = document.activeElement; if (mode === 'drive' || (tab !== 'online' && tab !== 'boards' && tab !== 'drive') || (a && a.tagName === 'INPUT' && a.type === 'text' && panel.contains(a))) return; renderPanel(); };
-  ONLINE.onUnread = n => toast('NEW MESSAGE · ' + (ONLINE.unread) + ' unread (Online tab)', 'good');
+  ONLINE.onUnread = n => { toast('NEW MESSAGE · ' + (ONLINE.unread) + ' unread (Social tab)', 'good'); if (mode !== 'drive' && tab === 'community' && F.cv === 'messages' && !thread) { const a = document.activeElement; if (!(a && panel.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) renderPanel(); } };
   ONLINE.onProfile = p => {   // first sign-in on this device: the account's garage comes down; PBs merge (best of both)
     const g = p.garage || {}; let first = true; try { first = localStorage.getItem('rcdl_sync_' + p.id) !== '1'; localStorage.setItem('rcdl_sync_' + p.id, '1'); } catch (e) { }
     if (g.pb) for (const k of Object.keys(g.pb)) if (!(S.pb[k] >= g.pb[k])) S.pb[k] = g.pb[k];
@@ -3651,7 +3685,7 @@ const ONLINE = (() => {
   function goFull() { try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f && !document.fullscreenElement) { const p = f.call(d); if (p && p.then) p.then(() => { try { screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } } catch (e) { } }
   function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface); player.tune = S.tune; }
   function rebuildPlayer() { GFX.disposeTree(player.mesh); player.mesh = GFX.buildCar(S.look, !isTouchDev()); player.look = S.look; scene.add(player.mesh); save(); }
-  function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'online' && ONLINE.unread) b.appendChild(el('i', 'badge', String(ONLINE.unread))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'online') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
+  function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && ONLINE.unread) b.appendChild(el('i', 'badge', String(ONLINE.unread))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
   const row = (label, node, tip) => { const r = el('div', 'row'); const l = el('label', '', label); r.appendChild(l); r.appendChild(node); if (tip) { r.appendChild(el('p', 'tip', tip)); } return r; };
   const chips = (list, cur, fn, cls) => { const w = el('div', 'chips ' + (cls || '')); list.forEach(o => { const b = el('button', 'chip' + (o.id === cur ? ' act' : ''), o.name); if (o.sub) b.appendChild(el('small', '', o.sub)); b.onclick = () => { fn(o.id); renderPanel(); }; w.appendChild(b); }); return w; };
   const swatches = (cur, fn, extra) => { const w = el('div', 'sw'); (extra || []).concat(GFX.PAINTS).forEach(c => { const b = el('button', 'swb' + (c === cur ? ' act' : '')); if (c) b.style.background = c; else b.textContent = 'off'; b.onclick = () => { fn(c); renderPanel(); }; w.appendChild(b); }); const ci = el('input'); ci.type = 'color'; ci.value = cur || '#ffffff'; ci.oninput = () => fn(ci.value); w.appendChild(ci); return w; };
@@ -3720,7 +3754,7 @@ const ONLINE = (() => {
       const box = el('div'); box.appendChild(w); box.appendChild(p); return box; }
     return w; };
   // ---------- player card: profile, PBs, message / block / report ----------
-  function playerCard(id, name) {
+  function playerCard(id, name, extra) {
     const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard'; document.body.appendChild(ov); const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov) close(); };
     const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'DRIVER')); const h2 = el('h2', '', name || 'Loading…'); card.appendChild(h2); const body = el('div', 'tbody'); card.appendChild(body); body.textContent = 'Loading…';
     const btns = el('div', 'tbtns'); card.appendChild(btns); const mk = (lab, cls, fn) => { const x = el('button', cls, lab); x.onclick = fn; btns.appendChild(x); return x; }; mk('Close', 'ghost', close);
@@ -3732,6 +3766,7 @@ const ONLINE = (() => {
       const lb = el('div', 'lb'); if (!p.pbs.length) lb.appendChild(el('p', 'tmut', 'No laps on the boards yet.'));
       for (const r of p.pbs) { const line = el('div', 'lbr lbr3'); line.appendChild(el('span', '', tName(r.track))); line.appendChild(el('span', 'lbn', '#' + r.rank + ' of ' + r.of)); line.appendChild(el('span', 'lbp', fmt(r.pts))); lb.appendChild(line); } body.appendChild(lb);
       if (p.me) { body.appendChild(el('p', 'tmut', 'This is you.')); return; }
+      if (!ONLINE.profile && extra && extra.room) mk('Join their room', 'big', async () => { close(); const lb = await ONLINE.findLobby(extra.room); if (!lb) { toast('That room just closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else drive(false); });
       if (!ONLINE.profile) { body.appendChild(el('p', 'tmut', 'Sign in on the Online tab to message or block drivers.')); return; }
       btns.textContent = ''; mk('Close', 'ghost', close);
       const bl = mk(p.blocked ? 'Unblock' : 'Block', 'ghost', async () => { bl.disabled = true; if (p.blocked) await ONLINE.unblock(p.id); else await ONLINE.block(p.id); p.blocked = !p.blocked; bl.textContent = p.blocked ? 'Unblock' : 'Block'; bl.disabled = false; toast(p.blocked ? p.name + ' blocked' : p.name + ' unblocked'); if (thread && thread.id === p.id && p.blocked) thread = null; });
@@ -3741,17 +3776,84 @@ const ONLINE = (() => {
         btns.textContent = ''; mk('Cancel', 'ghost', close); mk('Send report', 'big', async () => { if (!pick) { out.textContent = 'Pick a reason first.'; return; } const e = await ONLINE.report(p.id, pick + (note.value ? ': ' + note.value : ''), thread && thread.id === p.id ? thread.msgs.slice(-6).map(m => (m.from_me ? 'me: ' : 'them: ') + m.body).join(' | ') : null); out.textContent = e || 'Thanks. The report was sent.'; if (!e) setTimeout(close, 1200); }); });
       if (ONLINE.isAdmin) { mk('Admin: ban', 'ghost', async () => { await ONLINE.adminSet(p.id, true, null); toast(p.name + ' banned'); close(); }); mk(p.supporter ? 'Admin: remove ★' : 'Admin: supporter ★', 'ghost', async () => { await ONLINE.adminSet(p.id, null, !p.supporter); toast(p.supporter ? 'Badge removed' : p.name + ' is now a supporter ★', 'good'); close(); }); }
       if (!p.blocked) mk('Message', 'big', () => { close(); openThread(p.id, p.name); });
+      if (extra && extra.room && !(ONLINE.room && ONLINE.room.code === extra.room)) mk('Join their room', 'big', async () => { close(); const lb = await ONLINE.findLobby(extra.room); if (!lb) { toast('That room just closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else drive(false); });
     });
   }
+  // ---------- community forum (v45) ----------
+  const fSeen = (() => { let m = {}; try { m = JSON.parse(localStorage.getItem('rcdl_fseen') || '{}') || {}; } catch (e) { } return { get: id => m[id], set: (id, at) => { m[id] = at; const k = Object.keys(m); if (k.length > 400) delete m[k[0]]; try { localStorage.setItem('rcdl_fseen', JSON.stringify(m)); } catch (e) { } } }; })();
+  const catName = c => (ONLINE.FORUM_CATS.find(x => x[0] === c) || [c, c])[1];
+  function forumOpen(id) { F.ft = id; F.fth = null; F.freply = ''; renderPanel(); ONLINE.forum.thread(id).then(t => { if (F.ft !== id) return; F.fth = t || { gone: true, id }; if (t) fSeen.set(id, t.last_at); if (tab === 'community' && F.cv === 'forum' && mode !== 'drive') renderPanel(); }); }
+  function forumView({ h, add, msg, signInBtn, badges }) {
+    const O = ONLINE, canPost = !!O.profile, admin = !!O.isAdmin;
+    const sign = () => { if (!O.signedIn()) { msg('Anyone can read. Sign in to post or reply.'); add(signInBtn()); } else if (!O.profile) msg('Pick a driver name on the Online tab to post.'); };
+    // -- one thread --
+    if (F.ft) {
+      const back = el('button', 'ghost', '← All threads'); back.onclick = () => { F.ft = null; F.fth = null; renderPanel(); };
+      const t = F.fth; if (!t) { h('Forum'); add(back); msg('Loading…'); return; }
+      if (t.gone) { h('Forum'); add(back); msg('That thread was removed or does not exist.'); return; }
+      h('Forum', catName(t.cat)); add(back); add(el('div', 'ftitle', (t.pinned ? '📌 ' : '') + (t.locked ? '🔒 ' : '') + ONLINE.mask(String(t.title))));
+      if (t.hidden) msg('Hidden by the admin (only you can see it).');
+      const list = el('div', 'fposts'); add(list);
+      for (const p of t.posts || []) {
+        const d = el('div', 'fpost' + (p.mine ? ' me' : '') + (p.hidden ? ' hid' : '')), hd = el('div', 'fhead'), who = el('b', 'click', String(p.author)); who.onclick = () => playerCard(p.author_id, String(p.author)); badges(who, p);
+        hd.appendChild(who); hd.appendChild(el('small', '', ago(p.created_at) + (p.hidden ? ' · hidden' : ''))); d.appendChild(hd);
+        d.appendChild(el('div', 'fbody', O.mask(p.body)));
+        const acts = el('div', 'facts'), act = (lab, fn) => { const b = el('button', 'flink', lab); b.onclick = fn; acts.appendChild(b); };
+        if (p.mine) act('Delete', async e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = p.first ? 'Tap again to delete the thread' : 'Tap again to delete'; setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.textContent = 'Delete'; } }, 3000); return; } b.disabled = true; await O.forum.del(p.id); if (p.first) { F.ft = null; F.fth = null; renderPanel(); } else forumOpen(t.id); });
+        else if (canPost) act('Report', () => forumReport(p));
+        if (admin && !p.mine) act(p.hidden ? 'Admin: unhide' : 'Admin: hide', async () => { await O.forum.mod('post', p.id, p.hidden ? 'unhide' : 'hide'); toast(p.hidden ? 'Shown again' : 'Hidden'); if (p.first && !p.hidden) { F.ft = null; F.fth = null; renderPanel(); } else forumOpen(t.id); });
+        if (acts.children.length) d.appendChild(acts); list.appendChild(d);
+      }
+      if (t.locked) msg('🔒 This thread is locked.');
+      if (canPost && (!t.locked || admin)) {
+        const ta = el('textarea'); ta.maxLength = 2000; ta.rows = 3; ta.placeholder = 'Write a reply…'; ta.value = F.freply; ta.oninput = () => F.freply = ta.value; add(ta);
+        const out = el('p', 'tip', ''), go = el('button', 'big', 'Post reply'); go.onclick = async () => { if (!ta.value.trim()) return; go.disabled = true; const e = await O.forum.reply(t.id, ta.value); go.disabled = false; if (e) { out.textContent = e; return; } F.freply = ''; forumOpen(t.id); }; add(go); add(out);
+      } else if (!canPost) sign();
+      if (admin) { const br = el('div', 'btnrow'); for (const [lab, a] of [[t.pinned ? 'Unpin' : 'Pin', t.pinned ? 'unpin' : 'pin'], [t.locked ? 'Unlock' : 'Lock', t.locked ? 'unlock' : 'lock'], [t.hidden ? 'Unhide thread' : 'Hide thread', t.hidden ? 'unhide' : 'hide']]) { const b = el('button', 'ghost', 'Admin: ' + lab); b.onclick = async () => { await O.forum.mod('thread', t.id, a); toast('Done'); if (a === 'hide') { F.ft = null; F.fth = null; renderPanel(); } else forumOpen(t.id); }; br.appendChild(b); } add(br); }
+      return;
+    }
+    // -- new thread composer --
+    if (F.fnew && canPost) {
+      h('New thread'); const fd = F.fd;
+      add(row('Category', chips(O.FORUM_CATS.map(([id, name]) => ({ id, name })), fd.cat, v => fd.cat = v)));
+      const ti = el('input'); ti.type = 'text'; ti.maxLength = 80; ti.placeholder = 'Title, e.g. "Best tune for Prodigy V2?"'; ti.value = fd.title; ti.oninput = () => fd.title = ti.value; add(row('Title', ti));
+      const ta = el('textarea'); ta.maxLength = 2000; ta.rows = 6; ta.placeholder = 'Say what\'s up. For bugs: what phone/browser, which track, what happened.'; ta.value = fd.body; ta.oninput = () => fd.body = ta.value; add(ta);
+      const out = el('p', 'tip', 'Posts are public. Keep it friendly, no spam. The admin can hide posts and ban accounts.');
+      const cn = el('button', 'ghost', 'Cancel'), go = el('button', 'big', 'Post thread');
+      cn.onclick = () => { F.fnew = false; renderPanel(); };
+      go.onclick = async () => { go.disabled = true; const r = await O.forum.post(fd.cat, fd.title, fd.body); go.disabled = false; if (!r.ok) { out.textContent = r.why; return; } F.fnew = false; F.fd = { cat: fd.cat, title: '', body: '' }; forumOpen(r.id); };
+      add(go); add(cn); add(out); return;
+    }
+    // -- thread list --
+    h('Forum', 'how to play · tuning · bugs · ideas');
+    add(chips([{ id: 'all', name: 'All' }].concat(O.FORUM_CATS.map(([id, name]) => ({ id, name })), canPost ? [{ id: 'mine', name: 'My threads' }] : []), F.fmine ? 'mine' : (F.fcat || 'all'), v => { if (v === 'mine') { F.fmine = true; F.fcat = 'all'; } else { F.fmine = false; F.fcat = v; } }));
+    const qi = el('input'); qi.type = 'text'; qi.maxLength = 40; qi.placeholder = 'Search titles…'; qi.value = F.fq; qi.oninput = () => F.fq = qi.value; qi.onkeydown = e => { if (e.key === 'Enter') renderPanel(); }; add(qi);
+    if (canPost) { const nb = el('button', 'big', '+ New thread'); nb.onclick = () => { F.fnew = true; if (F.fcat && F.fcat !== 'all') F.fd.cat = F.fcat; renderPanel(); }; add(nb); } else sign();
+    const box = el('div', 'inbox'); box.textContent = 'Loading…'; add(box);
+    O.forum.list(F.fcat === 'all' ? null : F.fcat, F.fq.trim() || null, F.fmine).then(list => { if (!box.isConnected) return; box.textContent = '';
+      if (!list.length) { box.appendChild(el('p', 'tip', F.fq.trim() ? 'No threads match that.' : F.fmine ? 'You haven\'t posted yet.' : 'Nothing here yet. Start the first thread!')); return; }
+      for (const t of list) { const seen = fSeen.get(t.id), fresh = !seen || seen < t.last_at; const b = el('button', 'conv' + (fresh ? ' new' : '')), top = el('div'), nm = el('b', '', (t.pinned ? '📌 ' : '') + (t.locked ? '🔒 ' : '') + O.mask(String(t.title))); top.appendChild(nm); top.appendChild(el('small', '', ago(t.last_at))); b.appendChild(top);
+        const sub = el('span'); sub.textContent = catName(t.cat) + ' · ' + t.author + ' · ' + (t.replies ? t.replies + (t.replies === 1 ? ' reply' : ' replies') + (t.last_by && t.replies ? ', last ' + t.last_by : '') : 'no replies yet'); b.appendChild(sub);
+        if (t.preview) { const pv = el('span', 'fprev'); pv.textContent = O.mask(t.preview); b.appendChild(pv); }
+        b.onclick = () => forumOpen(t.id); box.appendChild(b); } });
+  }
+  function forumReport(p) {
+    const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard'; document.body.appendChild(ov); const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov) close(); };
+    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'REPORT POST')); card.appendChild(el('h2', '', 'Post by ' + p.author)); const body = el('div', 'tbody'); card.appendChild(body);
+    const why = el('div', 'chips'); let pick = ''; for (const r of ['Rude or harassing', 'Spam', 'Offensive', 'Off topic', 'Something else']) { const c = el('button', 'chip', r); c.onclick = () => { pick = r; why.querySelectorAll('.chip').forEach(x => x.classList.toggle('act', x === c)); }; why.appendChild(c); } body.appendChild(why);
+    const out = el('p', 'tmut', 'Reports go to the game admin. You can also block ' + p.author + ' from their profile so you never see their posts.'); body.appendChild(out);
+    const btns = el('div', 'tbtns'); card.appendChild(btns); const cn = el('button', 'ghost', 'Cancel'), go = el('button', 'big', 'Send report'); cn.onclick = close;
+    go.onclick = async () => { if (!pick) { out.textContent = 'Pick a reason first.'; return; } go.disabled = true; const e = await ONLINE.forum.report(p.id, pick); out.textContent = e || 'Thanks. The report was sent.'; if (!e) setTimeout(close, 1100); else go.disabled = false; }; btns.append(cn, go);
+  }
   let thread = null; // { id, name, msgs }
-  async function openThread(id, name) { thread = { id, name, msgs: null }; tab = 'online'; if (mode === 'drive') openMenu('pause', 'online'); else { renderNav(); renderPanel(); } thread.msgs = await ONLINE.thread(id); if (tab === 'online' && mode !== 'drive') renderPanel(); }
+  async function openThread(id, name) { thread = { id, name, msgs: null }; tab = 'community'; F.cv = 'messages'; if (mode === 'drive') openMenu('pause', 'community'); else { renderNav(); renderPanel(); } thread.msgs = await ONLINE.thread(id); if (tab === 'community' && mode !== 'drive') renderPanel(); }
   // ---------- leaderboards cache ----------
   const BC = { t: 0, leaders: null, ranks: null, recent: null, boards: {} }; let lbTrack = null, lbMonth = false;
   function boardsData(force) { const now = Date.now(); if (!force && BC.leaders && now - BC.t < 25000) return Promise.resolve(false); BC.t = now; BC.boards = {};
     return Promise.all([ONLINE.trackLeaders().then(r => BC.leaders = r), ONLINE.recentPbs(10).then(r => BC.recent = r), ONLINE.profile ? ONLINE.myRanks().then(r => BC.ranks = r) : (BC.ranks = null)]).then(() => true); }
   function boardFor(id, month) { const k = id + (month ? ':m' : ''); if (BC.boards[k]) return Promise.resolve(BC.boards[k]); return (month ? ONLINE.leaderboardMonth(id, 50) : ONLINE.leaderboard(id, 50)).then(r => (BC.boards[k] = r)); }
   // ---------- online-tab form state survives re-renders ----------
-  const F = { code: '', hostName: '', hostPub: true, hostMax: 12, hostTrack: null, find: '', draft: '' };
+  const F = { code: '', hostName: '', hostPub: true, hostMax: 12, hostTrack: null, find: '', draft: '', cv: 'people', fcat: 'all', fq: '', fmine: false, ft: null, fth: null, fnew: false, fd: { cat: 'howto', title: '', body: '' }, freply: '' };
 
   function renderPanel() { const st = panel.scrollTop; renderPanel0(); const cr = el('div', 'credit'); cr.innerHTML = 'RC Drift Lab · made by <b>Stranger Kreations</b> · free to play'; if (VENMO) { cr.appendChild(document.createTextNode(' · ')); cr.appendChild(venmoBtn('chip in on Venmo', 'venmoLink')); } panel.appendChild(cr); panel.scrollTop = st; }
   function renderPanel0() {
@@ -3899,28 +4001,8 @@ const ONLINE = (() => {
           d.append(bn, sp); ao.appendChild(d); };
         ab.onclick = look; ai.onkeydown = e => { if (e.key === 'Enter') look(); }; add(row('Driver', ai)); add(ab); add(ao);
         msg('Ban: hidden from every leaderboard, and can\'t post laps, message, chat or host rooms. Supporter: puts a ★ on their profile (for Venmo chip-ins).'); }
-      // ---- messages ----
-      if (O.profile) {
-        if (thread) {
-          h('Messages · ' + thread.name); const back = el('button', 'ghost', '← All messages'); back.onclick = () => { thread = null; renderPanel(); };
-          const box = el('div', 'thread'); if (!thread.msgs) box.textContent = 'Loading…'; else if (!thread.msgs.length) box.appendChild(el('p', 'tip', 'No messages yet. Say hi.'));
-          for (const m of thread.msgs || []) { const b = el('div', 'bub' + (m.from_me ? ' me' : '')); b.appendChild(el('div', '', O.mask(m.body))); b.appendChild(el('small', '', ago(m.created_at) + (m.from_me && m.read_at ? ' · seen' : ''))); box.appendChild(b); }
-          add(box); setTimeout(() => { box.scrollTop = box.scrollHeight; }, 0);
-          const inp = el('input'); inp.type = 'text'; inp.maxLength = 500; inp.placeholder = 'Message ' + thread.name + '…'; inp.value = F.draft; inp.oninput = () => F.draft = inp.value; const out = el('p', 'tip', '');
-          const send = el('button', 'big', 'Send'); const go = async () => { if (!inp.value.trim()) return; send.disabled = true; const e = await O.sendMessage(thread.id, inp.value); send.disabled = false; if (e) { out.textContent = e; return; } F.draft = ''; thread.msgs = await O.thread(thread.id); F.focusThread = true; renderPanel(); };
-          send.onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); }; add(inp); if (F.focusThread) { F.focusThread = false; setTimeout(() => inp.focus(), 0); } add(send); add(out);
-          const br = el('div', 'btnrow'), pf = el('button', 'ghost', 'Profile · block · report'), rf = el('button', 'ghost', 'Refresh'); pf.onclick = () => playerCard(thread.id, thread.name); rf.onclick = async () => { thread.msgs = await O.thread(thread.id); renderPanel(); }; br.append(back, pf, rf); add(br);
-        } else {
-          h('Messages', O.unread ? O.unread + ' unread' : '');
-          const box = el('div', 'inbox'); box.textContent = 'Loading…'; add(box);
-          O.inbox().then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No messages yet. Tap any name on the leaderboards or in a room to message them, or look someone up below.')); return; }
-            for (const c of list) { const r = el('button', 'conv' + (c.unread ? ' new' : '')); const top = el('div'); top.appendChild(el('b', '', (c.online ? '● ' : '') + c.other_name)); top.appendChild(el('small', '', ago(c.last_at))); r.appendChild(top);
-              r.appendChild(el('span', '', (c.last_from_me ? 'You: ' : '') + O.mask(c.last_body))); if (c.unread) r.appendChild(el('i', '', String(c.unread))); r.onclick = () => openThread(c.other_id, String(c.other_name)); box.appendChild(r); } });
-          const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Their driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
-          const fb = el('button', 'ghost', 'Find driver'); const find = async () => { const n = fi.value.trim(); if (n.length < 3) { fo.textContent = 'Type their driver name.'; return; } const p = await O.playerCard(null, n); if (!p) fo.textContent = 'No driver called ' + n + '.'; else { F.find = ''; playerCard(p.id, p.name); } };
-          fb.onclick = find; fi.onkeydown = e => { if (e.key === 'Enter') find(); }; add(row('Message someone', fi)); add(fb); add(fo);
-        }
-      }
+      // ---- messages moved to the Social tab ----
+      if (O.profile) { h('Messages', O.unread ? O.unread + ' unread' : ''); const ob = el('button', O.unread ? 'big' : 'ghost', O.unread ? 'Open messages · ' + O.unread + ' unread' : 'Open messages'); ob.onclick = () => { tab = 'community'; F.cv = 'messages'; renderNav(); renderPanel(); }; add(ob); msg('Messages, who\'s online and the forum are on the Social tab.'); }
       // ---- the room you're in ----
       if (O.room) {
         h('Your room', O.room.code); add(el('div', 'code', O.room.code));
@@ -3968,6 +4050,60 @@ const ONLINE = (() => {
       { h('Leaderboards'); msg('Every track\'s leader, full rankings, this month\'s board and the latest PBs.'); const lb = el('button', 'ghost', 'Open the leaderboards'); lb.onclick = () => { tab = 'boards'; renderNav(); renderPanel(); }; add(lb); }
     }
 
+    if (tab === 'community') {
+      if (!web) { h('Community'); msg('Who\'s online, messages and the forum are on the web version: ' + WEB); return; }
+      if (O.status !== 'ready') { h('Community'); msg('Connecting…'); return; }
+      const cv = F.cv || 'people';
+      add(chips([{ id: 'people', name: 'Online now' }, { id: 'messages', name: 'Messages' + (O.unread ? ' · ' + O.unread : '') }, { id: 'forum', name: 'Forum' }], cv, v => { F.cv = v; if (v !== 'messages') thread = null; }, 'subtabs'));
+      const where = d => d.room ? 'In room ' + (d.room_name || d.room) + (d.track ? ' · ' + tName(d.track) : '') : d.in_room ? 'In a private room' : d.track ? 'Driving ' + tName(d.track) : 'In the menus';
+      const dot = c => { const x = el('span', 'cdot'); x.style.background = /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#888'; return x; };
+      const badges = (n, d) => { if (d.dev) n.appendChild(el('em', 'tagdev', 'DEV')); if (d.supporter) n.appendChild(el('em', 'tagsup', '★')); return n; };
+      // ---- who's online ----
+      if (cv === 'people') {
+        h('Online now', 'live');
+        const box = el('div', 'inbox'); box.textContent = 'Loading…'; add(box);
+        O.onlineDrivers().then(r => { if (!box.isConnected) return; box.textContent = ''; const list = (r && r.drivers) || [], g = (r && r.guests) | 0;
+          if (!list.length) box.appendChild(el('p', 'tip', 'No signed-in drivers on right now.'));
+          for (const d of list) { const b = el('button', 'conv' + (d.me ? ' me' : '')); const top = el('div'), nm = el('b'); nm.appendChild(dot(d.look && d.look.color)); nm.appendChild(document.createTextNode(String(d.name))); badges(nm, d); top.appendChild(nm); top.appendChild(el('small', '', d.me ? 'you' : d.room ? 'tap to join' : '')); b.appendChild(top);
+            b.appendChild(el('span', '', where(d))); b.onclick = () => playerCard(d.id, String(d.name), d); box.appendChild(b); }
+          if (g) box.appendChild(el('p', 'tip', '+ ' + g + ' guest' + (g > 1 ? 's' : '') + ' playing without an account.')); });
+        msg('Tap a driver to see their profile and stats, message them, or join their room. Only drivers active in the last couple of minutes show up.');
+        const rf = el('button', 'ghost', 'Refresh'); rf.onclick = () => renderPanel(); add(rf);
+        h('Find a driver');
+        const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Their driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
+        const fb = el('button', 'ghost', 'Find driver'); const find = async () => { const n = fi.value.trim(); if (n.length < 3) { fo.textContent = 'Type their driver name.'; return; } const p = await O.playerCard(null, n); if (!p) fo.textContent = 'No driver called ' + n + '.'; else { F.find = ''; playerCard(p.id, p.name); } };
+        fb.onclick = find; fi.onkeydown = e => { if (e.key === 'Enter') find(); }; add(row('Driver name', fi)); add(fb); add(fo);
+        if (!O.signedIn()) { h('Your account'); msg('Sign in to show up here, message drivers and post in the forum.'); add(signInBtn()); }
+      }
+      // ---- messages ----
+      if (cv === 'messages') {
+        if (!O.profile) { h('Messages'); msg(O.signedIn() ? 'Pick a driver name on the Online tab to start messaging.' : 'Sign in to message other drivers.'); if (!O.signedIn()) add(signInBtn()); }
+        else {
+        if (thread) {
+          h('Messages · ' + thread.name); const back = el('button', 'ghost', '← All messages'); back.onclick = () => { thread = null; renderPanel(); };
+          const box = el('div', 'thread'); if (!thread.msgs) box.textContent = 'Loading…'; else if (!thread.msgs.length) box.appendChild(el('p', 'tip', 'No messages yet. Say hi.'));
+          for (const m of thread.msgs || []) { const b = el('div', 'bub' + (m.from_me ? ' me' : '')); b.appendChild(el('div', '', O.mask(m.body))); b.appendChild(el('small', '', ago(m.created_at) + (m.from_me && m.read_at ? ' · seen' : ''))); box.appendChild(b); }
+          add(box); setTimeout(() => { box.scrollTop = box.scrollHeight; }, 0);
+          const inp = el('input'); inp.type = 'text'; inp.maxLength = 500; inp.placeholder = 'Message ' + thread.name + '…'; inp.value = F.draft; inp.oninput = () => F.draft = inp.value; const out = el('p', 'tip', '');
+          const send = el('button', 'big', 'Send'); const go = async () => { if (!inp.value.trim()) return; send.disabled = true; const e = await O.sendMessage(thread.id, inp.value); send.disabled = false; if (e) { out.textContent = e; return; } F.draft = ''; thread.msgs = await O.thread(thread.id); F.focusThread = true; renderPanel(); };
+          send.onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); }; add(inp); if (F.focusThread) { F.focusThread = false; setTimeout(() => inp.focus(), 0); } add(send); add(out);
+          const br = el('div', 'btnrow'), pf = el('button', 'ghost', 'Profile · block · report'), rf = el('button', 'ghost', 'Refresh'); pf.onclick = () => playerCard(thread.id, thread.name); rf.onclick = async () => { thread.msgs = await O.thread(thread.id); renderPanel(); }; br.append(back, pf, rf); add(br);
+        } else {
+          h('Messages', O.unread ? O.unread + ' unread' : '');
+          const box = el('div', 'inbox'); box.textContent = 'Loading…'; add(box);
+          O.inbox().then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No messages yet. Tap any name on the leaderboards or in a room to message them, or look someone up below.')); return; }
+            for (const c of list) { const r = el('button', 'conv' + (c.unread ? ' new' : '')); const top = el('div'); top.appendChild(el('b', '', (c.online ? '● ' : '') + c.other_name)); top.appendChild(el('small', '', ago(c.last_at))); r.appendChild(top);
+              r.appendChild(el('span', '', (c.last_from_me ? 'You: ' : '') + O.mask(c.last_body))); if (c.unread) r.appendChild(el('i', '', String(c.unread))); r.onclick = () => openThread(c.other_id, String(c.other_name)); box.appendChild(r); } });
+          const fi = el('input'); fi.type = 'text'; fi.maxLength = 16; fi.placeholder = 'Their driver name'; fi.value = F.find; fi.oninput = () => F.find = fi.value; const fo = el('p', 'tip', '');
+          const fb = el('button', 'ghost', 'Find driver'); const find = async () => { const n = fi.value.trim(); if (n.length < 3) { fo.textContent = 'Type their driver name.'; return; } const p = await O.playerCard(null, n); if (!p) fo.textContent = 'No driver called ' + n + '.'; else { F.find = ''; playerCard(p.id, p.name); } };
+          fb.onclick = find; fi.onkeydown = e => { if (e.key === 'Enter') find(); }; add(row('Message someone', fi)); add(fb); add(fo);
+        }
+              }
+      }
+      // ---- forum ----
+      if (cv === 'forum') forumView({ h, add, msg, top, signInBtn, badges });
+      return;
+    }
     if (tab === 'boards') {
       if (lbTrack == null) lbTrack = S.opt.track;
       const myId = O.user && O.user.id;
