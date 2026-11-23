@@ -102,7 +102,7 @@ kbd{display:inline-block;min-width:26px;padding:2px 7px;margin-right:8px;border:
 #tbtns button{min-width:52px;height:44px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;padding:0 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(10,11,15,.55);font-size:12px;font-weight:700;letter-spacing:.06em}
 #rotate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(8,9,12,.92);z-index:9;font-size:18px;font-weight:700;text-align:center;padding:30px}
 @media (orientation:portrait){.touch body:not(.inmenu) #rotate{display:flex}}
-html.rot #rotate{display:none!important}.touch body:not(.inmenu) #hTL{pointer-events:auto;cursor:pointer}.touch body:not(.inmenu) #hud{z-index:4}html.narrow #tbtns{gap:5px;top:8px}html.narrow #tbtns button{min-width:42px;padding:0 7px;font-size:11px}html.narrow #hTL{min-width:0;max-width:150px}html.narrow #mini{width:130px;height:87px}html.rot body.paused #menu{width:min(600px,100%)}#tbtns .rotOnly{display:none}html.rot #tbtns .rotOnly{display:inline-block}
+html.rot #rotate{display:none!important}#talkB{position:absolute;left:14px;top:40%;width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(10,11,15,.6);font-size:12px;font-weight:800;letter-spacing:.08em;display:none;touch-action:none;-webkit-user-select:none;user-select:none}html.vptt.inroom #talkB{display:block}#talkB.on{background:#ff5a1f;border-color:#fff}.vmute{margin-left:auto;padding:2px 8px;font-size:12px}#qchat{position:absolute;top:62px;left:50%;transform:translateX(-50%);display:none;flex-wrap:wrap;justify-content:center;gap:6px;width:min(560px,92%);padding:8px;background:rgba(8,9,12,.82);border:1px solid rgba(255,255,255,.18);border-radius:8px;z-index:3}.inroom #qchat.on{display:flex}#qchat button{height:40px;padding:0 12px;border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;touch-action:manipulation}#qchat .qk{background:rgba(255,106,31,.25)}.touch body:not(.inmenu) #hTL{pointer-events:auto;cursor:pointer}.touch body:not(.inmenu) #hud{z-index:4}html.narrow #tbtns{gap:5px;top:8px}html.narrow #tbtns button{min-width:42px;padding:0 7px;font-size:11px}html.narrow #hTL{min-width:0;max-width:150px}html.narrow #mini{width:130px;height:87px}html.rot body.paused #menu{width:min(600px,100%)}#tbtns .rotOnly{display:none}html.rot #tbtns .rotOnly{display:inline-block}
 html.rot #hTL{top:8px;left:8px;min-width:150px;padding:6px 10px}html.rot #hScore{font-size:26px}html.rot #hRunRow{height:22px;font-size:17px}html.rot #hLap{font-size:11px;margin-top:4px}
 html.rot #mini{width:150px;height:100px}html.rot #hTR{top:8px;right:8px}html.rot #hB{bottom:8px;width:min(260px,40vh);padding:6px 10px}html.rot #hAng{font-size:30px}html.rot #hBR{display:none}html.rot #chat{width:min(400px,62vh)}
 .touch #hBL{display:none}
@@ -175,13 +175,13 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
   <div id="hTL"><div class="lbl">LAP SCORE</div><div id="hScore">0</div><div id="hRunRow"><span id="hRun"></span><span id="hMult"></span></div><div id="hTand">TANDEM</div><div id="hZone">IN ZONE</div><div id="hLap"></div></div>
   <div id="hTR"><canvas id="mini" width="210" height="140"></canvas><span id="hNet"></span><span id="hCam"></span></div>
   <div id="hB"><div id="hAng">0°</div><div id="hAngL">DRIFT ANGLE</div><div id="track"><div id="hBar"></div></div></div>
-  <div id="hBL">GYRO <span id="hGyro"></span> <b>[ ]</b><br><b>C</b> camera · <b>R</b> reset · <b>T</b> tune · <b>Esc</b> menu<span class="inroomOnly"> · <b>Enter</b> chat</span><br><span id="hSrc"></span></div>
+  <div id="hBL">GYRO <span id="hGyro"></span> <b>[ ]</b><br><b>C</b> camera · <b>R</b> reset · <b>T</b> tune · <b>Esc</b> menu<span class="inroomOnly"> · <b>Enter</b> chat · <b>1-8</b> quick chat · <b>V</b> talk</span><br><span id="hSrc"></span></div>
   <div id="hBR"><div><div id="hSpd">0</div><div class="unit" id="hUnit">SCALE MPH</div></div><div id="thrBox"><div id="hThr"></div></div></div>
 </div>
 <div id="touch"><div class="tz" id="tzL"></div><div class="tz" id="tzR"></div>
   <div class="stick" id="tsteer"><div class="lbl">STEER</div><div class="knob"></div></div>
   <div class="stick" id="tthr"><div class="lbl">THROTTLE</div><div class="knob"></div></div>
-  <div id="tbtns"><button data-a="menu">II</button><button data-a="cam">CAM</button><button data-a="reset">RESET</button><button data-a="gm">GYRO −</button><button data-a="gp">GYRO +</button><button data-a="chat">CHAT</button><button data-a="flip" class="rotOnly">⟲</button></div></div>
+  <div id="tbtns"><button data-a="menu">II</button><button data-a="cam">CAM</button><button data-a="reset">RESET</button><button data-a="gm">GYRO −</button><button data-a="gp">GYRO +</button><button data-a="chat">CHAT</button><button data-a="flip" class="rotOnly">⟲</button></div><button id="talkB" data-a="talk">TALK</button><div id="qchat"><button data-a="q0">GG!</button><button data-a="q1">Nice angle! 🔥</button><button data-a="q2">Tandem? I&#39;ll lead</button><button data-a="q3">Chase me!</button><button data-a="q4">My bad, sorry</button><button data-a="q5">Lag 😬</button><button data-a="q6">One more lap</button><button data-a="q7">brb</button><button data-a="qtype" class="qk">Type…</button><button data-a="qx" class="qk">✕</button></div></div>
 <div id="chat"><div id="chatLog"></div><input id="chatIn" type="text" maxlength="160" placeholder="Chat to the room · Enter sends · Esc cancels" autocomplete="off"></div>
 <div id="rotate"><div style="font-size:42px">⟲</div>Turn your phone sideways to drive</div>
 <div id="toast"></div>
@@ -2463,6 +2463,18 @@ const GFX = (function () {
   }
   const box = (w, h, d, m, x, y, z) => { const o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; return o; };
 
+  // merge a group's static parts into one mesh per material (same look, far fewer draw calls). Used for wheels: 12-30 parts each -> 4-6 meshes
+  function mergeParts(g) {
+    try { g.updateMatrixWorld(true); const by = new Map(), keep = [];
+      g.traverse(o => { if (o === g) return; if (!o.isMesh || Array.isArray(o.material)) { if (o.isMesh || o.isSprite) keep.push(o); return; }
+        let q = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); for (const a of Object.keys(q.attributes)) if (!['position', 'normal', 'uv'].includes(a)) q.deleteAttribute(a);
+        if (!q.attributes.uv) q.setAttribute('uv', new T.Float32BufferAttribute(new Float32Array(q.attributes.position.count * 2), 2)); if (!q.attributes.normal) q.computeVertexNormals();
+        q.applyMatrix4(o.matrixWorld); let L = by.get(o.material); if (!L) by.set(o.material, L = { g: [], cs: false, rs: false }); L.g.push(q); L.cs = L.cs || o.castShadow; L.rs = L.rs || o.receiveShadow; });
+      if (keep.length) return g;   // anything unusual: leave the wheel as built
+      const out = new T.Group(); for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = L.rs; out.add(mm); }
+      g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); return out;
+    } catch (e) { return g; }
+  }
   function buildWheel(style, color) {
     const m = mats(), g = new T.Group(), R = 0.031, rimR = 0.0235, Wd = 0.026;
     const rim = new T.MeshStandardMaterial({ color: new T.Color(color), roughness: 0.28, metalness: 0.85 });
@@ -2484,7 +2496,7 @@ const GFX = (function () {
       const cap = new T.Mesh(new T.SphereGeometry(0.019, 20, 8, 0, Math.PI * 2, 0, 0.9), m.chrome); cap.rotation.x = Math.PI / 2; cap.scale.y = 0.35; cap.position.z = fz - 0.004; g.add(cap); }
     else if (style === 'fan') { const f = new T.Mesh(new T.CylinderGeometry(rimR - 0.001, rimR - 0.001, 0.0025, 28), rim); f.rotation.x = Math.PI / 2; f.position.z = fz; g.add(f); for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, s = new T.Mesh(new T.BoxGeometry(0.0016, 0.008, 0.0012), m.dark); s.position.set(Math.sin(a) * 0.017, Math.cos(a) * 0.017, fz + 0.0016); s.rotation.z = -a + 0.4; g.add(s); } }
     else { const f = new T.Mesh(new T.CylinderGeometry(rimR - 0.001, rimR - 0.001, 0.0025, 28), rim); f.rotation.x = Math.PI / 2; f.position.z = fz; g.add(f); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, s = new T.Mesh(new T.CircleGeometry(0.0032, 10), m.dark); s.position.set(Math.sin(a) * 0.015, Math.cos(a) * 0.015, fz + 0.0015); g.add(s); } }
-    return g;
+    return mergeParts(g);
   }
 
   // ---------------- lofted lexan-shell body builder ----------------
@@ -2680,7 +2692,7 @@ const GFX = (function () {
     fx.hs = [spr(0xfff0c8, 0.06, [hp[0] + 0.01, hp[1], hp[2]], 0.5), spr(0xfff0c8, 0.06, [hp[0] + 0.01, hp[1], -hp[2]], 0.5)];
     fx.ts = [spr(0xff2200, 0.05, [tp[0] - 0.006, tp[1], tp[2]], 0.4), spr(0xff2200, 0.05, [tp[0] - 0.006, tp[1], -tp[2]], 0.4)];
     const beam = new T.Mesh(new T.PlaneGeometry(0.9, 0.55), new T.MeshBasicMaterial({ map: m.beamTex, color: 0xfff1d0, transparent: true, opacity: 0.0, blending: T.AdditiveBlending, depthWrite: false }));
-    beam.rotation.x = -Math.PI / 2; beam.position.set(h.xf + 0.45, 0.004, 0); car.add(beam); fx.beam = beam;
+    beam.rotation.x = -Math.PI / 2; beam.position.set(h.xf + 0.45, 0.004, 0); car.add(beam); fx.beam = beam; beam.visible = false;
     if (look.glow) { const ug = new T.Mesh(new T.PlaneGeometry(0.62, 0.36), new T.MeshBasicMaterial({ map: m.glowTex, color: new T.Color(look.glow), transparent: true, opacity: 0.85, blending: T.AdditiveBlending, depthWrite: false })); ug.rotation.x = -Math.PI / 2; ug.position.y = 0.003; car.add(ug); fx.under = ug; }
     fx.scan = scan; fx.bar = bar; car.userData = { body, wheels, fx, B: { roofH: h.top, cowlX: h.ws[1] }, xf: h.xf, xr: h.xr, sus: { p: 0, pv: 0, r: 0, rv: 0, hv: 0, h: 0 } };
     return car;
@@ -2703,7 +2715,7 @@ const GFX = (function () {
       w.sp.rotation.z -= (w.front ? c.u : c.w) / 0.031 * dt * 1;
     }
     const br = c.inp && c.inp.brake > 0.05; u.fx.tl.emissiveIntensity = br ? 2.6 : (night ? 1.0 : 0.45); u.fx.hl.emissiveIntensity = u.fx.hlF.emissiveIntensity = night ? 1.6 : 0.35; u.fx.ts.forEach(s => s.material.opacity = br ? (night ? 0.9 : 0.5) : (night ? 0.45 : 0.06));
-    u.fx.hs.forEach(s => s.material.opacity = night ? 0.8 : 0.12); u.fx.beam.material.opacity = night ? 0.32 : 0;
+    u.fx.hs.forEach(s => s.material.opacity = night ? 0.8 : 0.12); u.fx.beam.material.opacity = night ? 0.32 : 0; u.fx.beam.visible = night;
     const tt = performance.now() / 1000;
     if (u.fx.scan) { const n = u.fx.scan.length, p = (Math.sin(tt * 3.4) * 0.5 + 0.5) * (n - 1); u.fx.scan.forEach((b, i) => { const k = Math.max(0, 1 - Math.abs(i - p) / 2.2); b.material.color.setRGB(0.15 + k * 0.85, k * 0.08, 0); });
       u.fx.scan.glow.position.z = (p - (n - 1) / 2) * 0.0096; u.fx.scan.glow.material.opacity = night ? 1 : 0.7; }
@@ -3000,6 +3012,9 @@ const ONLINE = (() => {
   const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js';
   const ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
   const O = { status: 'off', sb: null, user: null, profile: null, stats: null, lobbies: [], lobby: null, room: null, err: '', changed: () => { } };
+  O.QUICK = ['GG!', 'Nice angle! 🔥', "Tandem? I'll lead", 'Chase me!', 'My bad, sorry', 'Lag 😬', 'One more lap', 'brb'];
+  O.voice = { track: null, hear: true, vol: 1, muted: new Set() };
+  O.PROTO = 2;   // room protocol: 2 = car look sent every ~2 s (cached), voice-capable peers
   const fire = () => { try { O.changed(); } catch (e) { } };
   let gid = null; try { gid = localStorage.getItem('rcdl_gid'); if (!gid) { gid = 'g' + Math.random().toString(36).slice(2, 12); localStorage.setItem('rcdl_gid', gid); } } catch (e) { gid = 'g' + Math.random().toString(36).slice(2, 12); }
   O.myId = () => (O.user && O.user.id) || gid;
@@ -3015,7 +3030,7 @@ const ONLINE = (() => {
   O.init = async () => {
     if (O.status !== 'off') return; O.status = 'connecting'; fire();
     try {
-      await loadLib(); O.sb = window.supabase.createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } });
+      await loadLib(); O.sb = window.supabase.createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }, realtime: { timeout: 25000 } });
       const st = await Promise.race([O.sb.rpc('game_stats'), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 15000))]);
       if (st.error) throw st.error; O.stats = st.data; O.status = 'ready';
       const { data } = await O.sb.auth.getSession(); await setUser(data && data.session ? data.session.user : null);
@@ -3076,49 +3091,70 @@ const ONLINE = (() => {
   O.refreshLobbies = async () => { if (!O.sb) return; const { data, error } = await O.sb.rpc('list_lobbies'); if (!error && data) { O.lobbies = data; fire(); } };
   O.createLobby = async (name, track, isPublic, max) => {
     if (!O.signedIn()) return { err: 'Sign in with Google to host a room.' }; const nm = O.cleanName(name, 32) || ((O.profile && O.profile.driver_name) || 'Driver') + "'s room";
-    const { data, error } = await O.sb.rpc('create_lobby', { p_name: nm, p_track: track, p_public: !!isPublic, p_max: Math.max(2, Math.min(10, max | 0 || 10)) }); return error ? { err: 'Could not create the room.' } : { lobby: data };
+    const { data, error } = await O.sb.rpc('create_lobby', { p_name: nm, p_track: track, p_public: !!isPublic, p_max: Math.max(2, Math.min(20, max | 0 || 12)) }); return error ? { err: 'Could not create the room.' } : { lobby: data };
   };
   O.findLobby = async code => { const { data } = await O.sb.rpc('join_lobby', { p_code: String(code || '').toUpperCase().trim() }); return data && data.code ? data : null; };
 
   // ---------------- a lobby room: presence for the roster, WebRTC mesh for the cars ----------------
   O.join = async (lobby, me) => {
     if (O.room) O.leave(); const id = O.myId(), peers = new Map(), states = new Map(); let ch = null, closed = false, bcT = 0, hbT = null, onPeersFn = null, onCloseFn = null, onChatFn = null, chatT = [];
-    const room = { lobby, code: lobby.code, count: 1, names: {}, full: false, log: [] }, C = { sigS: 0, sigR: 0, stS: 0, stR: 0, sendErr: '' };
-    const sig = (to, payload) => { if (!ch) return; C.sigS++; ch.send({ type: 'broadcast', event: 'sig', payload: Object.assign({ to, from: id }, payload) }).then(r => { if (r !== 'ok') C.sendErr = String(r); }); };
+    const auds = new Map(), V = O.voice, room = { lobby, code: lobby.code, count: 1, names: {}, full: false, log: [] }, C = { sigS: 0, sigR: 0, stS: 0, stR: 0, sendErr: '' };
+    C.t0 = Date.now(); O.lastC = C; const sig = (to, payload) => { if (!ch) return; C.sigS++; ch.send({ type: 'broadcast', event: 'sig', payload: Object.assign({ to, from: id }, payload) }).then(r => { if (r !== 'ok') C.sendErr = String(r); }); };
     function mkPeer(pid) {
       if (peers.has(pid)) return peers.get(pid); const pc = new RTCPeerConnection({ iceServers: ICE }), P = { pc, dc: null, pid, ok: false };
       pc.onicecandidate = e => { if (e.candidate) sig(pid, { cand: e.candidate.toJSON() }); };
       pc.onconnectionstatechange = () => { if (['failed', 'closed'].includes(pc.connectionState)) P.ok = false; };
       const wire = dc => { P.dc = dc; dc.onopen = () => { P.ok = true; }; dc.onclose = () => { P.ok = false; }; dc.onmessage = m => { try { const d = JSON.parse(m.data); states.set(pid, { drift: d, at: Date.now() }); } catch (e) { } }; };
       pc.ondatachannel = e => wire(e.channel);
-      if (id < pid) { wire(pc.createDataChannel('car', { ordered: false, maxRetransmits: 0 })); pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => sig(pid, { sdp: pc.localDescription.toJSON() })).catch(() => { }); }
+      pc.ontrack = e => { if (e.track && e.track.kind === 'audio') hearTrack(pid, e.track); };
+      if (id < pid) { P.born = Date.now(); P.kicks = 0; wire(pc.createDataChannel('car', { ordered: false, maxRetransmits: 0 })); try { P.atx = pc.addTransceiver('audio', { direction: 'sendrecv' }); if (V.track && room.voiceOn()) P.atx.sender.replaceTrack(V.track).catch(() => { }); } catch (e) { } pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => sig(pid, { sdp: pc.localDescription.toJSON() })).catch(() => { }); }
       peers.set(pid, P); return P;
     }
-    function dropPeer(pid) { const P = peers.get(pid); if (P) { try { P.pc.close(); } catch (e) { } peers.delete(pid); } states.delete(pid); }
+    function dropPeer(pid) { const P = peers.get(pid); if (P) { try { P.pc.close(); } catch (e) { } peers.delete(pid); } states.delete(pid); const a = auds.get(pid); if (a) { try { a.srcObject = null; a.remove(); } catch (e) { } auds.delete(pid); } }
+    function hearTrack(pid, track) { let a = auds.get(pid); if (!a) { a = document.createElement('audio'); a.autoplay = true; a.playsInline = true; a.setAttribute('playsinline', ''); a.style.display = 'none'; document.body.appendChild(a); auds.set(pid, a); }
+      a.srcObject = new MediaStream([track]); hearOne(pid); a.play().catch(() => { }); }
+    function hearOne(pid) { const a = auds.get(pid); if (!a) return; a.muted = !V.hear || V.muted.has(pid) || O.blocked.has(pid) || !room.voiceOn(); a.volume = Math.max(0, Math.min(1, V.vol)); }
     ch = O.sb.channel('rcdl-' + lobby.code, { config: { presence: { key: id }, broadcast: { self: false, ack: false } } });
     ch.on('broadcast', { event: 'sig' }, async ({ payload: m }) => {
       C.sigR++; if (!m || m.to !== id || !m.from || m.from === id) return; const P = mkPeer(m.from);
-      try { if (m.sdp) { await P.pc.setRemoteDescription(m.sdp); if (m.sdp.type === 'offer') { const a = await P.pc.createAnswer(); await P.pc.setLocalDescription(a); sig(m.from, { sdp: P.pc.localDescription.toJSON() }); } }
-        else if (m.cand) await P.pc.addIceCandidate(m.cand); } catch (e) { }
+      // one signal at a time per peer, and hold ICE candidates until the remote description is in (under load they arrive first and used to get dropped)
+      P.q = (P.q || Promise.resolve()).then(async () => { try {
+        if (m.sdp) { await P.pc.setRemoteDescription(m.sdp); const cq = P.cq || []; P.cq = []; for (const c of cq) await P.pc.addIceCandidate(c).catch(() => { });
+          if (m.sdp.type === 'offer') { if (!P.atx) { const t = P.pc.getTransceivers().find(x => x.receiver && x.receiver.track && x.receiver.track.kind === 'audio'); if (t) { try { t.direction = 'sendrecv'; } catch (e) { } P.atx = t; if (V.track && room.voiceOn()) t.sender.replaceTrack(V.track).catch(() => { }); } } const a = await P.pc.createAnswer(); await P.pc.setLocalDescription(a); sig(m.from, { sdp: P.pc.localDescription.toJSON() }); } }
+        else if (m.cand) { if (!P.pc.remoteDescription) (P.cq = P.cq || []).push(m.cand); else await P.pc.addIceCandidate(m.cand); } } catch (e) { } });
     });
-    ch.on('broadcast', { event: 'chat' }, ({ payload: m }) => { if (!m || m.from === id || O.blocked.has(m.from) || typeof m.t !== 'string') return; const msg = { from: m.from, n: String(m.n || 'Driver').slice(0, 16), t: O.mask(m.t.slice(0, 160)), at: Date.now() }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); if (onChatFn) try { onChatFn(msg); } catch (e) { } });
+    ch.on('broadcast', { event: 'chat' }, ({ payload: m }) => { if (!m || m.from === id || O.blocked.has(m.from) || typeof m.t !== 'string') return; const msg = { from: m.from, n: String(m.n || 'Driver').slice(0, 16), t: Number.isInteger(m.q) && O.QUICK[m.q] ? O.QUICK[m.q] : O.mask(m.t.slice(0, 160)), at: Date.now() }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); if (onChatFn) try { onChatFn(msg); } catch (e) { } });
+    ch.on('broadcast', { event: 'cfg' }, ({ payload: m }) => { if (!m || !lobby.host || m.from !== lobby.host) return; if (typeof m.voice === 'boolean') { lobby.voice = m.voice; room.setMic(V.track); room.hearAll(); if (onChatFn) try { onChatFn({ from: '', n: 'Room', t: m.voice ? 'Voice chat is on' : 'The host turned voice chat off', at: Date.now(), sys: true }); } catch (e) { } } });
     ch.on('broadcast', { event: 'st' }, ({ payload: m }) => { C.stR++; if (m && m.from && m.from !== id && !(peers.get(m.from) || {}).ok) states.set(m.from, { drift: m.d, at: Date.now() }); });
     ch.on('presence', { event: 'sync' }, () => {
-      const ps = ch.presenceState(), ids = Object.keys(ps).filter(k => k !== id).sort(); room.names = {}; for (const k of ids) { const p = ps[k] && ps[k][0]; room.names[k] = p && p.n ? String(p.n).slice(0, 16) : 'Driver'; }
+      room._sync = true; if (!room.tracked) return; // still deciding whether there's room for us: no peers yet
+      const ps = ch.presenceState(), ids = Object.keys(ps).filter(k => k !== id).sort(); room.names = {}; room.vers = {}; for (const k of ids) { const p = ps[k] && ps[k][0]; room.names[k] = p && p.n ? String(p.n).slice(0, 16) : 'Driver'; room.vers[k] = (p && +p.v) || 0; }
       const was = room.count; room.count = ids.length + 1; if (room.count !== was && room.beat) room.beat(); for (const k of ids) mkPeer(k); for (const k of Array.from(peers.keys())) if (!ids.includes(k)) dropPeer(k);
       if (onPeersFn) try { onPeersFn(); } catch (e) { } fire();
     });
-    await new Promise(res => ch.subscribe(async s => {
-      if (s === 'SUBSCRIBED') {
-        const others = Object.keys(ch.presenceState()).filter(k => k !== id).length;
-        if (others >= (lobby.max_players || 10)) { room.full = true; res(); return; }
-        await ch.track({ n: (me && me.name) || 'Driver', t: lobby.track, at: Date.now() }); res();
-      } else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') res();
-    }));
-    if (room.full) { O.sb.removeChannel(ch); return { err: 'That room is full (' + (lobby.max_players || 10) + ' drivers).' }; }
+    // Join: a slow phone can hit the 10 s join timeout; realtime retries on its own, so keep waiting (up to 30 s) instead of
+    // walking in half-joined. A later re-subscribe (network blip) just re-tracks us.
+    // Join. On a slow link the join can time out before it lands: we carry on (realtime keeps retrying) and get tracked in
+    // when it does. The "full" check only runs while we're still waiting at the door.
+    await new Promise(res => { let settled = false; const settle = () => { if (!settled) { settled = true; res(); } };
+      ch.subscribe(async s => { C.sub = (C.sub || '') + s[0] + ((Date.now() - C.t0) / 1000).toFixed(1) + ' ';
+        if (s !== 'SUBSCRIBED') { if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') settle(); return; }
+        if (room.full || closed) return;
+        if (!room.tracked && !settled) { await new Promise(r => { const t0 = Date.now(), chk = () => room._sync || Date.now() - t0 > 1500 ? r() : setTimeout(chk, 80); chk(); }); // let the roster arrive before judging "full"
+          const others = Object.keys(ch.presenceState()).filter(k => k !== id).length;
+          if (others >= (lobby.max_players || 10)) { room.full = true; settle(); return; } }
+        room.tracked = true; try { await ch.track({ n: (me && me.name) || 'Driver', t: lobby.track, at: Date.now(), v: O.PROTO }); } catch (e) { } settle();
+      }); });
+    if (room.full) { O.sb.removeChannel(ch);
+      // an always-open room that's full spills into "open session 2, 3..." automatically
+      if (lobby.is_official && (me && me._hop || 0) < 3) { try { const { data } = await O.sb.rpc('official_overflow', { p_code: lobby.code }); if (data && data.code && data.code !== lobby.code) return O.join(data, Object.assign({}, me, { _hop: ((me && me._hop) || 0) + 1, _from: lobby.name })); } catch (e) { } }
+      return { err: 'That room is full (' + (lobby.max_players || 10) + ' drivers).' }; }
     // everyone in an always-open room reports the head count (guests too); a player-hosted room is reported by its host
     const beat = (n) => { if (lobby.is_official || (O.signedIn() && lobby.host === O.user.id)) O.sb.rpc('lobby_heartbeat', { p_code: lobby.code, p_players: n == null ? room.count : n, p_track: null }).then(() => { }, () => { }); };
     room.beat = () => beat(); beat(); hbT = setInterval(beat, 30000);
+    // a link that never came up (busy phone, slow signalling) gets an ICE restart from the offerer, up to 3 tries; the relay carries the car meanwhile
+    const kickT = setInterval(() => { if (closed) return; for (const P of peers.values()) { if (P.ok || P.born == null || P.kicks >= 3 || P.pc.signalingState !== 'stable' || Date.now() - P.born < 12000 * (P.kicks + 1)) continue;
+      P.kicks++; C.kicks = (C.kicks || 0) + 1; P.pc.createOffer({ iceRestart: true }).then(o => P.pc.setLocalDescription(o)).then(() => sig(P.pid, { sdp: P.pc.localDescription.toJSON() })).catch(() => { }); } }, 4000); room.kickT = kickT;
     // the interface the game's online code already speaks
     room.presence = obj => { const d = obj && obj.drift; if (!d || closed) return Promise.resolve(); const msg = JSON.stringify(d); let need = false;
       for (const P of peers.values()) { if (P.ok && P.dc && P.dc.readyState === 'open') { try { P.dc.send(msg); } catch (e) { need = true; } } else need = true; }
@@ -3130,9 +3166,23 @@ const ONLINE = (() => {
     room.canChat = () => O.signedIn() && !!O.profile && !O.banned;
     room.chat = text => { if (!room.canChat()) return 'Sign in to chat.'; const t = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 160); if (!t) return ''; const now = Date.now(); chatT = chatT.filter(x => now - x < 10000); if (chatT.length >= 5) return 'Slow down a little.'; chatT.push(now);
       const msg = { from: id, n: O.profile.driver_name, t: O.mask(t), at: now, me: true }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); ch.send({ type: 'broadcast', event: 'chat', payload: { from: id, n: msg.n, t } }); return ''; };
+    // ---- voice ----
+    room.voiceOn = () => lobby.voice !== false;
+    room.audioIn = async () => { let b = 0; for (const P of peers.values()) { try { (await P.pc.getStats()).forEach(r => { if (r.type === 'inbound-rtp' && r.kind === 'audio') b += r.bytesReceived || 0; }); } catch (e) { } } return { bytes: b, els: auds.size, muted: Array.from(auds.entries()).filter(([k, a]) => a.muted).map(([k]) => k) }; };
+    room.setMic = track => { const t = track && room.voiceOn() ? track : null; for (const P of peers.values()) if (P.atx) try { P.atx.sender.replaceTrack(t).catch(() => { }); } catch (e) { } };
+    room.hearAll = () => { for (const pid of auds.keys()) hearOne(pid); };
+    room.wakeAudio = () => { for (const a of auds.values()) if (a.paused) a.play().catch(() => { }); };
+    room.voicePeers = () => { let n = 0; for (const P of peers.values()) if (P.ok && P.atx) n++; return n; };
+    room.isHost = () => !!(lobby.host && O.signedIn() && lobby.host === O.user.id);
+    room.setVoice = async on => { if (!room.isHost()) return 'Only the host can change that.'; const { error } = await O.sb.rpc('set_room_voice', { p_code: lobby.code, p_on: !!on }); if (error) return 'Could not change it.'; lobby.voice = !!on; room.setMic(V.track); room.hearAll(); ch.send({ type: 'broadcast', event: 'cfg', payload: { from: id, voice: !!on } }); return ''; };
+    room.oldPeers = () => Object.values(room.vers || {}).some(v => v < 2);   // anyone on a build that still needs the car look in every packet
+    // one-tap quick chat: fixed phrases (index + text, so older builds still show it); guests may use these, typing needs sign-in
+    room.quick = (i, name) => { const t = O.QUICK[i]; if (!t) return ''; const now = Date.now(); chatT = chatT.filter(x => now - x < 10000); if (chatT.length >= 5) return 'Slow down a little.'; chatT.push(now);
+      const n = String((O.profile && O.profile.driver_name) || name || 'Driver').slice(0, 16), msg = { from: id, n, t, at: now, me: true }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); if (onChatFn) try { onChatFn(msg); } catch (e) { }
+      ch.send({ type: 'broadcast', event: 'chat', payload: { from: id, n, t, q: i } }); return ''; };
     room.direct = () => { let n = 0; for (const P of peers.values()) if (P.ok) n++; return n; };
-    room.leave = () => { if (closed) return; closed = true; clearInterval(hbT); beat(Math.max(0, room.count - 1)); for (const k of Array.from(peers.keys())) dropPeer(k); try { ch.untrack(); } catch (e) { } O.sb.removeChannel(ch); if (O.room === room) { O.room = null; O.lobby = null; } if (onCloseFn) try { onCloseFn(); } catch (e) { } fire(); };
-    O.room = room; O.lobby = lobby; fire(); return { room };
+    room.leave = () => { if (closed) return; closed = true; clearInterval(hbT); clearInterval(room.kickT); for (const a of auds.values()) { try { a.srcObject = null; a.remove(); } catch (e) { } } auds.clear(); beat(Math.max(0, room.count - 1)); for (const k of Array.from(peers.keys())) dropPeer(k); try { ch.untrack(); } catch (e) { } O.sb.removeChannel(ch); if (O.room === room) { O.room = null; O.lobby = null; } if (onCloseFn) try { onCloseFn(); } catch (e) { } fire(); };
+    O.room = room; O.lobby = lobby; fire(); return { room, spill: me && me._from ? me._from + ' was full, so you are in ' + lobby.name : null };
   };
   O.leave = () => { if (O.room) O.room.leave(); };
   window.addEventListener('pagehide', () => { if (O.room) O.room.leave(); });
@@ -3150,7 +3200,7 @@ const ONLINE = (() => {
   const KEY = 'rcdrift_v1';
   function isTouchDev() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || false; }
   const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
-    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
+    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
     pad: { mode: 'auto', steerAxis: 0, thrAxis: 1, steerInv: false, thrInv: true, cS: 0, cT: 0, dead: 4 }, best: {}, bestPts: {}, pb: {}, slots: {} };
   try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
   let saveT = 0; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 300); if (window.ONLINE && ONLINE.profile) ONLINE.saveGarage({ look: S.look, tune: S.tune, pb: S.pb, opt: { cam: S.opt.cam, kbThrottle: S.opt.kbThrottle, kbAssist: S.opt.kbAssist, angleMix: S.opt.angleMix, angleAssist: S.opt.angleAssist, angleAssistPad: S.opt.angleAssistPad }, slots: S.slots }); };
@@ -3161,7 +3211,7 @@ const ONLINE = (() => {
   catch (e) { $('#fatal').style.display = 'flex'; return; }
   renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
-  const scene = new T.Scene(), camera = new T.PerspectiveCamera(58, 1, 0.01, 220);
+  const scene = new T.Scene(), camera = new T.PerspectiveCamera(58, 1, 0.01, 220); camera.layers.enable(1);   // layer 1 = far online cars: drawn, but skipped by the floor reflection and shadow passes
   // ---------------- post-processing: SSAO -> bloom -> grade (sRGB, vignette) -> FXAA ----------------
   let composer = null, ssao = null, bloom = null, fxaa = null, grade = null;
   const GradeShader = { uniforms: { tDiffuse: { value: null }, vig: { value: 0.32 }, sat: { value: 1.06 }, contrast: { value: 1.04 } },
@@ -3274,13 +3324,15 @@ const ONLINE = (() => {
     if (chatBox && chatBox.classList.contains('typing')) return;
     const k = e.key.toLowerCase(); if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
     if (keys[k]) return; keys[k] = true; audioStart();
+    if (ONLINE.room && mode === 'drive' && /^[1-8]$/.test(k)) { qSend('q' + (+k - 1)); return; }
+    if (k === 'v' && ONLINE.room) { talk(true); return; }
     if (k === 'escape' || k === 'p') { mode === 'drive' ? openMenu('pause') : mode === 'pause' ? drive(false) : 0; }
     if (mode !== 'drive') return;
     if (k === 'c') nextCam(); if (k === 'r') resetPlayer(); if (k === '[') gyroAdj(-5); if (k === ']') gyroAdj(5);
     if (k === 'm') { S.opt.sound = !S.opt.sound; toast('Sound ' + (S.opt.sound ? 'on' : 'off')); save(); }
     if (k === 't') openMenu('pause', 'tune'); if (k === 'enter' && ONLINE.room) { e.preventDefault(); chatOpen(); } if (k === 'h') { S.opt.hud = S.opt.hud === false; document.body.classList.toggle('nohud', S.opt.hud === false); toast('HUD ' + (S.opt.hud ? 'on' : 'off')); save(); }
   });
-  addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  addEventListener('keyup', e => { const k = e.key.toLowerCase(); keys[k] = false; if (k === 'v') talk(false); });
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   function gyroAdj(d) { S.tune.gyroGain = clamp(S.tune.gyroGain + d, 0, 100); applyTune(); toast('GYRO GAIN ' + S.tune.gyroGain + '%'); save(); }
   function nextCam() { S.opt.cam = (S.opt.cam + 1) % CAMS.length; toast('CAM · ' + CAMS[S.opt.cam]); save(); }
@@ -3315,7 +3367,7 @@ const ONLINE = (() => {
     const rest = () => { st.style.left = '16%'; st.style.top = '72%'; th.style.left = '84%'; th.style.top = '72%'; };
     rest();
     tz.addEventListener('pointerdown', e => {
-      if (e.target.closest('#tbtns')) return; e.preventDefault(); audioStart();
+      if (e.target.closest('#tbtns, #qchat, #talkB')) return; e.preventDefault(); audioStart();
       const [x, y] = LP(e);
       if (x < LW() / 2 && TCH.sId === null) { TCH.sId = e.pointerId; TCH.sx = x; place(st, x, y); knob(st, 0, 0); }
       else if (x >= LW() / 2 && TCH.tId === null) { TCH.tId = e.pointerId; TCH.ty = y; place(th, x, y); knob(th, 0, 0); }
@@ -3334,13 +3386,15 @@ const ONLINE = (() => {
     // top-bar buttons fire when the finger lifts (pointerup), not on 'click': iOS Safari drops clicks during touch-heavy play, which left PAUSE and CAM dead on iPhones.
     // The action runs before audio (an iOS audio hiccup can't block it), the stray click that follows is swallowed, and the lap-score box is a second pause button.
     let swallowT = 0;
-    const act = a => { if (a === 'menu') openMenu('pause'); if (a === 'cam') nextCam(); if (a === 'reset') resetPlayer(); if (a === 'gm') gyroAdj(-5); if (a === 'gp') gyroAdj(5); if (a === 'chat') chatOpen(); if (a === 'flip') { S.opt.flip = !S.opt.flip; save(); applyRot(); } };
+    const act = a => { if (a === 'menu') openMenu('pause'); if (a === 'cam') nextCam(); if (a === 'reset') resetPlayer(); if (a === 'gm') gyroAdj(-5); if (a === 'gp') gyroAdj(5); if (a === 'chat') qOpen(); if (a && a.startsWith('q')) qSend(a); if (a === 'flip') { S.opt.flip = !S.opt.flip; save(); applyRot(); } };
     const fire = a => { swallowT = performance.now(); try { act(a); } catch (e) { console.error(e); } try { audioStart(); } catch (e) { } };
     document.addEventListener('click', e => { if (performance.now() - swallowT < 450) { e.stopPropagation(); e.preventDefault(); } }, true);
     const tapBtn = (b, a) => { let down = 0; b.addEventListener('pointerdown', ev => { ev.stopPropagation(); down = performance.now(); });
       b.addEventListener('pointerup', ev => { ev.stopPropagation(); ev.preventDefault(); if (down && performance.now() - down < 1500) { down = 0; fire(a()); } });
       b.addEventListener('pointercancel', () => { down = 0; }); };
-    tz.querySelectorAll('#tbtns button').forEach(b => tapBtn(b, () => b.dataset.a));
+    tz.querySelectorAll('#tbtns button:not([data-a=talk]), #qchat button').forEach(b => tapBtn(b, () => b.dataset.a));
+    { const tb = tz.querySelector('#talkB'); if (tb) { tb.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); try { tb.setPointerCapture(ev.pointerId); } catch (e) { } talk(true); });
+      for (const evn of ['pointerup', 'pointercancel', 'lostpointercapture']) tb.addEventListener(evn, ev => { ev.stopPropagation(); talk(false); }); } }
     const tl = document.getElementById('hTL'); if (tl) tapBtn(tl, () => mode === 'drive' ? 'menu' : '');
     ['touchmove', 'gesturestart'].forEach(ev => document.addEventListener(ev, e => { if (mode === 'drive') e.preventDefault(); }, { passive: false }));
   })();
@@ -3363,9 +3417,9 @@ const ONLINE = (() => {
   }
 
   // ---------------- online (lights up on the shared page) ----------------
-  const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
+  const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v43', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v44', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3385,20 +3439,25 @@ const ONLINE = (() => {
     if (S.opt.track !== ti) { S.opt.track = ti; loadTrack(ti); }
     if (NET.aiBefore === undefined) NET.aiBefore = S.opt.ai; S.opt.ai = 0;
     const r = await ONLINE.join(lb, { name: S.opt.name }); if (r.err) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; return r.err; }
-    NET.room = r.room; NET.status = 'online'; r.room.onChat(chatShow); r.room.onPeers(() => { }, () => { if (NET.room === r.room) { NET.room = null; NET.status = 'solo'; } if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } });
+    NET.looks.clear(); NET.firstSeen.clear(); NET.room = r.room; NET.status = 'online'; if (r.spill) setTimeout(() => toast(r.spill), 400); voiceSync(); if (S.opt.voice !== 'off' && !VO.track) micOn().then(ok => { if (!ok) { S.opt.voice = 'off'; save(); } }); r.room.onChat(chatShow); r.room.onPeers(() => { }, () => { if (NET.room === r.room) { NET.room = null; NET.status = 'solo'; } if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } });
     newSession(); save(); return '';
   }
-  function leaveLobby() { ONLINE.leave(); newSession(); }
+  function leaveLobby() { ONLINE.leave(); if (VO.track) { const keep = S.opt.voice; micOff(); S.opt.voice = keep; } newSession(); }
   // ---------------- room chat while driving (Enter to talk) ----------------
   const chatBox = $('#chat'), chatLog = $('#chatLog'), chatIn = $('#chatIn');
   function chatShow(m) { if (!chatLog) return; const d = el('div'); if (!m.me) d.appendChild(el('b', '', m.n + ': ')); d.appendChild(document.createTextNode(m.t)); chatLog.appendChild(d); while (chatLog.children.length > 6) chatLog.firstChild.remove(); setTimeout(() => { d.style.opacity = '0'; setTimeout(() => d.remove(), 700); }, 9000); if (!m.me && mode !== 'drive' && tab === 'online') renderPanel(); }
+  // quick chat: the CHAT button (phones) opens one-tap phrases; keys 1-8 send them on a keyboard; "Type..." opens the text box (signed-in)
+  const qPanel = $('#qchat');
+  function qOpen() { if (!ONLINE.room || !qPanel) return; qPanel.classList.toggle('on'); }
+  function qSend(a) { if (!ONLINE.room) return; if (a === 'qtype') { qPanel && qPanel.classList.remove('on'); chatOpen(); return; } if (a === 'qx') { qPanel && qPanel.classList.remove('on'); return; }
+    const er = ONLINE.room.quick(+a.slice(1), S.opt.name); if (er) toast(er, 'bad'); qPanel && qPanel.classList.remove('on'); }
   function chatOpen() { if (!ONLINE.room || !chatBox) return; if (!ONLINE.room.canChat()) { toast('Sign in on the Online tab to chat'); return; } for (const k in keys) keys[k] = false; chatBox.classList.add('typing'); chatIn.value = ''; chatIn.focus(); }
   function chatClose() { if (!chatBox) return; chatBox.classList.remove('typing'); chatIn.blur(); }
   if (chatIn) { chatIn.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { const er = ONLINE.room && ONLINE.room.chat(chatIn.value); if (er) toast(er, 'bad'); else if (chatIn.value.trim() && ONLINE.room) chatShow(ONLINE.room.log[ONLINE.room.log.length - 1]); chatClose(); } else if (e.key === 'Escape') chatClose(); }); chatIn.addEventListener('blur', () => chatBox.classList.remove('typing')); }
   function pingNow() { if (!inClaude && ONLINE.status === 'ready' && track) ONLINE.ping(track.def.id, !!ONLINE.room); }
   // "online now" means somebody is actually there: page on screen AND touched in the last 3 minutes (or sitting in a room). Idle screens drop out; the next input brings them back.
   let lastAct = performance.now(), idleOff = false;
-  const wake = () => { lastAct = performance.now(); if (idleOff) { idleOff = false; pingNow(); } };
+  const wake = () => { lastAct = performance.now(); if (idleOff) { idleOff = false; pingNow(); } if (ONLINE.room && ONLINE.room.wakeAudio) ONLINE.room.wakeAudio(); };
   ['keydown', 'pointerdown', 'touchstart', 'wheel'].forEach(ev => addEventListener(ev, wake, { passive: true, capture: true }));
   setInterval(() => { try { for (const g of (navigator.getGamepads ? navigator.getGamepads() : [])) if (g && (g.buttons.some(b => b.pressed) || g.axes.some(a => Math.abs(a) > 0.25))) { wake(); break; } } catch (e) { } }, 2000);
   setInterval(() => { if (document.visibilityState === 'hidden' || inClaude || ONLINE.status !== 'ready') return;
@@ -3412,23 +3471,25 @@ const ONLINE = (() => {
   }
   function netSend(dt) {
     if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.066; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
-    try { NET.room.presence({ drift: { t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, sc: Math.round(score.lapPts + score.run), l: S.look, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight } }).catch(() => { }); } catch (e) { }
+    const lk = JSON.stringify(S.look); NET.lkN = (NET.lkN || 0) + 1; const sendLook = lk !== NET.lkSent || NET.lkN % 30 === 0 || NET.lkN < 15 || (NET.room.oldPeers && NET.room.oldPeers()); if (sendLook) NET.lkSent = lk;
+    try { NET.room.presence({ drift: { t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight } }).catch(() => { }); } catch (e) { }
   }
   function netRecv(dt) {
     if (!NET.room) return; let peers = []; try { peers = NET.room.peers(); } catch (e) { return; }
     const seen = new Set(), now = Date.now(); let n = 0;
     for (const p of peers) {
-      if (p.sameTab || p.kind !== 'viewer') continue; const d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 9) continue; n++;
-      const l = d.l && typeof d.l === 'object' ? d.l : {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
+      if (p.sameTab || p.kind !== 'viewer') continue; const d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
+      if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
+      const l = NET.looks.get(p.peer) || {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
       const sig = JSON.stringify(look), name = String(d.n || 'Driver').slice(0, 16); let nc = netCars.get(p.peer);
       if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(look); scene.add(mesh);
-        const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; mesh.add(sp);
+        const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; sp.userData.tag = 1; mesh.add(sp); const mic = new T.Sprite(new T.SpriteMaterial({ map: micTex(), depthTest: false, transparent: true })); mic.scale.set(0.05, 0.05, 1); mic.position.y = 0.215; mic.visible = false; mic.userData.tag = 1; mic.userData.mic = 1; mesh.add(mic);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
       seen.add(p.peer); nc.seenAt = now; const s = nc.sim, age = clamp((now - p.updatedAt) / 1000, 0, 0.25), k = 1 - Math.exp(-dt * 14);
       s.vx = num(d.vx, -12, 12); s.vy = num(d.vy, -12, 12); s.r = num(d.r, -30, 30); const tx = num(d.x, -50, 50) + s.vx * age, ty = num(d.y, -50, 50) + s.vy * age, tyaw = num(d.yw, -1e4, 1e4) + s.r * age;
       if (Math.hypot(tx - s.x, ty - s.y) > 1.5) { s.x = tx; s.y = ty; s.yaw = tyaw; } else { s.x += (tx - s.x) * k; s.y += (ty - s.y) * k; s.yaw += wrap(tyaw - s.yaw) * k; }
       s.delta = num(d.d, -1.4, 1.4); s.w = num(d.w, -20, 20); s.slip = num(d.sl, -1.6, 1.6); s.speed = Math.hypot(s.vx, s.vy); s.u = s.speed; s.inp.brake = d.br ? 1 : 0; s.ti = track.nearest(s.x, s.y, s.ti); s.lat = track.lateral(s.x, s.y, s.ti);
-      nc.tune = { camberF: num(d.cf, -12, 0), camberR: num(d.cr, -5, 0), offset: num(d.of, 0, 12), rideHeight: num(d.rh, 4, 9), toeF: 0, toeR: 0 }; nc.score = num(d.sc, 0, 1e9);
+      nc.tune = { camberF: num(d.cf, -12, 0), camberR: num(d.cr, -5, 0), offset: num(d.of, 0, 12), rideHeight: num(d.rh, 4, 9), toeF: 0, toeR: 0 }; nc.score = num(d.sc, 0, 1e9); const talking = !!d.vt && ONLINE.voice.hear && !ONLINE.voice.muted.has(p.peer) && !ONLINE.blocked.has(p.peer); if (talking !== nc.vt) { nc.vt = talking; nc.mesh.children.forEach(o => { if (o.userData.mic) o.visible = talking; }); }
     }
     // a late packet or two must not make a driver vanish and pop back: keep their car (coasting) for 3 s before removing it
     for (const [id, nc] of netCars) if (!seen.has(id)) { const s = nc.sim; s.x += s.vx * dt * 0.5; s.y += s.vy * dt * 0.5; if (now - (nc.seenAt || 0) > 3000) { GFX.disposeTree(nc.mesh); netCars.delete(id); } }
@@ -3690,7 +3751,7 @@ const ONLINE = (() => {
     return Promise.all([ONLINE.trackLeaders().then(r => BC.leaders = r), ONLINE.recentPbs(10).then(r => BC.recent = r), ONLINE.profile ? ONLINE.myRanks().then(r => BC.ranks = r) : (BC.ranks = null)]).then(() => true); }
   function boardFor(id, month) { const k = id + (month ? ':m' : ''); if (BC.boards[k]) return Promise.resolve(BC.boards[k]); return (month ? ONLINE.leaderboardMonth(id, 50) : ONLINE.leaderboard(id, 50)).then(r => (BC.boards[k] = r)); }
   // ---------- online-tab form state survives re-renders ----------
-  const F = { code: '', hostName: '', hostPub: true, hostMax: 10, hostTrack: null, find: '', draft: '' };
+  const F = { code: '', hostName: '', hostPub: true, hostMax: 12, hostTrack: null, find: '', draft: '' };
 
   function renderPanel() { const st = panel.scrollTop; renderPanel0(); const cr = el('div', 'credit'); cr.innerHTML = 'RC Drift Lab · made by <b>Stranger Kreations</b> · free to play'; if (VENMO) { cr.appendChild(document.createTextNode(' · ')); cr.appendChild(venmoBtn('chip in on Venmo', 'venmoLink')); } panel.appendChild(cr); panel.scrollTop = st; }
   function renderPanel0() {
@@ -3698,6 +3759,9 @@ const ONLINE = (() => {
     const add = n => { (cur || panel).appendChild(n); return n; }, top = () => { cur = null; }, msg = t => add(el('p', 'tip', t));
     const h = (t, right) => { cur = el('div', 'sec'); const hh = el('h3', '', t); if (right != null && right !== '') hh.appendChild(el('span', 'h3r', String(right))); cur.appendChild(hh); panel.appendChild(cur); return cur; };
     const onOff = (v, fn) => chips([{ id: true, name: 'On' }, { id: false, name: 'Off' }], v, fn);
+    const voiceRows = () => { add(row('Voice chat', chips([{ id: 'off', name: 'Off' }, { id: 'ptt', name: 'Push-to-talk', sub: 'hold TALK or V' }, { id: 'open', name: 'Open mic', sub: 'room hears you' }], S.opt.voice || 'off', v => setVoiceMode(v)), 'For online rooms. Talking needs sign-in; anyone in the room can listen. Headphones stop the game sound echoing into your mic.'));
+      add(row('Hear voices', onOff(S.opt.hear !== false, v => { S.opt.hear = v; save(); voiceSync(); })));
+      add(row('Voice volume', slider(0, 100, 5, S.opt.vvol ?? 100, v => v + '%', v => { S.opt.vvol = v; save(); voiceSync(); }))); };
     const O = ONLINE, web = !inClaude && O.status !== 'unavailable', inRoom = !!O.room;
     const signInBtn = (txt, cls) => { const g = el('button', cls || 'big', txt || 'Sign in with Google'); g.onclick = () => O.signInGoogle(); return g; };
 
@@ -3862,8 +3926,10 @@ const ONLINE = (() => {
         h('Your room', O.room.code); add(el('div', 'code', O.room.code));
         msg(O.lobby.name + ' · ' + tName(O.lobby.track) + ' · ' + (O.lobby.is_official ? 'always open' : O.lobby.is_public ? 'public' : 'private, code only') + ' · ' + O.room.count + ' / ' + (O.lobby.max_players || 10) + ' drivers');
         const ro = el('div', 'roster'), me = el('div', 'me'); me.appendChild(el('span', '', S.opt.name)); me.appendChild(el('small', '', 'you')); ro.appendChild(me);
-        for (const [pid, n] of Object.entries(O.room.names)) { const d = el('div'); d.appendChild(el('span', '', n)); d.appendChild(el('small', '', O.blocked.has(pid) ? 'blocked' : 'tap for profile')); d.style.cursor = 'pointer'; d.onclick = () => playerCard(/^[0-9a-f-]{36}$/.test(pid) ? pid : null, n); ro.appendChild(d); } add(ro);
-        if (O.room.direct() < Object.keys(O.room.names).length) msg('Some cars come through the server, so they may look a little choppier.');
+        for (const [pid, n] of Object.entries(O.room.names)) { const d = el('div'); d.appendChild(el('span', '', n)); d.appendChild(el('small', '', O.blocked.has(pid) ? 'blocked' : 'tap for profile')); if (O.room.voiceOn() && !O.blocked.has(pid)) { const mt = O.voice.muted.has(pid), mb = el('button', 'ghost vmute', mt ? '🔇 muted' : '🔊'); mb.title = mt ? 'Unmute' : 'Mute their voice'; mb.onclick = ev => { ev.stopPropagation(); if (O.voice.muted.has(pid)) O.voice.muted.delete(pid); else O.voice.muted.add(pid); O.room.hearAll(); renderPanel(); }; d.appendChild(mb); } d.style.cursor = 'pointer'; d.onclick = () => playerCard(/^[0-9a-f-]{36}$/.test(pid) ? pid : null, n); ro.appendChild(d); } add(ro);
+        if (O.room.direct() < Object.keys(O.room.names).length) msg('Some cars come through the server, so they may look a little choppier' + (S.opt.voice !== 'off' ? ', and those drivers can\'t hear voice.' : '.'));
+        if (O.room.voiceOn()) voiceRows(); else msg('The host turned voice chat off in this room.');
+        if (O.room.isHost()) add(row('Voice in your room', onOff(O.room.voiceOn(), async v => { const er = await O.room.setVoice(v); if (er) toast(er, 'bad'); renderPanel(); }), 'Switch voice off for everyone in this room.'));
         // room chat
         const log = el('div', 'thread small'); for (const m of O.room.log.slice(-20)) { const b = el('div', 'bub' + (m.me ? ' me' : '')); b.appendChild(el('div', '', (m.me ? '' : m.n + ': ') + m.t)); log.appendChild(b); } if (!O.room.log.length) log.appendChild(el('p', 'tip', 'Room chat is quiet. Press Enter while driving to chat.')); add(log); setTimeout(() => { log.scrollTop = log.scrollHeight; }, 0);
         if (O.room.canChat()) { const ci = el('input'); ci.type = 'text'; ci.maxLength = 160; ci.placeholder = 'Chat to the room…'; ci.onkeydown = e => { if (e.key === 'Enter') { const er = O.room.chat(ci.value); if (er) toast(er, 'bad'); ci.value = ''; renderPanel(); } }; add(ci); } else msg('Sign in to chat. You can still read along.');
@@ -3889,7 +3955,7 @@ const ONLINE = (() => {
           if (F.hostTrack == null) F.hostTrack = S.opt.track;
           const nm = el('input'); nm.type = 'text'; nm.maxLength = 32; nm.placeholder = O.profile.driver_name + "'s room"; nm.value = F.hostName; nm.oninput = () => F.hostName = nm.value; add(row('Room name', nm));
           add(row('Who can join', chips([{ id: true, name: 'Public', sub: 'listed for everyone' }, { id: false, name: 'Private', sub: 'code / invite only' }], F.hostPub, v => { F.hostPub = v; })));
-          add(row('Max drivers', slider(2, 10, 1, F.hostMax, v => v + ' drivers', v => { F.hostMax = v; })));
+          add(row('Max drivers', slider(2, 20, 1, F.hostMax, v => v + ' drivers', v => { F.hostMax = v; })));
           add(el('p', 'grp', 'Track'));
           add(trackChips(F.hostTrack, i => { F.hostTrack = i; renderPanel(); }, { two: true, noPb: true }));
           const tn = SIM.TRACK_DEFS[F.hostTrack].name, cb = el('button', 'big', 'Create room · ' + tn), co = el('p', 'tip', 'You get a 5-letter code and an invite link to share. The room stays open while someone is in it.');
@@ -3949,9 +4015,10 @@ const ONLINE = (() => {
       add(row('FPS counter', onOff(!!S.opt.showFps, v => { S.opt.showFps = v; save(); })));
       h('Sound'); add(row('Sound', onOff(S.opt.sound, v => { S.opt.sound = v; save(); }), 'M toggles it while driving.'));
       add(row('Volume', slider(0, 100, 5, S.opt.vol ?? 100, v => v + '%', v => { S.opt.vol = v; if (A.master) A.master.gain.value = 0.5 * v / 100; save(); })));
+      h('Voice chat'); voiceRows();
       h('Gameplay'); add(row('Sim speed', slider(60, 100, 5, S.opt.simSpeed || 100, v => v + '%', v => { S.opt.simSpeed = v; save(); }), 'Slows the whole world down (cars, AI, physics). 85% is the default and reads more like a real 1/10 car on a small screen. 100% is real time. Online rooms run at your own setting.'));
       h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', installEv ? 'big' : 'ghost', isApp() ? 'Installed as an app' : installEv ? 'Install app' : 'Add to home screen'); tb.onclick = () => tour(1); sv.disabled = isApp(); sv.onclick = async () => { if (!(await doInstall())) tour(1); renderPanel(); }; br.append(tb, sv); add(br);
-      if (web) { const pv = el('a', 'ghost', 'Privacy policy'); pv.href = 'privacy.html'; pv.target = '_blank'; pv.rel = 'noopener'; pv.style.textDecoration = 'none'; add(pv); }
+      if (web) { const pv = el('a', 'ghost', 'Privacy policy'); pv.href = 'privacy.html'; pv.target = '_blank'; pv.rel = 'noopener'; pv.style.textDecoration = 'none'; pv.style.color = 'inherit'; pv.style.textAlign = 'center'; add(pv); }
       msg('RC Drift Lab ' + VERSION + ' · made in Las Vegas by Stranger Kreations.');
     }
   }
@@ -3979,7 +4046,7 @@ const ONLINE = (() => {
     readInput(dt); netRecv(dt);
     if (mode !== 'pause') simulate(dt); netSend(dt);
     for (const c of cars) { if (!c._tm || (c._tmN = (c._tmN || 0) + 1) % 30 === 0) c._tm = Object.assign({}, SIM.DEF_TUNE, c.tune); GFX.poseCar(c.mesh, c.sim, c._tm, mode === 'pause' ? 0 : dt, world.night || world.dusk); }
-    for (const c of netCars.values()) GFX.poseCar(c.mesh, c.sim, Object.assign({}, SIM.DEF_TUNE, c.tune), dt, world.night || world.dusk);
+    for (const c of netCars.values()) { GFX.poseCar(c.mesh, c.sim, Object.assign({}, SIM.DEF_TUNE, c.tune), dt, world.night || world.dusk); lodNet(c); }
     updateCam(dt); audioUpdate(); if (mode === 'drive') { updateHud(); drawMini(); }
     if (composer) composer.render(dt); else renderer.render(scene, camera);
     // dynamic resolution: if a phone can't hold ~40 fps, drop render resolution (one-way per track, no rebuild hitches)
@@ -3991,6 +4058,32 @@ const ONLINE = (() => {
   function TRK() { const a = SIM.TRACK_DEFS.map((d, i) => [d, i]), k = a.findIndex(x => x[0].id === 'prodigy2'), j = a.findIndex(x => x[0].id === 'prodigy'); if (k > j + 1 && j >= 0) { const [x] = a.splice(k, 1); a.splice(j + 1, 0, x); } return a; }
   // narrow phones (and the sideways view): compact top-bar labels so the bar clears the lap-score box and the minimap (overlap made PAUSE/CAM untappable)
   function fitBar(w) { const n = w < 900; document.documentElement.classList.toggle('narrow', n); const L = n ? { gm: 'G −', gp: 'G +', reset: 'RESET' } : { gm: 'GYRO −', gp: 'GYRO +', reset: 'RESET' }; document.querySelectorAll('#tbtns button').forEach(b => { if (L[b.dataset.a]) b.textContent = L[b.dataset.a]; }); }
+  // online cars far from the camera (20-driver rooms): skip the floor reflection + shadow passes (layer 1) and, by day, the tiny light glows. Name tags always show.
+  function lodNet(nc) { const d = Math.hypot(nc.sim.x - camera.position.x, -nc.sim.y - camera.position.z), far = d > 9, glow = !far || !!(world.night || world.prodNight || world.dusk);
+    if (nc.far === far && nc.glow === glow) return; nc.far = far; nc.glow = glow;
+    nc.mesh.traverse(o => { if (o.isMesh || o.isSprite) o.layers.set(far ? 1 : 0); if (o.isSprite && !o.userData.tag) o.visible = glow; }); }
+  // ---------------- voice chat in rooms: off by default; push-to-talk (hold TALK / V) or open mic. Talking needs sign-in; anyone can listen ----------------
+  const VO = { stream: null, track: null, talk: false, level: 0, an: null, buf: null };
+  function voiceSync() { const v = ONLINE.voice; if (!v) return; v.hear = S.opt.hear !== false; v.vol = (S.opt.vvol ?? 100) / 100; v.track = VO.track; if (ONLINE.room) { ONLINE.room.setMic(VO.track); ONLINE.room.hearAll(); }
+    document.documentElement.classList.toggle('vptt', S.opt.voice === 'ptt' && !!VO.track); }
+  function canTalk() { return ONLINE.signedIn && ONLINE.signedIn() && !!ONLINE.profile && !ONLINE.banned; }
+  async function micOn() { if (VO.track) { voiceSync(); return true; }
+    if (!canTalk()) { toast('Sign in on the Online tab to talk. You can still hear the room.'); return false; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('This browser can\'t use the microphone', 'bad'); return false; }
+    try { VO.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+    catch (e) { toast('Microphone blocked. Allow it in your browser settings to talk.', 'bad'); return false; }
+    VO.track = VO.stream.getAudioTracks()[0]; VO.track.enabled = S.opt.voice === 'open';
+    try { audioStart(); if (AC) { const src = AC.createMediaStreamSource(VO.stream); VO.an = AC.createAnalyser(); VO.an.fftSize = 512; VO.buf = new Float32Array(VO.an.fftSize); src.connect(VO.an); } } catch (e) { VO.an = null; }
+    voiceSync(); return true; }
+  function micOff() { if (VO.stream) VO.stream.getTracks().forEach(t => t.stop()); VO.stream = VO.track = VO.an = null; VO.talk = false; voiceSync(); }
+  async function setVoiceMode(v) { S.opt.voice = v; save(); if (v === 'off') { micOff(); return; } const ok = await micOn(); if (!ok) { S.opt.voice = 'off'; save(); micOff(); } else { VO.track.enabled = v === 'open'; voiceSync(); toast(v === 'ptt' ? 'Push-to-talk: hold TALK (or V on a keyboard)' : 'Open mic: the room hears you when you speak'); } if (mode !== 'drive') renderPanel(); }
+  function talk(on) { if (!VO.track || S.opt.voice !== 'ptt') return; VO.track.enabled = !!on; VO.talk = !!on; const b = document.querySelector('#talkB'); if (b) b.classList.toggle('on', !!on); }
+  // talking flag for the 🎙 over your car on other screens: PTT = button held; open mic = voice level over a threshold
+  function voiceTalking() { if (!VO.track || !ONLINE.room || !ONLINE.room.voiceOn()) return false; if (S.opt.voice === 'ptt') return VO.talk;
+    if (!VO.an || !AC || AC.state !== 'running') return true; // can't measure (audio still locked) → show the mic as live, it is
+    VO.an.getFloatTimeDomainData(VO.buf); let s = 0; for (let i = 0; i < VO.buf.length; i++) s += VO.buf[i] * VO.buf[i]; VO.level = (VO.level || 0) * 0.6 + Math.sqrt(s / VO.buf.length) * 0.4;
+    const now = performance.now(); if (VO.level > 0.012) VO.lastLoud = now; return now - (VO.lastLoud || -1e9) < 450; }
+  const micTex = (() => { let t = null; return () => t || (t = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const g = c.getContext('2d'); g.fillStyle = 'rgba(10,11,15,0.85)'; g.beginPath(); g.arc(32, 32, 30, 0, 6.3); g.fill(); g.fillStyle = '#35e0ff'; g.fillRect(25, 12, 14, 26); g.beginPath(); g.arc(32, 38, 7, 0, 3.15); g.fill(); g.strokeStyle = '#35e0ff'; g.lineWidth = 4; g.beginPath(); g.arc(32, 32, 14, 0.2, 2.94); g.stroke(); g.fillRect(30, 46, 4, 8); g.fillRect(24, 52, 16, 4); const tx = new T.CanvasTexture(c); return tx; })()); })();
   function bakeStatic(g) {
     try { g.updateMatrixWorld(true); const inv = new T.Matrix4().copy(g.matrixWorld).invert(), by = new Map(), dead = [];
       g.traverse(o => { if (!o.isMesh || Array.isArray(o.material) || o.isSkinnedMesh) return; let q = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); for (const a of Object.keys(q.attributes)) if (!['position', 'normal', 'uv'].includes(a)) q.deleteAttribute(a);
@@ -4000,7 +4093,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); } };
+  window.__game = { joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt })) };
 })();
 
 </script>
