@@ -243,7 +243,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <script>
 // ===================== SIM: tracks, car physics, AI drivers =====================
 // Units: meters, seconds, radians. 1/10 scale RWD drift chassis. x fwd, y left, yaw CCW.
-const SIM_K = { muF: 2.2929, muR: 1.5798, a0F: 0.109, s0R: 0.5937, s0X: 0.2, yawD: 0.012, kapW: 1, gyroK: 0.5923, gFilt: 0.0045, J: 0.22, lat: 0.006, kin: 0.751, fA: 1.2174, fW: 1.5, dX: 1.1449, Iz0: 0.018, grip: 1.3763, bite: 1.2598, gTr: 0.7788, dSpin: 0 };   // v46 retune (feelopt.js): grip peaks at low wheelspin, quicker transitions, tighter entries
+const SIM_K = { muF: 2.2929, muR: 1.5798, a0F: 0.109, s0R: 0.5937, s0X: 0.2, yawD: 0.012, kapW: 1, gyroK: 0.66, gFilt: 0.0045, J: 0.22, lat: 0.006, kin: 0.751, fA: 1.2174, fW: 1.5, dX: 1.1449, Iz0: 0.0195, grip: 1.3763, bite: 1.2598, gTr: 0.7788, dSpin: 0 };   // v46 retune (feelopt.js): grip peaks at low wheelspin, quicker transitions, tighter entries
 const SIM = (function () {
   const G = 9.81, MASS = 1.45, WB = 0.257;
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -264,7 +264,7 @@ const SIM = (function () {
     { name: '17.5T (mild)', p: 0.85 }, { name: '13.5T', p: 1.08 }, { name: '10.5T (comp standard)', p: 1.32 }, { name: '8.5T (wild)', p: 1.6 }, { name: '6.5T (unlimited)', p: 1.95 }];
 
   const DEF_TUNE = {
-    gyroGain: 76, steerLock: 68, dualRate: 100, steerExpo: 30, servoSpeed: 0.05,
+    gyroGain: 76, gyroSpeed: 78, steerLock: 68, dualRate: 100, steerExpo: 30, servoSpeed: 0.05,
     ackermann: 25, camberF: -7, camberR: -2, caster: 8, toeF: 1, toeR: 1.5,
     weightRear: 57, weight: 1450, rideHeight: 6, springF: 50, springR: 45, tireF: 2, tireR: 2, offset: 6,
     topSpeed: 100, motor: 1, fdr: 10.5, punch: 75, throttleExpo: 25, dragBrake: 15, brake: 60,
@@ -277,16 +277,16 @@ const SIM = (function () {
   };
 
   // Tune -> physical parameters
-  function derive(tune, surfKey) {
-    const t = Object.assign({}, DEF_TUNE, tune), mu = (SURFACES[surfKey] || SURFACES.concrete).mu * SIM_K.grip;
+  function derive(tune, surfKey, Kset) {
+    const K0 = Kset || SIM_K, t = Object.assign({}, DEF_TUNE, tune), mu = (SURFACES[surfKey] || SURFACES.concrete).mu * K0.grip;
     const wr = clamp(t.weightRear, 40, 70) / 100, p = {};
     p.a = WB * wr; p.b = WB * (1 - wr);          // CG -> front / rear axle
     p.h = 0.020 + t.rideHeight * 0.0016;         // CG height
     p.m = clamp(t.weight || 1450, 1100, 2100) / 1000;   // v46: all-up weight (ballast). Heavier = more momentum, slower to bite and to rotate;
     const mr = p.m / MASS, ls = Math.pow(mr, -0.14);       // lighter = snappier. Tires are load-sensitive: grip per kg drops as weight goes up.
-    p.Iz = (SIM_K.Iz0 + Math.abs(wr - 0.5) * 0.012) * mr;   // a touch more yaw inertia: calmer, less twitchy rotation
+    p.Iz = (K0.Iz0 + Math.abs(wr - 0.5) * 0.012) * mr;   // a touch more yaw inertia: calmer, less twitchy rotation
     const camF = 1 - 0.0025 * Math.pow(t.camberF + 8, 2);
-    const K = SIM_K;
+    const K = K0; p.K = K0; p.gTr = K0.gTr ? clamp(t.gyroSpeed == null ? 78 : t.gyroSpeed, 0, 95) / 100 : 0;   // gyro back-off on flicks (tunable; Classic has none)
     p.muF = mu * K.muF * TIRES[t.tireF].k * camF * (1 + (t.caster - 8) * 0.006) * (1 + (50 - t.springF) * 0.0022) * (1 + t.ackermann * 0.0008);
     p.muR = mu * K.muR * TIRES[t.tireR].k * (1 + (50 - t.springR) * 0.0022) * ls; p.muF *= ls;
     p.a0F = K.a0F * (1 - clamp(t.toeF, -3, 4) * 0.04);
@@ -506,11 +506,11 @@ const SIM = (function () {
     const dRate = c._dt && c._dirP != null ? wrap(dir - c._dirP) / c._dt : 0; c._dirP = dir; c._bR = (c._bR || 0) + ((c.r - dRate) - (c._bR || 0)) * 0.08;   // how fast the drift ANGLE is changing (yaw rate minus path turn rate)
     const req = fSlip + clamp(err * 1.3 - c.r * 0.1 - c._bR * 0.22, -0.24, 0.24);   // keep the fronts at/below their grip peak (~5.5°): car pivots off planted fronts
     const Lk = Math.max(0.15, (c.stL || p.lock) * p.dual), gq = p.gyroK * c.gyroR; let sRaw = (req + gq) / Lk;
-    if (sRaw * Math.sign(c.gyroR) > 0 && SIM_K.gTr) sRaw = (req + gq) / (Lk + p.gyroK * SIM_K.gTr * Math.abs(c.gyroR));
+    if (sRaw * Math.sign(c.gyroR) > 0 && p.gTr) sRaw = (req + gq) / (Lk + p.gyroK * p.gTr * Math.abs(c.gyroR));
     return clamp(sRaw, -1, 1);
   }
   function stepCar(c, dt, tr) {
-    const p = c.p, inp = c.inp, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
+    const p = c.p, inp = c.inp, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw), KK = p.K || SIM_K;
     let u = c.vx * cs + c.vy * sn, v = -c.vx * sn + c.vy * cs;
     // v46: big-lock chassis (up to 90°). The gyro always has the full lock; the STICK only gets past ~68° once the car is sideways
     // enough to use it (like a driver's thumb): full lock while going straight would just plough the fronts.
@@ -523,14 +523,14 @@ const SIM = (function () {
       const mix = clamp(inp.angleMix == null ? 1 : inp.angleMix, 0, 1);
       st = direct * (1 - mix) + angleControl(c, inp.angle) * mix;
     } else st = direct;
-    c.gyroR += (c.r - c.gyroR) * Math.min(1, dt / SIM_K.gFilt);
+    c.gyroR += (c.r - c.gyroR) * Math.min(1, dt / KK.gFilt);
     // drift gyro "speed": when the driver steers WITH the rotation (asking for it, e.g. flicking into a transition) the gyro
     // backs off so the car swings quickly; hands off or steering against the rotation it gives full countersteer.
-    const gF = 1 - SIM_K.gTr * clamp(st * Math.sign(c.gyroR), 0, 1);
+    const gF = 1 - (p.gTr || 0) * clamp(st * Math.sign(c.gyroR), 0, 1);
     const cmd = clamp(st * c.stL * p.dual - p.gyroK * gF * c.gyroR, -p.lock, p.lock);
     if (!c.dq) { c.dq = new Float32Array(64); c.dqi = 0; c.dqt = 0; }
     c.dqt += dt; while (c.dqt >= 0.001) { c.dqt -= 0.001; c.dq[c.dqi = (c.dqi + 1) & 63] = cmd; }
-    const lagN = Math.round(SIM_K.lat * 1000), dcmd = c.dq[(c.dqi - lagN + 64) & 63];
+    const lagN = Math.round(KK.lat * 1000), dcmd = c.dq[(c.dqi - lagN + 64) & 63];
     const dmax = p.servoRate * dt; c.delta += clamp(dcmd - c.delta, -dmax, dmax);
     // --- loads with longitudinal weight transfer ---
     const M = p.m || MASS, L = p.a + p.b, wt = M * c.ax * p.h / L;
@@ -553,10 +553,10 @@ const SIM = (function () {
     // magnitude: how far past the grip threshold the contact patch is (plastic on tile: peak grip at LOW wheelspin, then it falls
     // toward sliding friction — feather it and it hooks up, smash it and it lets go). Direction: against the slip, lateral-weighted.
     const mx = (c.w - u) / vg * p.kLonR / p.s0X, ny = -rv / vg * p.kLatR / p.s0R, nmM = Math.hypot(mx, ny) + 1e-6;
-    const nx = (c.w - u) / vg * p.kLonR / SIM_K.dX * (1 + SIM_K.dSpin * Math.min(1, Math.max(0, (nmM - 2) / 3))), nm = Math.hypot(nx, ny) + 1e-6;   // smashed: the spinning rear drives along the chassis (holds speed at big angle)
-    const fall = 1 - (1 - SIM_K.kin) * Math.min(1, Math.max(0, (nmM - SIM_K.fA) / SIM_K.fW));
+    const nx = (c.w - u) / vg * p.kLonR / KK.dX * (1 + (KK.dSpin || 0) * Math.min(1, Math.max(0, (nmM - 2) / 3))), nm = Math.hypot(nx, ny) + 1e-6;   // smashed: the spinning rear drives along the chassis (holds speed at big angle)
+    const fall = 1 - (1 - KK.kin) * Math.min(1, Math.max(0, (nmM - KK.fA) / KK.fW));
     const sat = Math.tanh(nmM) * p.muR * Nr * fall;
-    const beta = Math.abs(Math.atan2(rv, Math.max(0.3, Math.abs(u)))); c.slide = Math.min(1, Math.max(0, (beta - 0.08) / 0.3)); const kw = SIM_K.bite + (p.kapW - SIM_K.bite) * c.slide;   // drive bite: brisk straight-line launch, but sideways the drive stays inside the tire's grip
+    const beta = Math.abs(Math.atan2(rv, Math.max(0.3, Math.abs(u)))); c.slide = Math.min(1, Math.max(0, (beta - 0.08) / 0.3)); const kw = KK.bite + (p.kapW - KK.bite) * c.slide;   // drive bite: brisk straight-line launch, but sideways the drive stays inside the tire's grip
     const Fxr = sat * nx / nm * kw, Fyr = sat * ny / nm * p.stab * (0.35 + 0.65 * lowG);
     const sx = c.w - u, sy = -rv;
     // --- ESC / motor: throttle sets wheel-speed target, punch limits torque ---
@@ -568,7 +568,7 @@ const SIM = (function () {
       else Fm = clamp(p.Fstall * (-br * 0.45 - c.w / p.wTop), -p.Fpunch, p.Fpunch); // reverse
     } else if (th > 0.01) { Fm = clamp(p.Fstall * (th - c.w / (p.wTop * turbo)), -p.Fstall * (0.3 + p.drag), p.Fpunch); if (Fm > 0) Fm *= clamp((p.vCap * 1.12 - c.w) / 0.8, 0, 1); }   // ESC limits MOTOR rpm (wheel speed), not ground speed: you can always rev it up and break the rear loose below top speed
     else Fm = clamp(-p.Fstall * (0.15 + p.drag * 2) * c.w / p.wTop * 4, -3, 3);
-    c.w += (Fm - Fxr) / SIM_K.J * dt;
+    c.w += (Fm - Fxr) / KK.J * dt;
     // --- integrate body ---
     const Fx = Fxf + Fxr - 0.05 * u, Fy = Fyf + Fyr - 0.05 * v, Mz = p.a * Fyf - p.b * Fyr - c.r * p.yawD;
     const axb = Fx / M, ayb = Fy / M;
@@ -705,7 +705,7 @@ const SIM = (function () {
     const fAng = sp > 0.4 ? Math.atan2(c.v + c.p.a * c.r, Math.max(0.2, c.u)) : 0;
     const dDes = fAng + clamp(e * g.kS - c.r * g.kD, -g.aMax, g.aMax);
     const Lk = (c.stL || c.p.lock) * c.p.dual, gq = c.p.gyroK * c.gyroR; let sRaw = (dDes + gq) / Lk;   // undo the gyro the way the car mixes it
-    if (sRaw * Math.sign(c.gyroR) > 0 && SIM_K.gTr) sRaw = (dDes + gq) / (Lk + c.p.gyroK * SIM_K.gTr * Math.abs(c.gyroR));   // gyro backs off when steering with the rotation
+    if (sRaw * Math.sign(c.gyroR) > 0 && c.p.gTr) sRaw = (dDes + gq) / (Lk + c.p.gyroK * c.p.gTr * Math.abs(c.gyroR));   // gyro backs off when steering with the rotation
     const stick = unExpo(sRaw, c.p.expo || 0);
     // ---- throttle: wheel speed sets the angle (spin the rear past the ground speed), speed error and line error trim it ----
     const ang = Math.abs(c.slip), over = c.slip * Math.sign(betaT || 1) - Math.abs(betaT), tight = latErr * Math.sign(betaT || 0);
@@ -736,6 +736,8 @@ const SIM = (function () {
   return { driftCheck, DRIFT_IN, G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
 })();
 SIM.K = SIM_K;
+// v45 constants: the 'Classic' physics option (same code path reproduces v45 exactly with these)
+SIM.K_CLASSIC = { muF: 1.72, muR: 1.3, a0F: 0.097, s0R: 0.5, s0X: 0.9, yawD: 0.0085, kapW: 1.0, gyroK: 0.8, gFilt: 0.0045, J: 0.22, lat: 0.006, kin: 0.78, fA: 2.2, fW: 4, dX: 0.9, Iz0: 0.0195, grip: 1, bite: 1.6, gTr: 0, dSpin: 0 };
 if (typeof module !== 'undefined') module.exports = SIM;
 
 </script>
@@ -3368,7 +3370,7 @@ const ONLINE = (() => {
     newSession();
   }
   function makeCarObj(kind, look, tune, name) {
-    const sim = SIM.makeCar(cars.length); sim.p = SIM.derive(tune, track.surface);
+    const sim = SIM.makeCar(cars.length); sim.p = SIM.derive(tune, track.surface, kind === 'player' ? physK() : undefined);
     const mesh = GFX.buildCar(look, kind === 'player' && !isTouchDev()); scene.add(mesh);
     return { kind, look, tune, name, sim, mesh, skid: [null, null], skidN: 0 };
   }
@@ -3494,7 +3496,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v46.2', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3720,7 +3722,7 @@ const ONLINE = (() => {
 
   // ---------------- menu UI ----------------
   const TUNE_UI = [
-    ['Gyro', [['gyroGain', 'Gyro gain', '%', 0, 100, 1, 'How hard the gyro counter-steers for you. Too low and the car spins; too high and it steers for you and wags on straights. Change it while driving with [ and ].']]],
+    ['Gyro', [['gyroGain', 'Gyro gain', '%', 0, 100, 1, 'How hard the gyro counter-steers for you. Too low and the car spins; too high and it steers for you and wags on straights. Change it while driving with [ and ].'], ['gyroSpeed', 'Gyro flick response', '%', 0, 95, 1, 'How much the gyro lets go when you flick into a transition. Higher = snappier, quicker swings. Lower = calmer, the gyro holds the car more. (New physics only.)']]],
     ['Steering', [['steerLock', 'Steering lock', '°', 45, 90, 1, 'Max front wheel angle (inside wheel). Comp chassis run 70–90°. More lock holds deeper angle before spinning.'], ['dualRate', 'Dual rate (EPA)', '%', 50, 100, 1, 'Scales your stick only. The gyro still gets full lock.'], ['steerExpo', 'Steering expo', '%', 0, 60, 1, 'Softens the stick around center for smoother hands.'], ['servoSpeed', 'Servo speed', 's/60°', 0.04, 0.2, 0.01, 'Lower is faster. A slow servo makes the gyro late and the car wobble.'], ['ackermann', 'Ackermann', '%', 0, 100, 1, '0 = parallel steering: fast, free-flowing. More Ackermann scrubs speed at lock and makes the car calmer and easier to place.']]],
     ['Alignment', [['camberF', 'Front camber', '°', -12, 0, 0.5, 'Front grip at lock peaks around -7° to -9° with drift caster.'], ['camberR', 'Rear camber', '°', -5, 0, 0.5, 'More negative = more side bite, less forward bite.'], ['caster', 'Caster', '°', 4, 12, 0.5, 'More caster adds front bite at lock and helps the car self-steer.'], ['toeF', 'Front toe-out', '°', -2, 4, 0.5, 'Toe-out sharpens initiation. Toe-in (negative) calms it.'], ['toeR', 'Rear toe-in', '°', 0, 4, 0.5, 'More rear toe-in = more rear side grip and stability, less angle.'], ['offset', 'Wheel offset', 'mm', 0, 12, 1, 'Wider track is a touch more stable — and fills the arches.']]],
     ['Chassis', [['weight', 'Car weight', 'g', 1200, 2000, 10, 'All-up weight with ballast. Lighter = snappy, bites and flicks quicker. Heavier = more momentum, smoother and slower to rotate. Stock 1450 g.'], ['weightRear', 'Rear weight bias', '%', 45, 65, 1, 'Rear-heavy drives forward harder and is steadier in drift. More front weight rotates faster.'], ['rideHeight', 'Ride height', 'mm', 4, 9, 0.5, 'Higher CG = more weight transfer under throttle and brake.'], ['springF', 'Front spring', '', 0, 100, 5, 'Softer front = more front grip.'], ['springR', 'Rear spring', '', 0, 100, 5, 'Softer rear = more rear grip and forward bite. Stiffer rear slides easier.']]],
@@ -3731,7 +3733,8 @@ const ONLINE = (() => {
   function openMenu(kind, t) { mode = kind === 'pause' ? 'pause' : 'menu'; menuKind = kind; if (t) tab = t; else if (kind === 'pause') tab = 'drive'; document.body.className = 'inmenu ' + (kind === 'pause' ? 'paused' : ''); camInit = kind === 'pause'; renderNav(); renderPanel(); }
   function drive(fresh) { if (fresh) { newSession(); score.lapN = undefined; } mode = 'drive'; document.body.className = S.opt.hud === false ? 'nohud' : ''; audioStart(); camInit = false; camYaw = player.sim.yaw; }
   function goFull() { try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f && !document.fullscreenElement) { const p = f.call(d); if (p && p.then) p.then(() => { try { screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } } catch (e) { } }
-  function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface); player.tune = S.tune; }
+  function physK() { return S.opt.physics === 'classic' ? SIM.K_CLASSIC : undefined; }
+  function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface, physK()); player.tune = S.tune; }
   function rebuildPlayer() { GFX.disposeTree(player.mesh); player.mesh = GFX.buildCar(S.look, !isTouchDev()); player.look = S.look; scene.add(player.mesh); save(); }
   function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && ONLINE.unread) b.appendChild(el('i', 'badge', String(ONLINE.unread))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
   const row = (label, node, tip) => { const r = el('div', 'row'); const l = el('label', '', label); r.appendChild(l); r.appendChild(node); if (tip) { r.appendChild(el('p', 'tip', tip)); } return r; };
@@ -3992,6 +3995,8 @@ const ONLINE = (() => {
     }
 
     if (tab === 'tune') {
+      h('Car physics', S.opt.physics === 'classic' ? 'classic' : 'new');
+      add(row('Physics', chips([{ id: 'new', name: 'New (v46)', sub: 'grip builds, quicker swings' }, { id: 'classic', name: 'Classic (v45)', sub: 'the old feel' }], S.opt.physics === 'classic' ? 'classic' : 'new', v => { S.opt.physics = v; applyTune(); save(); toast(v === 'classic' ? 'Classic physics (v45)' : 'New physics (v46)'); }), 'Flip between them on the same track and tell us which bits you like in Social → Forum → Game feedback. AI cars always run the new physics.'));
       h('Steering feel', 'driver aids');
       const mChips = (cur, fn) => chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], cur ? 1 : 0, v => { fn(!!v); save(); });
       add(row('Phone (touch / tilt)', mChips(S.opt.angleAssist !== false, v => S.opt.angleAssist = v), 'Default Direct: tilt and thumb steering feel most like a real radio.'));
