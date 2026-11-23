@@ -3149,10 +3149,10 @@ const ONLINE = (() => {
   // ---------------- saved state ----------------
   const KEY = 'rcdrift_v1';
   function isTouchDev() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || false; }
-  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
-    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
+  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
+    opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
     pad: { mode: 'auto', steerAxis: 0, thrAxis: 1, steerInv: false, thrInv: true, cS: 0, cT: 0, dead: 4 }, best: {}, bestPts: {}, pb: {}, slots: {} };
-  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.quality = 1; S.opt.ai = 3; } if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
+  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
   let saveT = 0; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 300); if (window.ONLINE && ONLINE.profile) ONLINE.saveGarage({ look: S.look, tune: S.tune, pb: S.pb, opt: { cam: S.opt.cam, kbThrottle: S.opt.kbThrottle, kbAssist: S.opt.kbAssist, angleMix: S.opt.angleMix, angleAssist: S.opt.angleAssist, angleAssistPad: S.opt.angleAssistPad }, slots: S.slots }); };
 
   // ---------------- renderer ----------------
@@ -3365,7 +3365,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v41', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v42', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3609,7 +3609,7 @@ const ONLINE = (() => {
       ['Welcome to RC Drift Lab', '<p>A 1/10 RC drift sim on real P-tile. Made by <b>Stranger Kreations</b>, Las Vegas.</p><p>Want the 30-second tour? You can skip it and find it later on the Drive tab.</p>'],
       ['Save it like an app', isApp() ? '<p>You\'re already running it as an app. Nice.</p>' : (installEv ? '<p>Tap <b>Install app</b> below. It goes on your home screen and opens full screen, like any other app.</p>' : save) + '<p class="tmut">Then it opens from your home screen with one tap, full screen, and solo mode even works offline.</p>'],
       ['Controls', ctrl],
-      ['How to drift it', '<p>This isn\'t a race. <b>Throttle swings the tail and sets the angle</b>, it doesn\'t just add speed. Rev it before turn-in to break the rear loose, then hold angle with the throttle.</p><p><b>Angle assist</b> (keyboard and phone): the stick asks for an angle. <b>Direct</b> (controller/radio): you steer like the real car and the gyro helps. Switch under <b>Tuning → Steering feel</b>.</p>'],
+      ['How to drift it', '<p>This isn\'t a race. <b>Throttle swings the tail and sets the angle</b>, it doesn\'t just add speed. Rev it before turn-in to break the rear loose, then hold angle with the throttle.</p><p><b>Direct</b> (the default): you steer like the real car and the gyro helps. <b>Angle assist</b>: the stick asks for a drift angle instead. Switch under <b>Tuning → Steering feel</b>.</p>'],
       ['Tracks', '<ul>' + tracks + '</ul><p>Pick one on the <b>Drive</b> tab.</p><p><b>Yellow hatched zones score.</b> Outer zones (OZ): get your <b>rear bumper</b> into the band by the outside wall while sliding. Clip points (CP): get your <b>nose</b> into the box on the inside. Each zone pays for how much of it you fill, <b>how deep</b> you get (closer to the wall = more) and <b>how much angle</b> you carry (50°+ = full). The yellow IN ZONE tag shows how you\'re doing live.</p>'],
       ['Garage + Tuning', '<p><b>Garage</b>: drift cars and movie cars, paint, wheels, wings, liveries.</p><p><b>Tuning</b>: gyro gain, steering lock, power, gearing. Too twitchy? Turn the gyro up or lower <b>Sim speed</b> (Settings tab).</p>'],
       ['Go drive', '<p>That\'s it. Replay this any time: <b>Drive tab → How to play</b>.</p>'],
@@ -3745,7 +3745,7 @@ const ONLINE = (() => {
 
     if (tab === 'tune') {
       h('Steering feel', 'driver aids');
-      add(row('Keyboard & phone', chips([{ id: 1, name: 'Angle assist', sub: 'stick = drift angle' }, { id: 0, name: 'Direct', sub: 'stick = wheels' }], S.opt.angleAssist === false ? 0 : 1, v => { S.opt.angleAssist = !!v; save(); })));
+      add(row('Keyboard & phone', chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], S.opt.angleAssist === false ? 0 : 1, v => { S.opt.angleAssist = !!v; save(); })));
       add(row('Controller & radio', chips([{ id: 0, name: 'Direct', sub: 'stick = wheels' }, { id: 1, name: 'Angle assist', sub: 'stick = drift angle' }], S.opt.angleAssistPad ? 1 : 0, v => { S.opt.angleAssistPad = !!v; save(); })));
       const anyA = S.opt.angleAssist !== false || !!S.opt.angleAssistPad;
       add(row('Assist strength', slider(0, 100, 5, S.opt.angleMix, v => v + '%', v => { S.opt.angleMix = v; save(); }), anyA ? 'Only affects inputs set to Angle assist. 100% = full angle hold. 50% = half angle hold, half direct steering, for a more natural feel. 0% = direct.' : 'Both inputs are on Direct, so this does nothing right now.'));
@@ -3931,7 +3931,7 @@ const ONLINE = (() => {
       h('Camera'); add(row('View', chips(CAMS.map((n, i) => ({ id: i, name: n })), S.opt.cam, v => { S.opt.cam = v; save(); }), 'Press C while driving (Y on a controller) to cycle.'));
       add(row('Stand cam zoom', slider(60, 200, 10, Math.round((S.opt.standZoom || 1) * 100), v => v + '%', v => { S.opt.standZoom = v / 100; save(); }), 'How tight the driver-stand camera follows your car.'));
       h('Display');
-      add(row('Graphics', chips([{ id: 0, name: 'Low', sub: 'older phones' }, { id: 1, name: 'Medium', sub: 'most phones' }, { id: 2, name: 'High', sub: 'computers' }], S.opt.quality, v => { S.opt.quality = v; save(); resize(); loadTrack(S.opt.track); applyTune(); })));
+      add(row('Graphics', chips([{ id: 0, name: 'Low', sub: 'very old phones' }, { id: 1, name: 'Medium', sub: 'older phones' }, { id: 2, name: 'High', sub: 'phones + computers' }], S.opt.quality, v => { S.opt.quality = v; save(); resize(); loadTrack(S.opt.track); applyTune(); })));
       add(row('HUD', onOff(S.opt.hud !== false, v => { S.opt.hud = v; save(); }), 'H toggles it while driving. Handy for clean screenshots and videos.'));
       add(row('Speed', chips([{ id: 'mph', name: 'Scale mph' }, { id: 'kmh', name: 'Scale km/h' }], S.opt.units || 'mph', v => { S.opt.units = v; save(); }), 'Scale speed: what the car would be doing at full size.'));
       add(row('FPS counter', onOff(!!S.opt.showFps, v => { S.opt.showFps = v; save(); })));
