@@ -3783,7 +3783,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v56', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v57', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4022,52 +4022,20 @@ const ONLINE = (() => {
     const gs = AC.createBufferSource(); gs.buffer = buf; gs.loop = true; const gf = AC.createBiquadFilter(); gf.type = 'bandpass'; gf.frequency.value = 3200; gf.Q.value = 2.2; const gg = AC.createGain(); gg.gain.value = 0; gs.connect(gf); gf.connect(gg); gg.connect(master); gs.start(); A.gg = gg; A.gf = gf;
     // tire scrub
     const ns = AC.createBufferSource(); ns.buffer = buf; ns.loop = true; const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 0.7; const ng = AC.createGain(); ng.gain.value = 0; ns.connect(bp); bp.connect(ng); ng.connect(master); ns.start(); A.ng = ng; A.bp = bp;
-    // v56 engine voices (JDM I6 / Muscle V8): firing-frequency saw + sub + square -> soft clip -> lowpass, with a V8 lope LFO
-    A.e1 = mk('sawtooth'); A.e2 = mk('sawtooth'); A.e3 = mk('square');
-    const eg2 = AC.createGain(); A.eg2 = eg2; const eg3 = AC.createGain(); A.eg3 = eg3; const emix = AC.createGain(); emix.gain.value = 0.5;
-    A.e1.connect(emix); A.e2.connect(eg2); eg2.connect(emix); A.e3.connect(eg3); eg3.connect(emix);
-    const ws = AC.createWaveShaper(); A.ews = ws; const lope = AC.createGain(); lope.gain.value = 1; A.elope = lope;
-    const lfo = AC.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 6; const ld = AC.createGain(); ld.gain.value = 0; lfo.connect(ld); ld.connect(lope.gain); lfo.start(); A.elfo = lfo; A.eld = ld;
-    const el2 = AC.createBiquadFilter(); el2.type = 'lowpass'; el2.frequency.value = 900; el2.Q.value = 1.2; A.elp = el2;
-    const eg = AC.createGain(); eg.gain.value = 0; A.eg = eg;
-    emix.connect(ws); ws.connect(lope); lope.connect(el2); el2.connect(eg); eg.connect(master);
-    A.shape = k => { const n = 1024, cu = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cu[i] = Math.tanh(x * k) / Math.tanh(k); } ws.curve = cu; };
-    A.shape(2); A.eR = 0; A.thrP = 0; A.mode = null;
   }
-  const SND_MODES = { real: { name: 'Authentic', sub: 'raw brushless whine' }, smooth: { name: 'Smooth', sub: 'brushless, easy on the ears' }, jdm: { name: 'JDM I6', sub: 'high-revving turbo six' }, muscle: { name: 'Muscle V8', sub: 'lumpy cross-plane V8' } };
-  const ENG = { jdm: { cyl: 6, idle: 950, red: 8200, sub: 0.35, sq: 0.16, lope: 0, drive: 2.2, lp0: 900, lpL: 2400, lpR: 1600, vol: 0.15 },
-    muscle: { cyl: 8, idle: 720, red: 6800, sub: 0.75, sq: 0.07, lope: 0.4, drive: 3.4, lp0: 420, lpL: 1500, lpR: 900, vol: 0.19 } };
-  function sndBurst(kind) {   // v56: JDM blow-off "pssh" / V8 decel pops
-    if (!AC || !A.noise) return; const t = AC.currentTime, mv = (S.opt.motorVol ?? 100) / 100;
-    if (kind === 'bov') { const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = A.noise; f.type = 'bandpass'; f.frequency.setValueAtTime(3800, t); f.frequency.exponentialRampToValueAtTime(1500, t + 0.35); f.Q.value = 0.9;
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16 * mv, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42); s.connect(f); f.connect(g); g.connect(A.master); s.start(t, Math.random()); s.stop(t + 0.45); }
-    else for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) { const t0 = t + 0.05 + Math.random() * 0.45, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = A.noise; f.type = 'lowpass'; f.frequency.value = 900 + Math.random() * 700;
-      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.28 * mv, t0 + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.07); s.connect(f); f.connect(g); g.connect(A.master); s.start(t0, Math.random()); s.stop(t0 + 0.08); }
-  }
+  const SND_MODES = { real: { name: 'Authentic', sub: 'raw brushless whine' }, smooth: { name: 'Smooth', sub: 'same motor, easier on the ears' } };
   function audioUpdate() {
     if (!AC) return; const c = player.sim, on = S.opt.sound && mode === 'drive', t = AC.currentTime, w = Math.abs(c.w);
     const p = c.p, load = clamp(Math.abs((c.inp.brake > 0.02 ? -c.inp.brake : c.inp.throttle) - c.w / p.wTop) * 1.4, 0, 1);
-    const sm = S.opt.sndMode || 'smooth', mv = (S.opt.motorVol ?? 100) / 100, E = ENG[sm];
-    if (A.mode !== sm) { A.mode = sm; if (E) { A.shape(E.drive); A.eg2.gain.value = E.sub; A.eg3.gain.value = E.sq; } }
-    if (E) {   // engine: virtual rpm follows the rear wheel speed (drift cars live at high rpm), bounces off the limiter when you hold it pinned
-      A.wg.gain.setTargetAtTime(0, t, 0.03); A.gg.gain.setTargetAtTime(0, t, 0.03);
-      const rn = Math.tanh(w / 8), rpm = E.idle + (E.red - E.idle) * rn, ff = rpm / 60 * E.cyl / 2, thr = clamp(c.inp.throttle, 0, 1);
-      A.e1.frequency.setTargetAtTime(ff, t, 0.03); A.e2.frequency.setTargetAtTime(ff / 2, t, 0.03); A.e3.frequency.setTargetAtTime(ff * 2, t, 0.03);
-      A.elfo.frequency.setTargetAtTime(rpm / 60 / 2, t, 0.05); A.eld.gain.setTargetAtTime(E.lope * Math.max(0, 1 - rn * 1.6), t, 0.08);
-      A.elp.frequency.setTargetAtTime(E.lp0 + E.lpL * thr + E.lpR * rn, t, 0.04);
-      const lim = thr > 0.9 && rn > 0.96 && (Math.floor(t * 15) % 2) ? 0.35 : 1;
-      A.eg.gain.setTargetAtTime(on ? mv * E.vol * (0.45 + 0.35 * thr + 0.2 * rn) * lim : 0, t, 0.02);
-      if (on && A.thrP > 0.65 && thr < 0.2 && rn > 0.45) sndBurst(sm === 'jdm' ? 'bov' : 'pops');
-      A.thrP = thr;
-    } else {
-      A.eg.gain.setTargetAtTime(0, t, 0.03);
-      const real = sm === 'real', kn = Math.tanh(w / 6.3), f = real ? 80 + w * 230 : 80 + 1450 * kn;
-      A.w1.frequency.setTargetAtTime(f, t, 0.015); A.w2.frequency.setTargetAtTime(f * 1.012, t, 0.015); A.w3.frequency.setTargetAtTime(f * 2, t, 0.015);
-      A.wg3.gain.setTargetAtTime(real ? 0.12 : 0.12 - 0.08 * kn, t, 0.05);
-      A.wf.frequency.setTargetAtTime(real ? 400 + w * 300 + load * 500 : 400 + 1300 * kn + load * 400, t, 0.03); A.wl.frequency.setTargetAtTime(real ? 12000 : 2800, t, 0.05);
-      A.wg.gain.setTargetAtTime(on ? mv * (real ? Math.min(0.16, w * 0.004 + load * Math.min(1, 0.25 + w * 0.12) * 0.11) : Math.min(0.13, Math.min(w, 9) * 0.004 + load * Math.min(1, 0.25 + w * 0.12) * 0.1)) : 0, t, 0.025);
-      A.gg.gain.setTargetAtTime(on ? mv * (real ? Math.min(0.05, w * 0.0045) : Math.min(0.035, w * 0.004)) : 0, t, 0.04); A.gf.frequency.setTargetAtTime(real ? 1500 + w * 260 : 1500 + 1700 * kn, t, 0.05);
-    }
+    const real = S.opt.sndMode === 'real', mv = (S.opt.motorVol ?? 100) / 100;
+    // v57 Smooth: pitch still tracks the whole wheel-speed range (power curve: ~70% of the real interval, so boost and turbo are clearly audible),
+    // tops out ~2.4 kHz instead of 4+ kHz, softer harmonics; the edge sharpens a touch while turbo is in.
+    const kn = Math.tanh(w / 6.3), f = real ? 80 + w * 230 : 80 + 300 * Math.pow(w, 0.7), tb = c.tb || 0;
+    A.w1.frequency.setTargetAtTime(f, t, 0.015); A.w2.frequency.setTargetAtTime(f * 1.012, t, 0.015); A.w3.frequency.setTargetAtTime(f * 2, t, 0.015);
+    A.wg3.gain.setTargetAtTime(real ? 0.12 : 0.06 - 0.03 * kn + 0.07 * tb, t, 0.05);
+    A.wf.frequency.setTargetAtTime(real ? 400 + w * 300 + load * 500 : f * 1.15 + load * 400, t, 0.03); A.wl.frequency.setTargetAtTime(real ? 12000 : Math.min(4200, 1800 + f * 0.9), t, 0.05);
+    A.wg.gain.setTargetAtTime(on ? mv * (real ? Math.min(0.16, w * 0.004 + load * Math.min(1, 0.25 + w * 0.12) * 0.11) : Math.min(0.13, Math.min(w, 10) * 0.004 + load * Math.min(1, 0.25 + w * 0.12) * 0.1)) : 0, t, 0.025);
+    A.gg.gain.setTargetAtTime(on ? mv * (real ? Math.min(0.05, w * 0.0045) : Math.min(0.035, w * 0.004)) : 0, t, 0.04); A.gf.frequency.setTargetAtTime(real ? 1500 + w * 260 : 1300 + f * 0.9, t, 0.05);
     const scrub = Math.hypot(c.wheelSlip || 0, c.speed * Math.sin(c.slip)); A.ng.gain.setTargetAtTime(on ? Math.min(0.22, Math.max(0, scrub - 0.25) * 0.055) : 0, t, 0.06); A.bp.frequency.setTargetAtTime(1900 + c.speed * 330, t, 0.1);
   }
   function sfxHit(v) { if (!AC || !S.opt.sound) return; const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); s.buffer = A.noise; f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = Math.min(0.6, v * 0.25); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.14); s.connect(f); f.connect(g); g.connect(A.master); s.start(); s.stop(AC.currentTime + 0.15); }
@@ -4668,7 +4636,7 @@ const ONLINE = (() => {
       add(row('FPS counter', onOff(!!S.opt.showFps, v => { S.opt.showFps = v; save(); })));
       h('Sound'); add(row('Sound', onOff(S.opt.sound, v => { S.opt.sound = v; save(); }), 'M toggles it while driving.'));
       add(row('Volume', slider(0, 100, 5, S.opt.vol ?? 100, v => v + '%', v => { S.opt.vol = v; if (A.master) A.master.gain.value = 0.5 * v / 100; save(); })));
-      add(row('Sound mode', chips(Object.keys(SND_MODES).map(k => ({ id: k, name: SND_MODES[k].name, sub: SND_MODES[k].sub })), S.opt.sndMode || 'smooth', v => { S.opt.sndMode = v; save(); renderPanel(); }), 'Authentic = the real brushless scream. Smooth = same motor, easier on the ears. JDM I6 and Muscle V8 swap in an engine for fun (blow-off valve / decel pops when you lift).'));
+      add(row('Sound mode', chips(Object.keys(SND_MODES).map(k => ({ id: k, name: SND_MODES[k].name, sub: SND_MODES[k].sub })), S.opt.sndMode === 'real' ? 'real' : 'smooth', v => { S.opt.sndMode = v; save(); renderPanel(); }), 'Authentic = the real brushless scream. Smooth = same motor and the same rise and fall (you still hear boost and turbo), with the shrill top end taken off.'));
       add(row('Motor sound', slider(0, 100, 5, S.opt.motorVol ?? 100, v => v + '%', v => { S.opt.motorVol = v; save(); }), 'Motor whine + gear noise only. Tire scrub and hits stay at full volume.'));
       h('Voice chat'); voiceRows();
       h('Gameplay'); add(row('Sim speed', slider(60, 100, 5, S.opt.simSpeed || 100, v => v + '%', v => { S.opt.simSpeed = v; save(); }), 'Slows the whole world down (cars, AI, physics). 85% is the default and reads more like a real 1/10 car on a small screen. 100% is real time. Online rooms run at your own setting.'));

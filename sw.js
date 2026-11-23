@@ -1,6 +1,6 @@
 // RC Drift Lab service worker: lets Android/desktop install it as an app and keeps it playable offline (solo).
 // Page itself: network first, so updates always land. Car bodies, textures and the 3D engine: cached for speed.
-const CACHE = 'rcdl-v56';
+const CACHE = 'rcdl-v57';
 const CDN = /^https:\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com)\//;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', 'manifest.webmanifest', 'icon-192.png']).catch(() => {}))); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
