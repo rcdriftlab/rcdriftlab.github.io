@@ -3365,7 +3365,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0 }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v42', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v43', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
@@ -3396,7 +3396,14 @@ const ONLINE = (() => {
   function chatClose() { if (!chatBox) return; chatBox.classList.remove('typing'); chatIn.blur(); }
   if (chatIn) { chatIn.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { const er = ONLINE.room && ONLINE.room.chat(chatIn.value); if (er) toast(er, 'bad'); else if (chatIn.value.trim() && ONLINE.room) chatShow(ONLINE.room.log[ONLINE.room.log.length - 1]); chatClose(); } else if (e.key === 'Escape') chatClose(); }); chatIn.addEventListener('blur', () => chatBox.classList.remove('typing')); }
   function pingNow() { if (!inClaude && ONLINE.status === 'ready' && track) ONLINE.ping(track.def.id, !!ONLINE.room); }
-  setInterval(() => { if (document.visibilityState !== 'hidden') pingNow(); }, 60000);
+  // "online now" means somebody is actually there: page on screen AND touched in the last 3 minutes (or sitting in a room). Idle screens drop out; the next input brings them back.
+  let lastAct = performance.now(), idleOff = false;
+  const wake = () => { lastAct = performance.now(); if (idleOff) { idleOff = false; pingNow(); } };
+  ['keydown', 'pointerdown', 'touchstart', 'wheel'].forEach(ev => addEventListener(ev, wake, { passive: true, capture: true }));
+  setInterval(() => { try { for (const g of (navigator.getGamepads ? navigator.getGamepads() : [])) if (g && (g.buttons.some(b => b.pressed) || g.axes.some(a => Math.abs(a) > 0.25))) { wake(); break; } } catch (e) { } }, 2000);
+  setInterval(() => { if (document.visibilityState === 'hidden' || inClaude || ONLINE.status !== 'ready') return;
+    if (!ONLINE.room && performance.now() - lastAct > 180000) { if (!idleOff) { idleOff = true; ONLINE.pingOff(); } return; }
+    pingNow(); }, 60000);
   document.addEventListener('visibilitychange', () => { if (inClaude || ONLINE.status !== 'ready') return; if (document.visibilityState === 'hidden') ONLINE.pingOff(); else pingNow(); });
   addEventListener('pagehide', () => { if (!inClaude && ONLINE.status === 'ready') ONLINE.pingOff(); });
   async function netInit() {
@@ -3645,7 +3652,12 @@ const ONLINE = (() => {
       b.onclick = () => { if (!b.disabled) fn(i); }; w.appendChild(b); }); return w; };
   const statStrip = () => { const L = ONLINE.live || ONLINE.stats; if (!L) return null; const w = el('div', 'stats');
     const it = (n, lab, live) => { const d = el('div', 'st' + (live ? ' live' : '')); d.appendChild(el('b', '', fmt(n))); d.appendChild(el('span', '', lab)); w.appendChild(d); };
-    it(L.online || 0, 'online now', true); it(L.today || 0, 'played today'); it(L.drivers || 0, 'signed up'); it(L.laps || 0, 'laps posted'); return w; };
+    it(L.online || 0, 'online now', true); it(L.today || 0, 'played today'); it(L.drivers || 0, 'signed up'); it(L.laps || 0, 'laps posted');
+    // where they are: most people drive solo, so say so instead of leaving the room list looking empty
+    if (L.online) { const T = L.tracks || {}, parts = Object.keys(T).sort((a, b) => T[b] - T[a]).map(k => tName(k) + ' ' + T[k]), inR = L.in_rooms || 0, solo = Math.max(0, L.online - inR);
+      const p = el('p', 'tip stwhere'); p.textContent = (parts.length ? 'Driving now: ' + parts.join(' · ') + '. ' : '') + (solo ? solo + ' solo' : '') + (solo && inR ? ', ' : '') + (inR ? inR + ' in rooms' : '') + (!inR ? '. Host or join a room on the Online tab to drive together.' : '.');
+      const box = el('div'); box.appendChild(w); box.appendChild(p); return box; }
+    return w; };
   // ---------- player card: profile, PBs, message / block / report ----------
   function playerCard(id, name) {
     const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard'; document.body.appendChild(ov); const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov) close(); };
