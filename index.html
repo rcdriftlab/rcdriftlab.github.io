@@ -250,7 +250,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <script>
 // ===================== SIM: tracks, car physics, AI drivers =====================
 // Units: meters, seconds, radians. 1/10 scale RWD drift chassis. x fwd, y left, yaw CCW.
-const SIM_K = { muF: 2.2929, muR: 1.5798, a0F: 0.109, s0R: 0.5937, s0X: 0.2, yawD: 0.012, kapW: 1, gyroK: 0.66, gFilt: 0.0045, J: 0.22, lat: 0.006, kin: 0.751, fA: 1.2174, fW: 1.5, dX: 1.1449, Iz0: 0.0195, grip: 1.3763, bite: 1.2598, gTr: 0.7788, dSpin: 0 };   // v46 retune (feelopt.js): grip peaks at low wheelspin, quicker transitions, tighter entries
+const SIM_K = { muF: 2.2929, muR: 1.5798, a0F: 0.109, s0R: 0.5937, s0X: 0.2, yawD: 0.012, kapW: 1, gyroK: 0.66, gFilt: 0.0045, J: 0.22, lat: 0.006, kin: 0.751, fA: 1.2174, fW: 1.5, dX: 1.1449, Iz0: 0.0195, grip: 1.3763, bite: 1.2598, gTr: 0.7788, dSpin: 0, esc2: 1, mStiff: 12 };   // v46 retune (feelopt.js): grip peaks at low wheelspin, quicker transitions, tighter entries
 const SIM = (function () {
   const G = 9.81, MASS = 1.45, WB = 0.257;
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -313,7 +313,7 @@ const SIM = (function () {
     p.Fstall = 11 * mp * (t.fdr / 10.5);
     p.Fpunch = p.Fstall * (0.25 + t.punch / 100 * 0.75);
     p.vCap = (t.topSpeed || 100) / 100 * (2.6 + mp * 3.3);   // ESC speed limit on ground speed: keeps straights sane, never chokes wheelspin in a slide
-    p.thrExpo = t.throttleExpo / 100; p.drag = t.dragBrake / 100; p.Fbrake = 1.5 + t.brake / 100 * 9;
+    p.thrExpo = t.throttleExpo / 100; p.rise = 0.018 + 0.34 * Math.pow(1 - clamp(t.punch, 0, 100) / 100, 1.5); p.Fdrive = p.Fstall * (K0.mStiff || 1); p.drag = t.dragBrake / 100; p.Fbrake = 1.5 + t.brake / 100 * 9;
     p.stab = 1 + (t.offset - 6) * 0.004;
     return p;
   }
@@ -524,6 +524,9 @@ const SIM = (function () {
     if (sRaw * Math.sign(c.gyroR) > 0 && p.gTr) sRaw = (req + gq) / (Lk + p.gyroK * p.gTr * Math.abs(c.gyroR));
     return clamp(sRaw, -1, 1);
   }
+  const AIC = 1.25;   // v53: the AI's wheel-speed ceiling (x ESC speed limit) — keeps its trigger finger sane on the stiffer ESC
+  function thrCurve(t, e) { return e >= 0 ? t * (1 - e) + t * t * t * e : t * (1 + e) - (1 - Math.pow(1 - t, 3)) * e; }
+  function unCurve(d, e) { let lo = 0, hi = 1; for (let k = 0; k < 14; k++) { const m = (lo + hi) / 2; if (thrCurve(m, e) < d) lo = m; else hi = m; } return (lo + hi) / 2; }
   function stepCar(c, dt, tr) {
     const p = c.p, inp = c.inp, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw), KK = p.K || SIM_K;
     let u = c.vx * cs + c.vy * sn, v = -c.vx * sn + c.vy * cs;
@@ -571,18 +574,29 @@ const SIM = (function () {
     const nx = (c.w - u) / vg * p.kLonR / KK.dX * (1 + (KK.dSpin || 0) * Math.min(1, Math.max(0, (nmM - 2) / 3))), nm = Math.hypot(nx, ny) + 1e-6;   // smashed: the spinning rear drives along the chassis (holds speed at big angle)
     const fall = 1 - (1 - KK.kin) * Math.min(1, Math.max(0, (nmM - KK.fA) / KK.fW));
     const sat = Math.tanh(nmM) * p.muR * Nr * fall;
-    const beta = Math.abs(Math.atan2(rv, Math.max(0.3, Math.abs(u)))); c.slide = Math.min(1, Math.max(0, (beta - 0.08) / 0.3)); const kw = KK.bite + (p.kapW - KK.bite) * c.slide;   // drive bite: brisk straight-line launch, but sideways the drive stays inside the tire's grip
+    const beta = Math.abs(Math.atan2(rv, Math.max(0.3, Math.abs(u)))); c.slide = Math.min(1, Math.max(0, (beta - 0.08) / 0.3)); const bt = KK.esc2 ? 1 + (KK.bite - 1) * (1 - Math.min(1, Math.max(0, (nmM - KK.fA) / KK.fW))) : KK.bite, kw = bt + (p.kapW - bt) * c.slide;   // v53: the straight-line bite is a hooked-up tire: smash it from a roll and it's gone (roll into it to launch)   // drive bite: brisk straight-line launch, but sideways the drive stays inside the tire's grip
     const Fxr = sat * nx / nm * kw, Fyr = sat * ny / nm * p.stab * (0.35 + 0.65 * lowG);
     const sx = c.w - u, sy = -rv;
     // --- ESC / motor: throttle sets wheel-speed target, punch limits torque ---
-    let th = clamp(inp.throttle, 0, 1); th = th * (1 - p.thrExpo) + th * th * th * p.thrExpo;
+    let th = clamp(inp.throttle, 0, 1);
+    if (KK.esc2) th = thrCurve(th, p.thrExpo);   // throttle curve: + softens the bottom, - makes it hit early
+    else th = th * (1 - p.thrExpo) + th * th * th * p.thrExpo;
     const turbo = 1 + p.turbo * Math.max(0, (clamp(inp.throttle, 0, 1) - 0.85) / 0.15);   // ESC turbo timing: kicks in at the top of the trigger
     const br = clamp(inp.brake, 0, 1); let Fm;
     if (br > 0.02) {
       if (c.w > 0.15 || u > 0.25) Fm = -br * p.Fbrake * Math.tanh(c.w / 0.1);
       else Fm = clamp(p.Fstall * (-br * 0.45 - c.w / p.wTop), -p.Fpunch, p.Fpunch); // reverse
+      c.duty = 0;
+    } else if (KK.esc2 && th > 0.01) {
+      // v53 ESC: the trigger sets motor DUTY (= wheel-speed target) and a real brushless motor holds it hard against the tires,
+      // so part throttle really means part wheel speed (roll on and it grips, mid trigger keeps the rear spinning, full trigger = huge wheel speed).
+      // Punch = how fast the duty is allowed to rise (spin-up), lifting is instant and the motor actively slows the wheels (quick decel).
+      // The speed limit governs GROUND speed, never wheel speed, so a slide always gets the full wheelspin.
+      c.duty = th > (c.duty || 0) ? Math.min(th, (c.duty || 0) + dt / p.rise) : th;
+      const wTt = p.wTop * turbo; Fm = clamp(p.Fdrive * (c.duty - c.w / wTt), c.w > Math.max(0, u) + 0.15 ? -p.Fdrive * 0.5 : -p.Fstall * (0.3 + p.drag), p.Fdrive);   // lifting kills wheelspin fast; below road speed it only drags like before
+      if (Fm > 0) Fm *= clamp((p.vCap * 1.12 - u) / 0.8, 0, 1);
     } else if (th > 0.01) { Fm = clamp(p.Fstall * (th - c.w / (p.wTop * turbo)), -p.Fstall * (0.3 + p.drag), p.Fpunch); if (Fm > 0) Fm *= clamp((p.vCap * 1.12 - c.w) / 0.8, 0, 1); }   // ESC limits MOTOR rpm (wheel speed), not ground speed: you can always rev it up and break the rear loose below top speed
-    else Fm = clamp(-p.Fstall * (0.15 + p.drag * 2) * c.w / p.wTop * 4, -3, 3);
+    else { Fm = clamp(-p.Fstall * (0.15 + p.drag * 2) * c.w / p.wTop * 4, -3, 3); c.duty = 0; if (KK.esc2 && c.w > Math.max(0, u) + 0.2) Fm -= KK.J * (c.w - Math.max(0, u)) / 0.08; }   // v53: off the trigger a spun-up rear drops back to road speed fast (light wheels + motor)
     c.w += (Fm - Fxr) / KK.J * dt;
     // --- integrate body ---
     const Fx = Fxf + Fxr - 0.05 * u, Fy = Fyf + Fyr - 0.05 * v, Mz = p.a * Fyf - p.b * Fyr - c.r * p.yawD;
@@ -746,7 +760,11 @@ const SIM = (function () {
     }
     if (over > 0) wT -= over * g.kO;
     if (ang > 1.2) wT = Math.min(wT, sp * 0.7);
-    let throttle = clamp(c.w / (c.p.wTop || 30) + (wT - c.w) * 0.5, 0, 1), brake = 0;
+    let throttle, brake = 0;
+    if ((c.p.K || SIM_K).esc2) {   // v53 ESC: trigger = wheel speed. The AI's finger is smooth (its gains were fitted on a laggy motor), so it eases toward its target
+      const wTc = clamp(wT, 0, Math.min(c.p.wTop, c.p.vCap * AIC));
+      throttle = wTc > 0.05 ? Math.max(0.012, unCurve(wTc / c.p.wTop, c.p.thrExpo)) : 0;
+    } else throttle = clamp(c.w / (c.p.wTop || 30) + (wT - c.w) * 0.5, 0, 1);
     if (sp > vT + 0.6 && ang < 0.3 && Math.abs(betaT) < 0.25) { throttle = 0; brake = 0.45; }
     // stuck / spun recovery (the game resets a car that has been stuck for a while, like a marshal would)
     const along = Math.cos(c.yaw) * tr.TX[i] + Math.sin(c.yaw) * tr.TY[i];
@@ -760,7 +778,7 @@ const SIM = (function () {
     return c.inp;
   }
 
-  return { driftCheck, DRIFT_IN, G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
+  return { thrCurve, unCurve, driftCheck, DRIFT_IN, G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
 })();
 SIM.K = SIM_K;
 // v45 constants: the 'Classic' physics option (same code path reproduces v45 exactly with these)
@@ -3733,7 +3751,7 @@ const ONLINE = (() => {
   function readInput(dt) {
     const L = keys['arrowleft'] || keys['a'], R = keys['arrowright'] || keys['d'], U = keys['arrowup'] || keys['w'], D = keys['arrowdown'] || keys['s'] || keys[' '];
     const tgt = (L ? 1 : 0) - (R ? 1 : 0); inp.kbS += clamp(tgt - inp.kbS, -dt * (tgt ? 4.2 : 7), dt * (tgt ? 4.2 : 7));
-    const tt = U ? (keys['shift'] ? 1 : S.opt.kbThrottle / 100) : 0; inp.kbT += clamp(tt - inp.kbT, -dt * 14, dt * 14);
+    const tt = U ? (keys['shift'] ? 1 : S.opt.kbThrottle / 100) : 0; inp.kbT += clamp(tt - inp.kbT, -dt * 14, dt * (player && player.sim.speed < 1.2 ? 3 : 14));   // v53: keys roll into the throttle from a stop (a full stab just spins the tires)
     let st = inp.kbS, th = inp.kbT, br = D ? 1 : 0; inp.src = 'kb';
     const pad = readPad();
     const touching = TCH.sId !== null || TCH.tId !== null;
@@ -3753,7 +3771,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v52', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v53', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4034,7 +4052,7 @@ const ONLINE = (() => {
     ['Alignment', [['camberF', 'Front camber', '°', -12, 0, 0.5, 'Front grip at lock peaks around -7° to -9° with drift caster.'], ['camberR', 'Rear camber', '°', -5, 0, 0.5, 'More negative = more side bite, less forward bite.'], ['caster', 'Caster', '°', 4, 12, 0.5, 'More caster adds front bite at lock and helps the car self-steer.'], ['toeF', 'Front toe-out', '°', -2, 4, 0.5, 'Toe-out sharpens initiation. Toe-in (negative) calms it.'], ['toeR', 'Rear toe-in', '°', 0, 4, 0.5, 'More rear toe-in = more rear side grip and stability, less angle.'], ['offset', 'Wheel offset', 'mm', 0, 12, 1, 'Wider track is a touch more stable — and fills the arches.']]],
     ['Chassis', [['weight', 'Car weight', 'g', 1200, 2000, 10, 'All-up weight with ballast. Lighter = snappy, bites and flicks quicker. Heavier = more momentum, smoother and slower to rotate. Stock 1450 g.'], ['weightRear', 'Rear weight bias', '%', 45, 65, 1, 'Rear-heavy drives forward harder and is steadier in drift. More front weight rotates faster.'], ['rideHeight', 'Ride height', 'mm', 4, 9, 0.5, 'Higher CG = more weight transfer under throttle and brake.'], ['springF', 'Front spring', '', 0, 100, 5, 'Softer front = more front grip.'], ['springR', 'Rear spring', '', 0, 100, 5, 'Softer rear = more rear grip and forward bite. Stiffer rear slides easier.']]],
     ['Tires', [['tireF', 'Front compound', 'sel:TIRES', 0, 4, 1, 'Plastic drift tire hardness. Softer grips more. Match it to the surface.'], ['tireR', 'Rear compound', 'sel:TIRES', 0, 4, 1, 'Less rear grip than front = looser, more angle. More = faster, more forward drive.']]],
-    ['Power', [['topSpeed', 'ESC speed limit', '%', 60, 160, 5, 'Caps your speed on the straights without cutting power in a slide. Lower = slower, more technical.'], ['motor', 'Motor', 'sel:MOTORS', 0, 4, 1, 'Fewer turns = more wheel speed and punch.'], ['fdr', 'Final drive ratio', ':1', 8.5, 13, 0.1, 'Lower FDR = more wheel speed. Higher = more torque, less top end.'], ['punch', 'ESC punch', '%', 20, 100, 5, 'How hard the ESC lets the motor hit.'], ['throttleExpo', 'Throttle expo', '%', 0, 60, 5, 'Softens the bottom of the trigger for finer wheel-speed control.'], ['dragBrake', 'Drag brake', '%', 0, 50, 1, 'Braking when you are off throttle. More helps the rear step out on lift.'], ['brake', 'Brake strength', '%', 0, 100, 5, 'Rear-only braking, like the real thing.']]]];
+    ['Power', [['topSpeed', 'ESC speed limit', '%', 60, 160, 5, 'Caps your ground speed on the straights. It never limits wheel speed, so a slide always gets full wheelspin. Lower = slower, more technical.'], ['motor', 'Motor', 'sel:MOTORS', 0, 4, 1, 'Fewer turns = more wheel speed and punch.'], ['fdr', 'Final drive ratio', ':1', 8.5, 13, 0.1, 'Lower FDR = more wheel speed. Higher = more torque, less top end.'], ['punch', 'ESC punch', '%', 20, 100, 5, 'How fast the rear spins up when you squeeze the trigger. 100 = snaps up instantly (like a race ESC), lower = softer, lazier hit. Lifting is always instant.'], ['throttleExpo', 'Throttle curve', '%', -50, 60, 5, 'How the trigger maps to wheel speed. + softens the bottom (easy to roll in and hook up, more travel for mid-corner wheel speed). 0 = linear. − makes the bottom hit early and hard.'], ['dragBrake', 'Drag brake', '%', 0, 50, 1, 'Braking when you are off throttle. More helps the rear step out on lift.'], ['brake', 'Brake strength', '%', 0, 100, 5, 'Rear-only braking, like the real thing.']]]];
   let menuKind = 'main', tab = 'drive';
   const menu = $('#menu'), panel = $('#panel'), nav = $('#nav');
   function openMenu(kind, t) { mode = kind === 'pause' ? 'pause' : 'menu'; menuKind = kind; if (t) tab = t; else if (kind === 'pause') tab = 'drive'; document.body.className = 'inmenu ' + (kind === 'pause' ? 'paused' : ''); camInit = kind === 'pause'; OV.enter = true; OV.focus = null; OV.user = 0; renderNav(); renderPanel(); }
