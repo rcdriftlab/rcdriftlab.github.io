@@ -3783,7 +3783,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v54', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v55', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4015,7 +4015,7 @@ const ONLINE = (() => {
     const wg2 = AC.createGain(); wg2.gain.value = 0.5, A.wg3 = AC.createGain(); A.wg3.gain.value = 0.12;
     const wf = AC.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 900; wf.Q.value = 0.9;
     const wg = AC.createGain(); wg.gain.value = 0;
-    A.w1.connect(wf); A.w2.connect(wg2); wg2.connect(wf); A.w3.connect(A.wg3); A.wg3.connect(wf); wf.connect(wg); wg.connect(master);
+    A.w1.connect(wf); A.w2.connect(wg2); wg2.connect(wf); A.w3.connect(A.wg3); A.wg3.connect(wf); const wl = AC.createBiquadFilter(); wl.type = 'lowpass'; wl.frequency.value = 2800; wl.Q.value = 0.5; wf.connect(wl); wl.connect(wg); wg.connect(master);   // v55: lowpass takes the shrill edge off
     A.wg = wg; A.wf = wf;
     // gear-mesh / spur noise: tight bandpass on noise, tracks wheel speed
     const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; A.noise = buf;
@@ -4026,12 +4026,14 @@ const ONLINE = (() => {
   function audioUpdate() {
     if (!AC) return; const c = player.sim, on = S.opt.sound && mode === 'drive', t = AC.currentTime, w = Math.abs(c.w);
     const p = c.p, load = clamp(Math.abs((c.inp.brake > 0.02 ? -c.inp.brake : c.inp.throttle) - c.w / p.wTop) * 1.4, 0, 1);
-    const f = 80 + w * 230;                                     // motor whine climbs fast with wheel speed
+    // v55: pitch rises like before at low wheel speed but rolls off up top (v53 lets the rear spin to ~18 m/s, which used to scream at 4 kHz+)
+    const mv = (S.opt.motorVol ?? 100) / 100, kn = Math.tanh(w / 6.3), f = 80 + 1450 * kn;
     A.w1.frequency.setTargetAtTime(f, t, 0.015); A.w2.frequency.setTargetAtTime(f * 1.012, t, 0.015); A.w3.frequency.setTargetAtTime(f * 2, t, 0.015);
-    A.wf.frequency.setTargetAtTime(400 + w * 300 + load * 500, t, 0.03);
+    A.wg3.gain.setTargetAtTime(0.12 - 0.08 * kn, t, 0.05);            // less square-wave buzz as it winds up
+    A.wf.frequency.setTargetAtTime(400 + 1300 * kn + load * 400, t, 0.03);
     // electric: nearly silent coasting, whine comes from LOAD (current), plus a floor from rotation
-    A.wg.gain.setTargetAtTime(on ? Math.min(0.16, w * 0.004 + load * Math.min(1, 0.25 + w * 0.12) * 0.11) : 0, t, 0.025);
-    A.gg.gain.setTargetAtTime(on ? Math.min(0.05, w * 0.0045) : 0, t, 0.04); A.gf.frequency.setTargetAtTime(1500 + w * 260, t, 0.05);
+    A.wg.gain.setTargetAtTime(on ? mv * Math.min(0.13, Math.min(w, 9) * 0.004 + load * Math.min(1, 0.25 + w * 0.12) * 0.1) : 0, t, 0.025);
+    A.gg.gain.setTargetAtTime(on ? mv * Math.min(0.035, w * 0.004) : 0, t, 0.04); A.gf.frequency.setTargetAtTime(1500 + 1700 * kn, t, 0.05);
     const scrub = Math.hypot(c.wheelSlip || 0, c.speed * Math.sin(c.slip)); A.ng.gain.setTargetAtTime(on ? Math.min(0.22, Math.max(0, scrub - 0.25) * 0.055) : 0, t, 0.06); A.bp.frequency.setTargetAtTime(1900 + c.speed * 330, t, 0.1);
   }
   function sfxHit(v) { if (!AC || !S.opt.sound) return; const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); s.buffer = A.noise; f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = Math.min(0.6, v * 0.25); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.14); s.connect(f); f.connect(g); g.connect(A.master); s.start(); s.stop(AC.currentTime + 0.15); }
@@ -4632,6 +4634,7 @@ const ONLINE = (() => {
       add(row('FPS counter', onOff(!!S.opt.showFps, v => { S.opt.showFps = v; save(); })));
       h('Sound'); add(row('Sound', onOff(S.opt.sound, v => { S.opt.sound = v; save(); }), 'M toggles it while driving.'));
       add(row('Volume', slider(0, 100, 5, S.opt.vol ?? 100, v => v + '%', v => { S.opt.vol = v; if (A.master) A.master.gain.value = 0.5 * v / 100; save(); })));
+      add(row('Motor sound', slider(0, 100, 5, S.opt.motorVol ?? 100, v => v + '%', v => { S.opt.motorVol = v; save(); }), 'Motor whine + gear noise only. Tire scrub and hits stay at full volume.'));
       h('Voice chat'); voiceRows();
       h('Gameplay'); add(row('Sim speed', slider(60, 100, 5, S.opt.simSpeed || 100, v => v + '%', v => { S.opt.simSpeed = v; save(); }), 'Slows the whole world down (cars, AI, physics). 85% is the default and reads more like a real 1/10 car on a small screen. 100% is real time. Online rooms run at your own setting.'));
       h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', installEv ? 'big' : 'ghost', isApp() ? 'Installed as an app' : installEv ? 'Install app' : 'Add to home screen'); tb.onclick = () => tour(1); sv.disabled = isApp(); sv.onclick = async () => { if (!(await doInstall())) tour(1); renderPanel(); }; br.append(tb, sv); add(br); if (web) { const fb = el('button', 'ghost', 'Leave feedback · it\'s a beta'); fb.onclick = openFeedback; add(fb); }
