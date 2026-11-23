@@ -82,6 +82,7 @@ h3{margin:20px 0 8px;font-size:11px;letter-spacing:.22em;text-transform:uppercas
 .row{display:grid;grid-template-columns:132px 1fr;gap:4px 12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .row>label{font-size:13px;font-weight:600}
 .row>.tip{grid-column:1/-1;margin:0}
+canvas.escg{width:100%;height:auto;display:block;border-radius:10px;background:rgba(0,0,0,.25);margin:6px 0 2px}
 .tip{font-size:12px;line-height:1.45;color:var(--mut);margin:6px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips.col{flex-direction:column}.chips.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
@@ -276,11 +277,13 @@ const SIM = (function () {
     ackermann: 25, camberF: -7, camberR: -2, caster: 8, toeF: 1, toeR: 1.5,
     weightRear: 57, weight: 1450, rideHeight: 6, springF: 50, springR: 45, tireF: 2, tireR: 2, offset: 6,
     topSpeed: 100, motor: 1, fdr: 10.5, punch: 75, throttleExpo: 25, dragBrake: 15, brake: 60,
+    boost: 0, boostStart: 5000, boostEnd: 25000, turbo: 35, turboStart: 85, turboDelay: 0, turboUp: 0.1, turboDown: 0.1,
   };
   const PRESETS = {
     'Baseline': {},
     'Easy / stable': { gyroGain: 80, steerLock: 58, ackermann: 45, toeR: 2.5, weightRear: 60, springR: 35, motor: 1, punch: 50, steerExpo: 30 },
     'Comp / fast flow': { gyroGain: 55, steerLock: 68, ackermann: 8, camberF: -8, toeR: 1, weightRear: 55, motor: 3, punch: 85, fdr: 9.6 },
+    'Boost + turbo ESC': { boost: 20, boostStart: 5000, boostEnd: 25000, turbo: 12, turboStart: 95, turboDelay: 0.05, turboUp: 0.2, turboDown: 0.15, punch: 90, throttleExpo: 20 },
     'Loose / big angle': { gyroGain: 48, steerLock: 72, ackermann: 15, camberF: -9, caster: 10, toeR: 0, weightRear: 52, springR: 65, tireR: 1, punch: 90 },
   };
 
@@ -301,6 +304,10 @@ const SIM = (function () {
     p.s0R = K.s0R;
     p.yawD = K.yawD;
     p.kapW = K.kapW; p.turbo = (t.turbo === undefined ? 35 : t.turbo) / 100;
+    // v54 ESC timing (New physics): ~1° of timing ≈ 1% more motor rpm = wheel speed. Boost follows motor RPM (start → end), turbo follows the trigger.
+    p.boost = clamp(t.boost || 0, 0, 60) / 100; p.bS = t.boostStart == null ? 5000 : t.boostStart; p.bE = Math.max(p.bS + 500, t.boostEnd == null ? 25000 : t.boostEnd);
+    p.rpmK = 60 / (2 * Math.PI * 0.0325) * t.fdr;   // motor rpm per m/s of rear wheel speed (65 mm tire)
+    p.tStart = clamp(t.turboStart == null ? 85 : t.turboStart, 40, 100) / 100; p.tDel = clamp(t.turboDelay || 0, 0, 2); p.tUp = Math.max(0.01, t.turboUp == null ? 0.1 : t.turboUp); p.tDn = Math.max(0.01, t.turboDown == null ? 0.1 : t.turboDown);
     p.s0X = K.s0X;
     p.kLatR = 1 + (-t.camberR) * 0.03 + t.toeR * 0.045;   // rear side bite
     p.kLonR = 1 - (-t.camberR) * 0.018;                  // rear forward bite
@@ -525,6 +532,8 @@ const SIM = (function () {
     return clamp(sRaw, -1, 1);
   }
   const AIC = 1.25;   // v53: the AI's wheel-speed ceiling (x ESC speed limit) — keeps its trigger finger sane on the stiffer ESC
+  function boostAt(p, w) { const rpm = Math.abs(w) * p.rpmK; return p.boost * clamp((rpm - p.bS) / (p.bE - p.bS), 0, 1); }
+  function timing(c, p) { return (1 + boostAt(p, c.w)) * (1 + p.turbo * (c.tb || 0)); }   // wheel-speed multiplier from boost + turbo timing
   function thrCurve(t, e) { return e >= 0 ? t * (1 - e) + t * t * t * e : t * (1 + e) - (1 - Math.pow(1 - t, 3)) * e; }
   function unCurve(d, e) { let lo = 0, hi = 1; for (let k = 0; k < 14; k++) { const m = (lo + hi) / 2; if (thrCurve(m, e) < d) lo = m; else hi = m; } return (lo + hi) / 2; }
   function stepCar(c, dt, tr) {
@@ -582,6 +591,9 @@ const SIM = (function () {
     if (KK.esc2) th = thrCurve(th, p.thrExpo);   // throttle curve: + softens the bottom, - makes it hit early
     else th = th * (1 - p.thrExpo) + th * th * th * p.thrExpo;
     const turbo = 1 + p.turbo * Math.max(0, (clamp(inp.throttle, 0, 1) - 0.85) / 0.15);   // ESC turbo timing: kicks in at the top of the trigger
+    if (KK.esc2) {   // v54 turbo: trigger past Turbo start -> wait Turbo delay -> ramp in over Turbo ramp-in; drop below -> ramp out
+      if (clamp(inp.throttle, 0, 1) >= p.tStart - 1e-4 && p.turbo > 0) { c.tbH = (c.tbH || 0) + dt; if (c.tbH >= p.tDel) c.tb = Math.min(1, (c.tb || 0) + dt / p.tUp); }
+      else { c.tbH = 0; c.tb = Math.max(0, (c.tb || 0) - dt / p.tDn); } }
     const br = clamp(inp.brake, 0, 1); let Fm;
     if (br > 0.02) {
       if (c.w > 0.15 || u > 0.25) Fm = -br * p.Fbrake * Math.tanh(c.w / 0.1);
@@ -593,7 +605,7 @@ const SIM = (function () {
       // Punch = how fast the duty is allowed to rise (spin-up), lifting is instant and the motor actively slows the wheels (quick decel).
       // The speed limit governs GROUND speed, never wheel speed, so a slide always gets the full wheelspin.
       c.duty = th > (c.duty || 0) ? Math.min(th, (c.duty || 0) + dt / p.rise) : th;
-      const wTt = p.wTop * turbo; Fm = clamp(p.Fdrive * (c.duty - c.w / wTt), c.w > Math.max(0, u) + 0.15 ? -p.Fdrive * 0.5 : -p.Fstall * (0.3 + p.drag), p.Fdrive);   // lifting kills wheelspin fast; below road speed it only drags like before
+      const wTt = p.wTop * timing(c, p); Fm = clamp(p.Fdrive * (c.duty - c.w / wTt), c.w > Math.max(0, u) + 0.15 ? -p.Fdrive * 0.5 : -p.Fstall * (0.3 + p.drag), p.Fdrive);   // lifting kills wheelspin fast; below road speed it only drags like before
       if (Fm > 0) Fm *= clamp((p.vCap * 1.12 - u) / 0.8, 0, 1);
     } else if (th > 0.01) { Fm = clamp(p.Fstall * (th - c.w / (p.wTop * turbo)), -p.Fstall * (0.3 + p.drag), p.Fpunch); if (Fm > 0) Fm *= clamp((p.vCap * 1.12 - c.w) / 0.8, 0, 1); }   // ESC limits MOTOR rpm (wheel speed), not ground speed: you can always rev it up and break the rear loose below top speed
     else { Fm = clamp(-p.Fstall * (0.15 + p.drag * 2) * c.w / p.wTop * 4, -3, 3); c.duty = 0; if (KK.esc2 && c.w > Math.max(0, u) + 0.2) Fm -= KK.J * (c.w - Math.max(0, u)) / 0.08; }   // v53: off the trigger a spun-up rear drops back to road speed fast (light wheels + motor)
@@ -778,7 +790,7 @@ const SIM = (function () {
     return c.inp;
   }
 
-  return { thrCurve, unCurve, driftCheck, DRIFT_IN, G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
+  return { thrCurve, unCurve, boostAt, driftCheck, DRIFT_IN, G, MASS, WB, clamp, wrap, SURFACES, TIRES, MOTORS, DEF_TUNE, PRESETS, derive, TRACK_DEFS, buildTrack, makeCar, placeCar, stepCar, angleControl, collide, makeAI, aiDrive, AIG, judgeTick };
 })();
 SIM.K = SIM_K;
 // v45 constants: the 'Classic' physics option (same code path reproduces v45 exactly with these)
@@ -3771,7 +3783,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v53', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v54', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4052,7 +4064,12 @@ const ONLINE = (() => {
     ['Alignment', [['camberF', 'Front camber', '°', -12, 0, 0.5, 'Front grip at lock peaks around -7° to -9° with drift caster.'], ['camberR', 'Rear camber', '°', -5, 0, 0.5, 'More negative = more side bite, less forward bite.'], ['caster', 'Caster', '°', 4, 12, 0.5, 'More caster adds front bite at lock and helps the car self-steer.'], ['toeF', 'Front toe-out', '°', -2, 4, 0.5, 'Toe-out sharpens initiation. Toe-in (negative) calms it.'], ['toeR', 'Rear toe-in', '°', 0, 4, 0.5, 'More rear toe-in = more rear side grip and stability, less angle.'], ['offset', 'Wheel offset', 'mm', 0, 12, 1, 'Wider track is a touch more stable — and fills the arches.']]],
     ['Chassis', [['weight', 'Car weight', 'g', 1200, 2000, 10, 'All-up weight with ballast. Lighter = snappy, bites and flicks quicker. Heavier = more momentum, smoother and slower to rotate. Stock 1450 g.'], ['weightRear', 'Rear weight bias', '%', 45, 65, 1, 'Rear-heavy drives forward harder and is steadier in drift. More front weight rotates faster.'], ['rideHeight', 'Ride height', 'mm', 4, 9, 0.5, 'Higher CG = more weight transfer under throttle and brake.'], ['springF', 'Front spring', '', 0, 100, 5, 'Softer front = more front grip.'], ['springR', 'Rear spring', '', 0, 100, 5, 'Softer rear = more rear grip and forward bite. Stiffer rear slides easier.']]],
     ['Tires', [['tireF', 'Front compound', 'sel:TIRES', 0, 4, 1, 'Plastic drift tire hardness. Softer grips more. Match it to the surface.'], ['tireR', 'Rear compound', 'sel:TIRES', 0, 4, 1, 'Less rear grip than front = looser, more angle. More = faster, more forward drive.']]],
-    ['Power', [['topSpeed', 'ESC speed limit', '%', 60, 160, 5, 'Caps your ground speed on the straights. It never limits wheel speed, so a slide always gets full wheelspin. Lower = slower, more technical.'], ['motor', 'Motor', 'sel:MOTORS', 0, 4, 1, 'Fewer turns = more wheel speed and punch.'], ['fdr', 'Final drive ratio', ':1', 8.5, 13, 0.1, 'Lower FDR = more wheel speed. Higher = more torque, less top end.'], ['punch', 'ESC punch', '%', 20, 100, 5, 'How fast the rear spins up when you squeeze the trigger. 100 = snaps up instantly (like a race ESC), lower = softer, lazier hit. Lifting is always instant.'], ['throttleExpo', 'Throttle curve', '%', -50, 60, 5, 'How the trigger maps to wheel speed. + softens the bottom (easy to roll in and hook up, more travel for mid-corner wheel speed). 0 = linear. − makes the bottom hit early and hard.'], ['dragBrake', 'Drag brake', '%', 0, 50, 1, 'Braking when you are off throttle. More helps the rear step out on lift.'], ['brake', 'Brake strength', '%', 0, 100, 5, 'Rear-only braking, like the real thing.']]]];
+    ['Power', [['topSpeed', 'ESC speed limit', '%', 60, 160, 5, 'Caps your ground speed on the straights. It never limits wheel speed, so a slide always gets full wheelspin. Lower = slower, more technical.'], ['motor', 'Motor', 'sel:MOTORS', 0, 4, 1, 'Fewer turns = more wheel speed and punch.'], ['fdr', 'Final drive ratio', ':1', 8.5, 13, 0.1, 'Lower FDR = more wheel speed. Higher = more torque, less top end.'], ['punch', 'ESC punch', '%', 20, 100, 5, 'How fast the rear spins up when you squeeze the trigger. 100 = snaps up instantly (like a race ESC), lower = softer, lazier hit. Lifting is always instant.'], ['throttleExpo', 'Throttle curve', '%', -50, 60, 5, 'How the trigger maps to wheel speed. + softens the bottom (easy to roll in and hook up, more travel for mid-corner wheel speed). 0 = linear. − makes the bottom hit early and hard.'], ['dragBrake', 'Drag brake', '%', 0, 50, 1, 'Braking when you are off throttle. More helps the rear step out on lift.'], ['brake', 'Brake strength', '%', 0, 100, 5, 'Rear-only braking, like the real thing.']]],
+    ['ESC boost & turbo', [['boost', 'Boost timing', '°', 0, 40, 1, 'Timing the ESC adds as motor RPM climbs (about 1° = 1% more wheel speed). Works anywhere on the trigger: it stretches the top of the wheel speed once the motor is spinning. 0 = off.'],
+      ['boostStart', 'Boost start', ' rpm', 0, 30000, 500, 'Motor RPM where boost starts coming in.'], ['boostEnd', 'Boost end', ' rpm', 5000, 50000, 500, 'Motor RPM where boost is all the way in. Wider gap = smoother, narrower = it hits harder.'],
+      ['turbo', 'Turbo timing', '°', 0, 40, 1, 'Extra timing on TOP of boost, only near the top of the trigger. Keep the drift smooth on the mid trigger, squeeze past Turbo start to nail it.'],
+      ['turboStart', 'Turbo start', '% trigger', 50, 100, 1, 'How far you pull the trigger before turbo arms. 100 = full trigger only.'], ['turboDelay', 'Turbo delay', 's', 0, 1, 0.05, 'Time at/after Turbo start before turbo comes in. Lets you flick through the top without it hitting.'],
+      ['turboUp', 'Turbo ramp in', 's', 0, 1, 0.05, 'How long turbo takes to come all the way in. 0 = instant hit, longer = smooth swell.'], ['turboDown', 'Turbo ramp out', 's', 0, 1, 0.05, 'How long turbo takes to fade when you come back under Turbo start.']]]];
   let menuKind = 'main', tab = 'drive';
   const menu = $('#menu'), panel = $('#panel'), nav = $('#nav');
   function openMenu(kind, t) { mode = kind === 'pause' ? 'pause' : 'menu'; menuKind = kind; if (t) tab = t; else if (kind === 'pause') tab = 'drive'; document.body.className = 'inmenu ' + (kind === 'pause' ? 'paused' : ''); camInit = kind === 'pause'; OV.enter = true; OV.focus = null; OV.user = 0; renderNav(); renderPanel(); }
@@ -4090,6 +4107,22 @@ const ONLINE = (() => {
   function myLook() { return ONLINE.isGuest && ONLINE.isGuest() ? GUEST_LOOK : S.look; }
   function rebuildPlayer() { GFX.disposeTree(player.mesh); const L = myLook(); player.mesh = GFX.buildCar(L, !isTouchDev()); player.look = L; scene.add(player.mesh); save(); }
   function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && ONLINE.unread) b.appendChild(el('i', 'badge', String(ONLINE.unread))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
+  function drawEsc(cv) {   // v54: ESC curve graph like the programmer apps (wheel speed / motor rpm vs trigger)
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, L = 56, B = 34, T = 14, R = 30, p = SIM.derive(S.tune, 'vinyl'), e = p.thrExpo;
+    g.clearRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,0.04)'; g.fillRect(L, T, W - L - R, H - T - B);
+    const curve = (boost, turbo) => { const out = []; for (let k = 0; k <= 60; k++) { const t = k / 60, d = SIM.thrCurve(t, e); let w = d * p.wTop; const tb = turbo && t >= p.tStart - 1e-4 ? p.turbo : 0;
+      for (let it = 0; it < 30; it++) w = d * p.wTop * (1 + (boost ? SIM.boostAt(p, w) : 0)) * (1 + tb); out.push([t, w * p.rpmK]); } return out; };
+    const A = curve(false, false), Bc = curve(true, false), C = curve(true, true), top = Math.max(1000, ...C.map(q => q[1])) * 1.08;
+    const X = t => L + t * (W - L - R), Y = r => H - B - r / top * (H - T - B);
+    g.strokeStyle = 'rgba(255,255,255,0.10)'; g.lineWidth = 1; g.font = '20px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,0.55)'; g.textAlign = 'right';
+    const stepR = top > 40000 ? 10000 : 5000; for (let r = 0; r <= top; r += stepR) { g.beginPath(); g.moveTo(L, Y(r)); g.lineTo(W - R, Y(r)); g.stroke(); g.fillText((r / 1000) + 'k', L - 6, Y(r) + 7); }
+    g.textAlign = 'center'; for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) g.fillText(Math.round(t * 100) + '%', X(t), H - 8);
+    if (p.boost > 0) { g.fillStyle = 'rgba(80,140,255,0.10)'; g.fillRect(L, Y(Math.min(top, p.bE)), W - L - R, Y(p.bS) - Y(Math.min(top, p.bE))); }
+    if (p.turbo > 0) { g.setLineDash([6, 6]); g.strokeStyle = 'rgba(255,80,80,0.7)'; g.beginPath(); g.moveTo(X(p.tStart), T); g.lineTo(X(p.tStart), H - B); g.stroke(); g.setLineDash([]); }
+    const line = (pts, col, w) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); pts.forEach(([t, r], i) => i ? g.lineTo(X(t), Y(r)) : g.moveTo(X(t), Y(r))); g.stroke(); };
+    line(A, '#3fbf6a', 3); if (p.boost > 0) line(Bc, '#4f8cff', 3); if (p.turbo > 0) line(C.filter(q => q[0] >= p.tStart - 1e-4), '#ff4d4d', 3.5);
+    g.fillStyle = 'rgba(255,255,255,0.75)'; g.textAlign = 'left'; g.fillText('motor rpm', L + 6, T + 22);
+  }
   const row = (label, node, tip) => { const r = el('div', 'row'); const l = el('label', '', label); r.appendChild(l); r.appendChild(node); if (tip) { r.appendChild(el('p', 'tip', tip)); } return r; };
   const chips = (list, cur, fn, cls) => { const w = el('div', 'chips ' + (cls || '')); list.forEach(o => { const b = el('button', 'chip' + (o.id === cur ? ' act' : ''), o.name); if (o.sub) b.appendChild(el('small', '', o.sub)); b.onclick = () => { fn(o.id); renderPanel(); }; w.appendChild(b); }); return w; };
   const swatches = (cur, fn, extra) => { const w = el('div', 'sw'); (extra || []).concat(GFX.PAINTS).forEach(c => { const b = el('button', 'swb' + (c === cur ? ' act' : '')); if (c) b.style.background = c; else b.textContent = 'off'; b.onclick = () => { fn(c); renderPanel(); }; w.appendChild(b); }); const ci = el('input'); ci.type = 'color'; ci.value = cur || '#ffffff'; ci.oninput = () => fn(ci.value); w.appendChild(ci); return w; };
@@ -4386,7 +4419,9 @@ const ONLINE = (() => {
         const sv = el('button', 'ghost', s ? 'Overwrite' : 'Save'); let armed = false;
         sv.onclick = () => { if (s && !armed) { armed = true; sv.textContent = 'Tap again'; setTimeout(() => { armed = false; sv.textContent = 'Overwrite'; }, 2500); return; } S.slots[n] = { name: 'Setup ' + n + ' · ' + track.def.name, tune: Object.assign({}, S.tune), at: Date.now() }; save(); renderPanel(); toast('Saved to slot ' + n, 'good'); };
         r.append(ld, sv); add(r); }
-      for (const [grp, items] of TUNE_UI) { h(grp); for (const [key, label, unit, min, max, step, tip] of items) { const sel = unit.startsWith('sel:') ? SIM[unit.slice(4)] : null; add(row(label, slider(min, max, step, S.tune[key], v => sel ? sel[v].name : (step < 1 ? v.toFixed(step < 0.1 ? 2 : 1) : v) + unit, v => { S.tune[key] = v; applyTune(); save(); player._tm = null; camFocus(key); }), tip)); } }
+      let escCv = null;
+      for (const [grp, items] of TUNE_UI) { h(grp); if (grp === 'ESC boost & turbo') { escCv = el('canvas', 'escg'); escCv.width = 640; escCv.height = 300; add(escCv); add(el('p', 'tip', 'Wheel speed vs trigger once the motor is up to speed. Green = no timing · blue = with boost · red = turbo fully in (after delay + ramp). Dashed line = Turbo start.')); drawEsc(escCv); }
+        for (const [key, label, unit, min, max, step, tip] of items) { const sel = unit.startsWith('sel:') ? SIM[unit.slice(4)] : null; add(row(label, slider(min, max, step, S.tune[key] == null ? SIM.DEF_TUNE[key] : S.tune[key], v => sel ? sel[v].name : (step < 1 ? v.toFixed(step < 0.1 ? 2 : 1) : v) + unit, v => { S.tune[key] = v; applyTune(); save(); player._tm = null; camFocus(key); if (escCv) drawEsc(escCv); }), tip)); } }
     }
 
     if (tab === 'controls') {
