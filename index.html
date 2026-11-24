@@ -3280,43 +3280,43 @@ const GFX = (function () {
   // fo/ro: front/rear overhang past the axles. Heights in m at 1/10 scale.
   // real body shells (converted from the user's STL files: tools/conv2.py). Loaded async.
   const BODIES = [
-    { id: 's15', name: 'S15', tag: 'Aero-kit coupe', cls: 'drift' },
-    { id: 'ae86', name: 'AE86', tag: 'Pop-up hatch, the drift icon', cls: 'drift' },
-    { id: 'r33', name: 'R33', tag: 'Four-door GT sedan', cls: 'drift' },
-    { id: 'supra', name: 'Supra', tag: 'Twin-turbo GT, big wing', cls: 'drift' },
-    { id: 'm4', name: 'M4', tag: 'Turbo six coupe', cls: 'drift' },
-    { id: 'rx7', name: 'RX-7 FD', tag: 'Twin-rotor widebody', cls: 'drift' },
-    { id: 'rwb', name: 'RWB 911', tag: 'Rough widebody air-cooled', cls: 'drift' },
-    { id: 'datsun', name: 'Safari Z', tag: 'Old Z on rally flares', cls: 'drift' },
-    { id: 'body4', name: 'Pony GT', tag: 'Long-hood V8 fastback', cls: 'drift' },
-    { id: 'body3', name: 'Vette GT', tag: 'Front-mid V8 supercar', cls: 'drift' },
-    { id: 'body2', name: 'Classic Coupe', tag: 'Old-school box flares', cls: 'drift' },
-    { id: 'body1', name: 'GT Sedan', tag: 'Wide four-door missile', cls: 'drift' },
-    { id: 'body0', name: 'Fastback Sedan', tag: 'Sleek four-door', cls: 'drift' },
-    { id: 'a85', egg: 1, name: 'AE85 Wide', tag: 'Tuned hatch on boxed flares', cls: 'drift', ds: 1 },
-    { id: 'evo', egg: 1, name: 'Evo Wide', tag: 'Tuned rally sedan, big wing', cls: 'drift', ds: 1 },
-    { id: 'chaser', name: 'Chaser', tag: 'Four-door drift sedan', cls: 'drift', ds: 1 },
-    { id: 'camaro', name: 'Camaro 70', tag: 'Split-bumper muscle coupe', cls: 'drift', ds: 1 },
-    { id: 'golf', name: 'Mk1 Hatch', tag: 'Boxy 80s hot hatch', cls: 'drift', ds: 1 },
-    { id: 'beetle', name: 'Beetle', tag: 'Air-cooled bug', cls: 'drift', ds: 1 },
+    { id: 's15', name: 'S15', tag: 'Aero-kit coupe', cls: 'drift', reg: 'jdm' },
+    { id: 'ae86', name: 'AE86', tag: 'Pop-up hatch, the drift icon', cls: 'drift', reg: 'jdm' },
+    { id: 'r33', name: 'R33', tag: 'Four-door GT sedan', cls: 'drift', reg: 'jdm' },
+    { id: 'supra', name: 'Supra', tag: 'Twin-turbo GT, big wing', cls: 'drift', reg: 'jdm' },
+    { id: 'm4', name: 'M4', tag: 'Turbo six coupe', cls: 'drift', reg: 'eu' },
+    { id: 'rx7', name: 'RX-7 FD', tag: 'Twin-rotor widebody', cls: 'drift', reg: 'jdm' },
+    { id: 'rwb', name: 'RWB 911', tag: 'Rough widebody air-cooled', cls: 'drift', reg: 'eu' },
+    { id: 'datsun', name: 'Safari Z', tag: 'Old Z on rally flares', cls: 'drift', reg: 'jdm' },
+    { id: 'body4', name: 'Pony GT', tag: 'Long-hood V8 fastback', cls: 'drift', reg: 'us' },
+    { id: 'body3', name: 'Vette GT', tag: 'Front-mid V8 supercar', cls: 'drift', reg: 'us' },
+    { id: 'body2', name: 'Classic Coupe', tag: 'Old-school box flares', cls: 'drift', reg: 'us' },
+    { id: 'body1', name: 'GT Sedan', tag: 'Wide four-door missile', cls: 'drift', reg: 'us' },
+    { id: 'body0', name: 'Fastback Sedan', tag: 'Sleek four-door', cls: 'drift', reg: 'us' },
+    { id: 'a85', egg: 1, name: 'AE85 Wide', tag: 'Tuned hatch on boxed flares', cls: 'chibi', ds: 1 },
+    { id: 'evo', egg: 1, name: 'Skyline Wide', tag: 'Chibi Skyline, big wing', cls: 'chibi', ds: 1 },
+    { id: 'chaser', name: 'Chaser', tag: 'Four-door drift sedan', cls: 'drift', reg: 'jdm', ds: 1 },
+    { id: 'camaro', name: 'Camaro 70', tag: 'Split-bumper muscle coupe', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'golf', name: 'Mk1 Hatch', tag: 'Boxy 80s hot hatch', cls: 'drift', reg: 'eu', ds: 1 },
+    { id: 'beetle', name: 'Beetle', tag: 'Air-cooled bug', cls: 'drift', reg: 'eu', ds: 1 },
     // v49 trucks (same drift chassis)
-    { id: 'hilux', name: 'Hilux', tag: 'Double-cab drift truck', cls: 'truck', ds: 1 },
-    { id: 'jaban', name: 'Crew Cab', tag: 'Slammed square-body crew cab', cls: 'truck', ds: 1 },
-    { id: 'sr5', name: 'SR5 Pickup', tag: 'Xtracab with a roll bar', cls: 'truck', ds: 1 },
-    { id: 'k5', name: 'K5 Blazer', tag: 'Square-body two-door 4x4', cls: 'truck', ds: 1 },
-    { id: 'k5vert', name: 'K5 Topless', tag: 'Square-body with a roll bar', cls: 'truck', ds: 1 },
-    { id: 'runner', name: '4Runner', tag: 'Third-gen SUV', cls: 'truck', ds: 1 },
-    { id: 'gvan', name: 'G-Van', tag: 'Square-nose shorty van', cls: 'truck', ds: 1 },
+    { id: 'hilux', egg: 1, name: 'Hilux', tag: 'Double-cab drift truck', cls: 'truck', ds: 1 },
+    { id: 'jaban', egg: 1, name: 'Crew Cab', tag: 'Slammed square-body crew cab', cls: 'truck', ds: 1 },
+    { id: 'sr5', egg: 1, name: 'SR5 Pickup', tag: 'Xtracab with a roll bar', cls: 'truck', ds: 1 },
+    { id: 'k5', egg: 1, name: 'K5 Blazer', tag: 'Square-body two-door 4x4', cls: 'truck', ds: 1 },
+    { id: 'k5vert', egg: 1, name: 'K5 Topless', tag: 'Square-body with a roll bar', cls: 'truck', ds: 1 },
+    { id: 'runner', egg: 1, name: '4Runner', tag: 'Third-gen SUV', cls: 'truck', ds: 1 },
+    { id: 'gvan', egg: 1, name: 'G-Van', tag: 'Square-nose shorty van', cls: 'truck', ds: 1 },
     { id: 'stepvan', egg: 1, name: 'Step Van', tag: 'Bread truck on 1/10 wheels', cls: 'truck', ds: 1 },
-    { id: 'monte', name: 'Monte Carlo', tag: '72 long-hood coupe', cls: 'drift', ds: 1 },
-    { id: 'elcamino', name: 'El Camino', tag: 'Car up front, truck out back', cls: 'drift', ds: 1 },
-    { id: 'malibu', name: 'Malibu', tag: '81 G-body coupe', cls: 'drift', ds: 1 },
-    { id: 'malwagon', name: 'Malibu Wagon', tag: '80 two-door wagon', cls: 'drift', ds: 1 },
-    { id: 'bel55', name: 'Chevy 150', tag: '55 utility sedan', cls: 'drift', ds: 1 },
-    { id: 'cyber', name: 'Cyber Truck', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
+    { id: 'monte', name: 'Monte Carlo', tag: '72 long-hood coupe', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'elcamino', name: 'El Camino', tag: 'Car up front, truck out back', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'malibu', name: 'Malibu', tag: '81 G-body coupe', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'malwagon', name: 'Malibu Wagon', tag: '80 two-door wagon', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'bel55', name: 'Chevy 150', tag: '55 utility sedan', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'cyber', egg: 1, name: 'Cyber Truck', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
     { id: 'ecto', name: 'Ecto Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
     { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie', ds: 1 },
-    { id: 'chibidm', name: 'Mini Time Machine', tag: 'Chibi gullwing, giant wheels', cls: 'movie', ds: 1 },
+    { id: 'chibidm', name: 'Mini Time Machine', tag: 'Chibi gullwing, giant wheels', cls: 'chibi', egg: 1, ds: 1 },
     { id: 'kitt', name: 'Knight Car', tag: '82 T-top, red scanner', cls: 'movie' },
     { id: 'christine', name: 'Fury 58', tag: 'Red fin-car with a temper', cls: 'movie' },
     { id: 'ateam', name: 'Team Van', tag: 'Black-and-grey G-van', cls: 'movie' },
@@ -3502,7 +3502,7 @@ const GFX = (function () {
   }
   // v58 per-body wheel fit (measured from each shell: tools/fit/solve.py). fx/rx: wheel x shift to centre it in the arch (m),
   // dy: body raise so the arch clears the tire, tk: tuck the wheels inward, ws: wheel scale for small-arch shells. Visual only (physics WB unchanged).
-  const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"bs": 1.25, "ws": 1.075, "dy": 0.00125, "tk": 0.005, "fx": 0.0291, "rx": -0.0404}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}, "monte": {"fx": 0.0051, "rx": 0.0071}, "elcamino": {"fx": 0.01, "rx": 0.0015}, "malibu": {"fx": -0.0036}, "malwagon": {"fx": -0.0036}, "stepvan": {"fx": 0.0068, "rx": 0.0076}, "k5vert": {"fx": 0.0164, "rx": 0.0056}, "gvan": {"fx": 0.0011, "rx": 0.0021}, "bel55": {"fx": 0.0043, "rx": -0.0016}, "chibidm": {"fx": -0.04, "rx": 0.04, "ws": 1.34}};
+  const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"bs": 1.25, "ws": 1.075, "dy": 0.00125, "tk": 0.005, "fx": 0.0291, "rx": -0.0404}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}, "monte": {"fx": 0.0051, "rx": 0.0071}, "elcamino": {"fx": 0.01, "rx": 0.0015}, "malibu": {"fx": -0.0036}, "malwagon": {"fx": -0.0036}, "stepvan": {"fx": 0.0068, "rx": 0.0076}, "k5vert": {"fx": 0.0164, "rx": 0.0056}, "gvan": {"fx": 0.0011, "rx": 0.0021}, "bel55": {"fx": 0.0043, "rx": -0.0016}, "chibidm": {"fx": -0.04, "rx": 0.04, "ws": 1.22, "tk": 0.012, "cm": -9, "dy": 0.009}};
   const wheelFace = style => Math.max(0, 0.013 - 0.002 - (style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : 0.0015));   // z of the wheel face (outward), matches buildWheel
   // v60: off-road crawler wheel (knobby tire + beadlock), drawn at the drift wheel's scale (R 0.031) and scaled up by buildCar
   function buildCrawlWheel(color) {
@@ -3738,7 +3738,7 @@ const GFX = (function () {
     for (const [ax, front, fh] of [[SIM.WB / 2, 1, h.fender[0]], [-SIM.WB / 2, 0, h.fender[1]]]) for (const sd of [1, -1]) {
       const crawlT = look.tires === 'crawl', k = new T.Group(), cam = new T.Group(), sp = crawlT ? buildCrawlWheel(look.wheelColor || '#2a2b2e') : buildWheel(look.wheel, look.wheelColor); k.add(cam); cam.add(sp);
       const cal = new T.Mesh(new T.BoxGeometry(0.014, 0.01, 0.005), m.caliper); cal.position.set(-0.0095, 0.0075, wheelFace(look.wheel) - 0.007); cam.add(cal);   // v58: rides on the disc, always behind the spokes
-      const F = crawlT ? {} : (FIT[h.id] || {}), ws = crawlT ? 1.77 : (F.ws || 1), bz = crawlT ? 0.125 : fh * BS - 0.0005 - (F.tk || 0) - 0.013 * ws; k.position.set(ax + ((front ? F.fx : F.rx) || 0), 0.031 * ws, sd * bz); k.scale.set(ws, ws, sd * ws); car.add(k); wheels.push({ k, cam, sp, front, sd, baseZ: bz, ws });
+      const F = crawlT ? {} : (FIT[h.id] || {}), ws = crawlT ? 1.77 : (F.ws || 1), bz = crawlT ? 0.125 : fh * BS - 0.0005 - (F.tk || 0) - 0.013 * ws; k.position.set(ax + ((front ? F.fx : F.rx) || 0), 0.031 * ws, sd * bz); k.scale.set(ws, ws, sd * ws); car.add(k); wheels.push({ k, cam, sp, front, sd, baseZ: bz, ws, xcam: (F.cm || 0) * Math.PI / 180 });
     }
     // light glows
     const fx = { hl: head, hlF: amber, tl: tail };
@@ -3774,7 +3774,7 @@ const GFX = (function () {
     for (const w of u.wheels) {
       w.k.rotation.y = w.front ? c.delta * w.sd * w.sd : 0;
       w.k.position.z = w.sd * (w.baseZ + ((tune.offset || 6) - 6) * 0.001);
-      w.cam.rotation.x = (w.front ? tune.camberF : tune.camberR) * Math.PI / 180;
+      w.cam.rotation.x = (w.front ? tune.camberF : tune.camberR) * Math.PI / 180 + (w.xcam || 0);
       w.k.rotation.y += (w.front ? -1 : 1) * w.sd * (w.front ? tune.toeF : tune.toeR) * Math.PI / 180 * (w.front ? 1 : 1);
       w.sp.rotation.z -= (w.front ? c.u : c.w) / (0.031 * (w.ws || 1)) * dt * 1;
     }
@@ -4440,7 +4440,7 @@ const ONLINE = (() => {
       diamondback: { id: 'crystal', name: 'CRYSTAL KEY', col: '#bfeaff', x: 8.5, y: 2.6, hint: 'Crystal glints inside Diamondback\'s infield, a long way from the gate.' } },
     altar: { track: 'prodigy', x: 6.7, y: -1.7 } };
   const movieOk = id => S.hunt.egg === 'done' || S.hunt.keep === id;
-  const eggCar = id => { const i = GFX.bodyInfo(id); return i.cls === 'movie' || !!i.egg; };   // v73: movie cars + egg-reward bodies (chibis, step van)
+  const eggCar = id => { const i = GFX.bodyInfo(id); return i.cls === 'movie' || !!i.egg; };   // v73/74: movie cars + egg-reward bodies (chibis, every truck & van)
   function huntKeep() { const b = S.look && S.look.body; if (b && eggCar(b) && !movieOk(b) && !S.hunt.keep) { S.hunt.keep = b; save(); } }   // v62: grandfather the movie car you were already driving
   function huntRefresh() { if (huntObj && huntObj.g.parent) huntObj.g.parent.remove(huntObj.g); huntSpawn(); rebuildPlayer(); }
   function huntReset() { S.hunt = { keys: {}, egg: 0, rv: (S.hunt.rv | 0) + 1, keep: S.hunt.keep }; delete S.look.egg; save(); huntRefresh(); toast('Hunt reset · keys and egg gone, find them again', 'good'); }
@@ -4645,7 +4645,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v73.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v74', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5342,8 +5342,13 @@ const ONLINE = (() => {
         S.look.body = v; const tk = (pickBody.tk = (pickBody.tk || 0) + 1); toast('Loading ' + GFX.bodyInfo(v).name + '…');
         GFX.ensureBody(v).then(() => { if (tk === pickBody.tk) { rebuildPlayer(); toast(GFX.bodyInfo(v).name, 'good'); } }, () => toast('Could not load that body', 'bad')); };
       const bChip = b => !b.egg || movieOk(b.id) ? { id: b.id, name: (b.egg ? '🥚 ' : '') + b.name, sub: b.tag } : { id: b.id, name: b.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg, unlock the ' + b.name + '.') };
-      h('Drift cars', GFX.BODIES.filter(b => b.cls === 'drift').length); add(chips(GFX.BODIES.filter(b => b.cls === 'drift').map(bChip), S.look.body, pickBody, 'grid'));
-      h('Trucks', GFX.BODIES.filter(b => b.cls === 'truck').length); add(chips(GFX.BODIES.filter(b => b.cls === 'truck').map(bChip), S.look.body, pickBody, 'grid'));
+      const sect = (title, L, badge) => { if (!L.length) return; h(title, badge || L.length); add(chips(L.map(bChip), S.look.body, pickBody, 'grid')); };
+      const eggBadge = S.hunt.egg === 'done' ? '🥚 unlocked' : '🔒 find the egg';
+      sect('JDM', GFX.BODIES.filter(b => b.cls === 'drift' && b.reg === 'jdm'));
+      sect('American', GFX.BODIES.filter(b => b.cls === 'drift' && b.reg === 'us'));
+      sect('Euro', GFX.BODIES.filter(b => b.cls === 'drift' && b.reg !== 'jdm' && b.reg !== 'us'));
+      sect('Chibi cars', GFX.BODIES.filter(b => b.cls === 'chibi'), eggBadge);
+      sect('Trucks & vans', GFX.BODIES.filter(b => b.cls === 'truck'), eggBadge);
       { const mv = GFX.BODIES.filter(b => b.cls === 'movie'), open = S.hunt.egg === 'done'; h('Movie cars', open ? '🥚 unlocked' : '🔒 find the egg');
         add(chips(mv.map(b => movieOk(b.id) ? { id: b.id, name: b.name, sub: b.tag } : { id: b.id, name: b.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg, unlock the cars.') }), S.look.body, pickBody, 'grid movies'));
         msg(open ? 'You found the egg. Every movie car is yours. They keep their screen look and stock stance but run the same drift chassis. Repaint them below if you want.' : 'Find the egg, unlock the cars. Some cars are earned, not given…' + (S.hunt.keep ? ' (You keep the ' + GFX.bodyInfo(S.hunt.keep).name + ' you were already driving.)' : '')); }
