@@ -4605,7 +4605,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v69', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v69.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -4616,14 +4616,14 @@ const ONLINE = (() => {
     if (mode !== 'drive' && nav) renderNav(); const a = document.activeElement; if (mode === 'drive' || (tab !== 'online' && tab !== 'boards' && tab !== 'drive') || (a && a.tagName === 'INPUT' && a.type === 'text' && panel.contains(a))) return; renderPanel(); };
   ONLINE.onUnread = n => { toast('NEW MESSAGE · ' + (ONLINE.unread) + ' unread (Social tab)', 'good'); if (mode !== 'drive' && tab === 'community' && F.cv === 'messages' && !thread) { const a = document.activeElement; if (!(a && panel.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) renderPanel(); } };
   // merge the account's garage into this device. Car / tune / setups: newest edit wins. PBs: best of both. Hunt: newer reset wins, else furthest progress.
-  function applyGarage(g, first) { if (!g || typeof g !== 'object') return false; let carChanged = false;
+  function applyGarage(g, first, skipCar) { if (!g || typeof g !== 'object') return false; let carChanged = false;
     if (g.pb && typeof g.pb === 'object') for (const k of Object.keys(g.pb)) if (+g.pb[k] > 0 && !(S.pb[k] >= g.pb[k])) S.pb[k] = +g.pb[k];
     const H = g.hunt, rank = v => v === 'done' ? 2 : v === 'carry' ? 1 : 0, eggWas = S.hunt.egg;
     if (H && typeof H === 'object' && (H.rv | 0) > (S.hunt.rv | 0)) { S.hunt = JSON.parse(JSON.stringify(H)); S.hunt.keys = S.hunt.keys || {}; }
     else if (H && typeof H === 'object' && (H.rv | 0) === (S.hunt.rv | 0)) { Object.assign(S.hunt.keys, H.keys || {}); if (rank(H.egg) > rank(S.hunt.egg)) S.hunt.egg = H.egg; if (H.keep && !S.hunt.keep) S.hunt.keep = H.keep; }
     if (S.hunt.egg === 'done') S.look.egg = 1; else delete S.look.egg;
     const st = +g.t || 0, lt = +S.syncT || 0;
-    if (g.look && typeof g.look === 'object' && (first || st > lt)) { const keepEgg = S.look.egg; S.look = Object.assign({}, g.look); if (keepEgg) S.look.egg = 1; else delete S.look.egg;
+    if (!skipCar && g.look && typeof g.look === 'object' && (first || st > lt)) { const keepEgg = S.look.egg; S.look = Object.assign({}, g.look); if (keepEgg) S.look.egg = 1; else delete S.look.egg;
       if (g.tune && typeof g.tune === 'object') Object.assign(S.tune, g.tune); if (g.slots && typeof g.slots === 'object') S.slots = Object.assign({}, g.slots);
       if (g.opt && g.opt.cam !== undefined) S.opt.cam = g.opt.cam; S.syncT = Math.max(st, lt); carChanged = true; }
     S.syncH = JSON.stringify(syncBody());
@@ -4631,9 +4631,29 @@ const ONLINE = (() => {
     if (eggWas !== S.hunt.egg && track) huntRefresh();
     return carChanged; }
   ONLINE.onGarage = g => { if (applyGarage(g, false)) toast('Car and tune synced from your account', 'good'); saveLocal(); };   // no push here: that would ping-pong
+  // v69.1: the first time a device syncs, if its car / tune differs from what the account already has, the player picks which one
+  //        to keep (v69 silently took the account's, which could overwrite the setup you actually liked). A copy of this device's
+  //        setup is kept in localStorage (rcdl_presync_<id>) either way.
+  const carKey = (look, tune) => { const l = Object.assign({}, look || {}); delete l.egg; return JSON.stringify([l, tune || {}]); };
+  function syncChoice(p, g) {
+    const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard synccard'; document.body.appendChild(ov);
+    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'ACCOUNT SYNC'));
+    card.appendChild(el('h2', '', 'Which car & tune should your account keep?'));
+    const nm = l => { try { return GFX.bodyInfo(l.body).name; } catch (e) { return l.body || 'car'; } };
+    const body = el('div', 'tbody'); card.appendChild(body);
+    body.appendChild(el('p', '', 'Your car, tune and saved setups now follow your account to every device. This device and your account have different ones. Pick the one to keep everywhere. Your egg, keys and PBs are kept either way, and steering assist and physics stay set per device.'));
+    const btns = el('div', 'tbtns'); card.appendChild(btns);
+    const mine = el('button', 'big', 'Keep THIS device · ' + nm(S.look)), acct = el('button', 'ghost', 'Use my account\'s · ' + nm(g.look));
+    const done = () => { ov.remove(); try { localStorage.setItem('rcdl_sync2_' + p.id, '1'); } catch (e) { } ONLINE.synced = true; save(); renderPanel(); };
+    mine.onclick = () => { S.syncT = Date.now(); S.syncH = JSON.stringify(syncBody()); toast('Kept this device\'s car & tune on your account', 'good'); done(); };
+    acct.onclick = () => { applyGarage(g, true); toast('Using your account\'s car & tune', 'good'); done(); };
+    btns.append(acct, mine); }
   ONLINE.onProfile = p => {   // every sign-in / boot: the account's garage merges in (see applyGarage), then this device's newer bits go up
-    let first = true; try { first = localStorage.getItem('rcdl_sync2_' + p.id) !== '1'; localStorage.setItem('rcdl_sync2_' + p.id, '1'); } catch (e) { }
-    const g = p.garage || {}, has = !!(g.look && typeof g.look === 'object'); applyGarage(g, first && has); if (!has && !S.syncT) S.syncT = Date.now(); ONLINE.synced = true;   // the account's car wins on a device's first sync; an empty account takes this device's
+    let first = true; try { first = localStorage.getItem('rcdl_sync2_' + p.id) !== '1'; } catch (e) { }
+    const g = p.garage || {}, has = !!(g.look && typeof g.look === 'object');
+    if (first) try { localStorage.setItem('rcdl_presync_' + p.id, JSON.stringify({ at: Date.now(), look: S.look, tune: S.tune, slots: S.slots })); } catch (e) { }
+    if (first && has && carKey(g.look, g.tune) !== carKey(S.look, S.tune)) { applyGarage(g, false, true); ONLINE.synced = false; setTimeout(() => syncChoice(p, g), 300); }
+    else { applyGarage(g, first && has); if (!has && !S.syncT) S.syncT = Date.now(); ONLINE.synced = true; try { localStorage.setItem('rcdl_sync2_' + p.id, '1'); } catch (e) { } }
     S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save(); setTimeout(() => socPoll(false), 4000);
     ONLINE.syncPbs(S.pb).then(n => { if (n) { toast('Your PBs are on the leaderboards', 'good'); if (tab === 'boards' && mode !== 'drive') renderPanel(); } }); };
   async function joinLobby(lb, keepPos) {
