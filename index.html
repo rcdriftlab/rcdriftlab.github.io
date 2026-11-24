@@ -177,6 +177,16 @@ em.tagsup{background:rgba(255,206,80,.18);color:#ffce50}
 .chip.trk.lockd{opacity:.55}
 .chip.trk.lockd small{color:#ffd21a}
 .chip.lockd{opacity:.45;filter:grayscale(1)}
+.tagteam{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.06em;margin-left:6px;padding:1px 5px;border-radius:4px;background:#2a5fd8;color:#fff;vertical-align:middle}
+.conv.frow{display:flex;flex-direction:column;gap:6px;cursor:default}
+.conv.frow .btnrow{display:flex;flex-wrap:wrap;gap:6px}
+.conv.frow .btnrow button{padding:6px 12px;font-size:12px}
+.reqbar{background:rgba(255,106,0,.12);border:1px solid rgba(255,106,0,.45);border-radius:10px;padding:10px 12px;margin:6px 0}
+.reqbar .btnrow{display:flex;gap:6px;flex-wrap:wrap}
+h3.sh{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:14px 0 6px;opacity:.85}
+h3.sh small{margin-left:8px;opacity:.7;font-weight:600}
+.pcard .tbtns{flex-wrap:wrap;gap:6px}
+.pcard .tbtns button{flex:1 1 30%;min-width:120px;white-space:normal}
 .chip.lockd small{color:#ffd21a}
 .dres{max-height:340px;overflow-y:auto;margin-top:6px}
 .conv u{text-decoration:none;color:var(--ac)}
@@ -4126,8 +4136,24 @@ const ONLINE = (() => {
   O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping2', { p_gid: devId(), p_track: track || null, p_room: !!inRoom, p_code: inRoom && O.room ? O.room.code : null }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
   // ---- messages, blocks, reports, player cards ----
   const rpc = async (fn, args) => { if (!O.sb) return null; try { const { data, error } = await O.sb.rpc(fn, args || {}); return error ? null : data; } catch (e) { return null; } };
-  O.sendMessage = async (to, body) => { const b = String(body || '').replace(/\s+/g, ' ').trim().slice(0, 500); if (!b) return 'Type a message first.'; const r = await rpc('send_message', { p_to: to, p_body: b }); return r ? (r.ok ? '' : r.why) : 'Could not send. Check your connection.'; };
+  O.sendMessage = async (to, body) => { const b = String(body || '').replace(/\s+/g, ' ').trim().slice(0, 500); if (!b) return 'Type a message first.'; const r = await rpc('send_message', { p_to: to, p_body: b }); O.lastReq = !!(r && r.request); return r ? (r.ok ? '' : r.why) : 'Could not send. Check your connection.'; };
   O.inbox = async () => (await rpc('inbox')) || [];
+  // v66 friends, teams, message requests
+  const said = r => r ? (r.ok ? '' : r.why || 'Could not do that.') : 'Could not reach the server. Check your connection.';
+  O.friendRequest = async id => { const r = await rpc('friend_request', { p_id: id }); return r && r.ok ? { state: r.state } : { err: said(r) }; };
+  O.friendRespond = async (id, yes) => !!(await rpc('friend_respond', { p_id: id, p_accept: !!yes }));
+  O.friendRemove = async id => !!(await rpc('friend_remove', { p_id: id }));
+  O.myFriends = async () => (await rpc('my_friends')) || { friends: [], incoming: [], outgoing: [] };
+  O.myTeam = async () => (await rpc('my_team')) || { team: null, invites: [] };
+  O.teamCreate = async (name, tag) => said(await rpc('team_create', { p_name: String(name || '').slice(0, 24), p_tag: String(tag || '').slice(0, 4) }));
+  O.teamInvite = async id => said(await rpc('team_invite', { p_id: id }));
+  O.teamUninvite = async id => !!(await rpc('team_uninvite', { p_id: id }));
+  O.teamRespond = async (team, yes) => said(await rpc('team_respond', { p_team: team, p_accept: !!yes }));
+  O.teamLeave = async () => said(await rpc('team_leave'));
+  O.teamKick = async id => !!(await rpc('team_kick', { p_id: id }));
+  O.teamDisband = async () => !!(await rpc('team_disband'));
+  O.adminTeamDelete = async id => !!(await rpc('admin_team_delete', { p_team: id }));
+  O.msgRequest = async (id, yes) => !!(await rpc('msg_request_respond', { p_other: id, p_accept: !!yes }));
   O.thread = async other => { const r = (await rpc('thread', { p_other: other, p_limit: 100 })) || []; O.ping(); return r; };
   O.loadBlocks = async () => { const r = (await rpc('my_blocks')) || []; O.blocked = new Set(r.map(x => x.id)); O.blockList = r; return r; };
   O.block = async id => { const ok = await rpc('block_user', { p_id: id }); if (ok) O.blocked.add(id); await O.loadBlocks(); fire(); return ok; };
@@ -4568,7 +4594,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v65', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v66', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4583,7 +4609,7 @@ const ONLINE = (() => {
     if (g.hunt && typeof g.hunt === 'object' && (g.hunt.rv | 0) > (S.hunt.rv | 0)) { S.hunt = JSON.parse(JSON.stringify(g.hunt)); S.hunt.keys = S.hunt.keys || {}; if (S.hunt.egg !== 'done') delete S.look.egg; if (track) huntRefresh(); }   // a newer reset elsewhere wins
     else if (g.hunt && typeof g.hunt === 'object' && (g.hunt.rv | 0) === (S.hunt.rv | 0)) { Object.assign(S.hunt.keys, g.hunt.keys || {}); const rank = v => v === 'done' ? 2 : v === 'carry' ? 1 : 0; if (rank(g.hunt.egg) > rank(S.hunt.egg)) S.hunt.egg = g.hunt.egg; if (S.hunt.egg === 'done') S.look.egg = 1; if (g.hunt.keep && !S.hunt.keep) S.hunt.keep = g.hunt.keep; }   // v61 key hunt follows the account
     if (first && g.look) { Object.assign(S.look, g.look); huntKeep(); if (g.tune) Object.assign(S.tune, g.tune); if (g.opt) Object.assign(S.opt, g.opt); if (g.slots) Object.assign(S.slots, g.slots); applyTune(); if (mode !== 'drive') newSession(); }
-    S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save();
+    S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save(); setTimeout(() => socPoll(false), 4000);
     ONLINE.syncPbs(S.pb).then(n => { if (n) { toast('Your PBs are on the leaderboards', 'good'); if (tab === 'boards' && mode !== 'drive') renderPanel(); } }); };
   async function joinLobby(lb, keepPos) {
     const ti = SIM.TRACK_DEFS.findIndex(d => d.id === lb.track); if (ti < 0) return 'That room is on a track this version does not have.';
@@ -4925,7 +4951,7 @@ const ONLINE = (() => {
   const GUEST_LOOK = Object.assign({}, GFX.DEF_LOOK, { body: 's15', color: '#ff5a1f', color2: '#101114', livery: 'sponsor', finish: 'gloss', wheel: 'five', wheelColor: '#e8e8ea', wing: 'none', glow: '' });
   function myLook() { if (ONLINE.isGuest && ONLINE.isGuest()) return GUEST_LOOK; const b = S.look.body; if (b && GFX.bodyInfo(b).cls === 'movie' && !movieOk(b)) { huntKeep(); if (!movieOk(b)) return Object.assign({}, S.look, { body: GFX.DEF_LOOK.body }); } return S.look; }
   function rebuildPlayer() { GFX.disposeTree(player.mesh); let L = myLook(); if (isCrawl()) L = Object.assign({}, L, { tires: 'crawl' }); player.mesh = GFX.buildCar(L, !isTouchDev()); player.look = L; scene.add(player.mesh); save(); }
-  function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && ONLINE.unread) b.appendChild(el('i', 'badge', String(ONLINE.unread))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
+  function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && (ONLINE.unread || SOC.n)) b.appendChild(el('i', 'badge', String((ONLINE.unread | 0) + SOC.n))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
   function drawEsc(cv) {   // v54: ESC curve graph like the programmer apps (wheel speed / motor rpm vs trigger)
     const g = cv.getContext('2d'), W = cv.width, H = cv.height, L = 56, B = 34, T = 14, R = 30, p = SIM.derive(S.tune, 'vinyl'), e = p.thrExpo;
     g.clearRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,0.04)'; g.fillRect(L, T, W - L - R, H - T - B);
@@ -5032,6 +5058,7 @@ const ONLINE = (() => {
       body.textContent = ''; if (!p) { body.textContent = 'That driver could not be found.'; return; }
       h2.textContent = p.name; const meta = el('p', 'tmut'); meta.textContent = (p.online ? '● Online now' + (p.track_now ? ' · ' + tName(p.track_now) : '') : 'Offline') + ' · driving since ' + new Date(p.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) + ' · ' + fmt(p.laps) + ' laps posted'; body.appendChild(meta);
       if (p.supporter) body.appendChild(el('span', 'status', '★ SUPPORTER'));
+      if (p.team) body.appendChild(el('p', 'tmut', 'Team: ' + p.team.name + ' [' + p.team.tag + ']' + (p.team.owner ? ' · captain' : '')));
       if (p.look && p.look.egg === 1) { h2.textContent = p.name + ' 🥚'; body.appendChild(el('span', 'status egg', '🥚 FOUND THE EASTER EGG')); }
       if (p.look && p.look.body) body.appendChild(el('p', 'tmut', 'Drives the ' + GFX.bodyInfo(p.look.body).name));
       const lb = el('div', 'lb'); if (!p.pbs.length) lb.appendChild(el('p', 'tmut', 'No laps on the boards yet.'));
@@ -5046,7 +5073,13 @@ const ONLINE = (() => {
         const note = el('input'); note.type = 'text'; note.maxLength = 280; note.placeholder = 'Anything else? (optional)'; note.style.marginTop = '8px'; body.appendChild(note); const out = el('p', 'tmut', 'Reports go to the game admin. You can also block them so you never see their messages or chat.'); body.appendChild(out);
         btns.textContent = ''; mk('Cancel', 'ghost', close); mk('Send report', 'big', async () => { if (!pick) { out.textContent = 'Pick a reason first.'; return; } const e = await ONLINE.report(p.id, pick + (note.value ? ': ' + note.value : ''), thread && thread.id === p.id ? thread.msgs.slice(-6).map(m => (m.from_me ? 'me: ' : 'them: ') + m.body).join(' | ') : null); out.textContent = e || 'Thanks. The report was sent.'; if (!e) setTimeout(close, 1200); }); });
       if (ONLINE.isAdmin) { mk('Admin: ban', 'ghost', async () => { await ONLINE.adminSet(p.id, true, null); toast(p.name + ' banned'); close(); }); mk(p.supporter ? 'Admin: remove ★' : 'Admin: supporter ★', 'ghost', async () => { await ONLINE.adminSet(p.id, null, !p.supporter); toast(p.supporter ? 'Badge removed' : p.name + ' is now a supporter ★', 'good'); close(); }); }
-      if (!p.blocked) mk('Message', 'big', () => { close(); openThread(p.id, p.name); });
+      if (!p.blocked) mk(p.can_msg === false ? 'Send a message request' : 'Message', 'big', () => { close(); openThread(p.id, p.name); });
+      if (!p.blocked) { const lab = { friends: 'Friends ✓ (remove)', pending_out: 'Friend request sent (cancel)', pending_in: 'Accept friend request' }[p.friend] || 'Add friend';
+        const fb = mk(lab, p.friend === 'pending_in' ? 'big' : 'ghost', async () => { fb.disabled = true;
+          if (p.friend === 'friends' || p.friend === 'pending_out') { if (p.friend === 'friends' && !fb.dataset.arm) { fb.dataset.arm = '1'; fb.textContent = 'Tap again to remove friend'; fb.disabled = false; return; } await ONLINE.friendRemove(p.id); p.friend = null; toast(p.name + ' removed'); }
+          else { const r = await ONLINE.friendRequest(p.id); if (r.err) { toast(r.err, 'bad'); fb.disabled = false; return; } p.friend = r.state; toast(r.state === 'friends' ? 'You and ' + p.name + ' are friends' : 'Friend request sent to ' + p.name, 'good'); }
+          fb.dataset.arm = ''; fb.textContent = { friends: 'Friends ✓ (remove)', pending_out: 'Friend request sent (cancel)' }[p.friend] || 'Add friend'; fb.disabled = false; socPoll(true); }); }
+      if (!p.blocked && p.can_invite) { const ib = mk(p.invited ? 'Invited to your team (cancel)' : 'Invite to my team', 'ghost', async () => { ib.disabled = true; if (p.invited) { await ONLINE.teamUninvite(p.id); p.invited = false; } else { const e = await ONLINE.teamInvite(p.id); if (e) { toast(e, 'bad'); ib.disabled = false; return; } p.invited = true; toast('Team invite sent to ' + p.name, 'good'); } ib.textContent = p.invited ? 'Invited to your team (cancel)' : 'Invite to my team'; ib.disabled = false; }); }
       if (extra && extra.room && !(ONLINE.room && ONLINE.room.code === extra.room)) mk('Join their room', 'big', async () => { close(); const lb = await ONLINE.findLobby(extra.room); if (!lb) { toast('That room just closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else drive(false); });
     });
   }
@@ -5134,7 +5167,15 @@ const ONLINE = (() => {
     go.onclick = async () => { if (!pick) { out.textContent = 'Pick a reason first.'; return; } go.disabled = true; const e = await ONLINE.forum.report(p.id, pick); out.textContent = e || 'Thanks. The report was sent.'; if (!e) setTimeout(close, 1100); else go.disabled = false; }; btns.append(cn, go);
   }
   let thread = null; // { id, name, msgs }
-  async function openThread(id, name) { thread = { id, name, msgs: null }; tab = 'community'; F.cv = 'messages'; if (mode === 'drive') openMenu('pause', 'community'); else { renderNav(); renderPanel(); } thread.msgs = await ONLINE.thread(id); if (tab === 'community' && mode !== 'drive') renderPanel(); }
+  // v66 friends + teams: a light poll so requests and invites get noticed (toast + Social badge)
+  const SOC = { n: 0, seen: new Set(), f: null, t: null };
+  async function socPoll(quiet) { if (!ONLINE.profile) { SOC.n = 0; return; } const [f, t] = await Promise.all([ONLINE.myFriends(), ONLINE.myTeam()]); SOC.f = f; SOC.t = t;
+    const inc = (f && f.incoming) || [], inv = (t && t.invites) || []; SOC.n = inc.length + inv.length;
+    for (const r of inc) { const k = 'f' + r.id; if (!SOC.seen.has(k)) { SOC.seen.add(k); if (!quiet) toast('FRIEND REQUEST from ' + r.name + ' · Social → Friends', 'good'); } }
+    for (const r of inv) { const k = 't' + r.team; if (!SOC.seen.has(k)) { SOC.seen.add(k); if (!quiet) toast('TEAM INVITE · ' + r.name + ' [' + r.tag + '] · Social → Team', 'good'); } }
+    if (mode !== 'drive' && nav) renderNav(); }
+  setInterval(() => { if (document.visibilityState === 'visible' && ONLINE.profile) socPoll(false); }, 90000);
+  async function openThread(id, name, request) { thread = { id, name, msgs: null, request: !!request }; tab = 'community'; F.cv = 'messages'; if (mode === 'drive') openMenu('pause', 'community'); else { renderNav(); renderPanel(); } thread.msgs = await ONLINE.thread(id); if (tab === 'community' && mode !== 'drive') renderPanel(); }
   // ---------- leaderboards cache ----------
   const BC = { t: 0, leaders: null, ranks: null, recent: null, boards: {} }; let lbTrack = null, lbMonth = false;
   function boardsData(force) { const now = Date.now(); if (!force && BC.leaders && now - BC.t < 25000) return Promise.resolve(false); BC.t = now; BC.boards = {};
@@ -5359,7 +5400,7 @@ const ONLINE = (() => {
       if (!web) { h('Community'); msg('Who\'s online, messages and the forum are on the web version: ' + WEB); return; }
       if (O.status !== 'ready') { h('Community'); msg('Connecting…'); return; }
       const cv = F.cv || 'people';
-      add(chips([{ id: 'people', name: 'Online now' }, { id: 'messages', name: 'Messages' + (O.unread ? ' · ' + O.unread : '') }, { id: 'forum', name: 'Forum' }], cv, v => { F.cv = v; if (v !== 'messages') thread = null; }, 'subtabs'));
+      add(chips([{ id: 'people', name: 'Online now' }, { id: 'friends', name: 'Friends' + (SOC.f && SOC.f.incoming && SOC.f.incoming.length ? ' · ' + SOC.f.incoming.length : '') }, { id: 'team', name: 'Team' + (SOC.t && SOC.t.invites && SOC.t.invites.length ? ' · ' + SOC.t.invites.length : '') }, { id: 'messages', name: 'Messages' + (O.unread ? ' · ' + O.unread : '') }, { id: 'forum', name: 'Forum' }], cv, v => { F.cv = v; if (v !== 'messages') thread = null; }, 'subtabs'));
       const where = d => d.room ? 'In room ' + (d.room_name || d.room) + (d.track ? ' · ' + tName(d.track) : '') : d.in_room ? 'In a private room' : d.track ? 'Driving ' + tName(d.track) : 'In the menus';
       const dot = c => { const x = el('span', 'cdot'); x.style.background = /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#888'; return x; };
       const badges = (n, d) => { if (d.dev) n.appendChild(el('em', 'tagdev', 'DEV')); if (d.supporter) n.appendChild(el('em', 'tagsup', '★')); return n; };
@@ -5379,6 +5420,42 @@ const ONLINE = (() => {
         msg('Type a few letters, any part of the name works. Tap a driver for their profile, to message or to block them.');
         if (!O.signedIn()) { h('Your account'); msg('Sign in to show up here, message drivers and post in the forum.'); add(signInBtn()); }
       }
+      // ---- friends ----
+      if (cv === 'friends') {
+        if (!O.profile) { h('Friends'); msg(O.signedIn() ? 'Pick a driver name on the Online tab first.' : 'Sign in to add friends.'); if (!O.signedIn()) add(signInBtn()); }
+        else { const box = el('div'); box.textContent = 'Loading…'; add(box);
+          O.myFriends().then(f => { if (!box.isConnected) return; SOC.f = f; box.textContent = ''; const H2 = (t, s2) => { const x = el('h3', 'sh', t); if (s2) x.appendChild(el('small', '', s2)); box.appendChild(x); };
+            const rowF = (d, sub, acts) => { const r = el('div', 'conv frow'), top = el('div'), nm = el('b'); nm.appendChild(dot(d.color)); nm.appendChild(document.createTextNode(String(d.name))); top.appendChild(nm); if (sub) top.appendChild(el('small', '', sub)); r.appendChild(top); const ab = el('div', 'btnrow'); for (const [lab, cls, fn] of acts) { const b = el('button', cls, lab); b.onclick = e => { e.stopPropagation(); fn(b); }; ab.appendChild(b); } r.appendChild(ab); return r; };
+            if (f.incoming.length) { H2('Friend requests', String(f.incoming.length)); for (const d of f.incoming) box.appendChild(rowF(d, ago(d.at), [['Accept', 'big', async () => { await ONLINE.friendRespond(d.id, true); toast('You and ' + d.name + ' are friends', 'good'); socPoll(true).then(renderPanel); }], ['Decline', 'ghost', async () => { await ONLINE.friendRespond(d.id, false); socPoll(true).then(renderPanel); }], ['Profile', 'ghost', () => playerCard(d.id, String(d.name))]])); }
+            H2('Friends', f.friends.length ? f.friends.filter(d => d.online).length + ' online of ' + f.friends.length : '');
+            if (!f.friends.length) box.appendChild(el('p', 'tip', 'No friends yet. Find someone below, or tap any name in a room, the leaderboards or Online now and hit Add friend.'));
+            for (const d of f.friends) { const acts = [['Message', 'ghost', () => openThread(d.id, String(d.name))]]; if (d.room) acts.unshift(['Join room', 'big', async () => { const lb = await ONLINE.findLobby(d.room); if (!lb) { toast('That room just closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else drive(false); }]);
+              acts.push(['Profile', 'ghost', () => playerCard(d.id, String(d.name))]); const r = rowF(d, d.online ? (d.room ? '● in room ' + (d.room_name || d.room) : d.track ? '● driving ' + tName(d.track) : '● online') : 'offline', acts); if (d.team) r.querySelector('b').appendChild(el('em', 'tagteam', d.team)); box.appendChild(r); }
+            if (f.outgoing.length) { H2('Requests you sent', String(f.outgoing.length)); for (const d of f.outgoing) box.appendChild(rowF(d, 'waiting · ' + ago(d.at), [['Cancel', 'ghost', async () => { await ONLINE.friendRemove(d.id); renderPanel(); }]])); }
+            const h3 = el('h3', 'sh', 'Add a friend'); box.appendChild(h3); driverSearch(n => box.appendChild(n), null, d => playerCard(d.id, String(d.name)));
+            box.appendChild(el('p', 'tip', 'Friends see when you\'re online and which room you\'re in, and can message you any time. Everyone else has to send a message request first.')); }); }
+      }
+      // ---- team ----
+      if (cv === 'team') {
+        if (!O.profile) { h('Team'); msg(O.signedIn() ? 'Pick a driver name on the Online tab first.' : 'Sign in to join or create a team.'); if (!O.signedIn()) add(signInBtn()); }
+        else { const box = el('div'); box.textContent = 'Loading…'; add(box);
+          O.myTeam().then(r => { if (!box.isConnected) return; SOC.t = r; box.textContent = ''; const T2 = r.team, H2 = (t, s2) => { const x = el('h3', 'sh', t); if (s2) x.appendChild(el('small', '', s2)); box.appendChild(x); }, P2 = t => box.appendChild(el('p', 'tip', t)), B2 = (lab, cls, fn) => { const b = el('button', cls, lab); b.onclick = () => fn(b); box.appendChild(b); return b; };
+            if (r.invites.length) { H2('Team invites', String(r.invites.length)); for (const iv of r.invites) { const row2 = el('div', 'conv frow'), top = el('div'); top.appendChild(el('b', '', iv.name + ' [' + iv.tag + ']')); top.appendChild(el('small', '', 'from ' + iv.by + ' · ' + ago(iv.at))); row2.appendChild(top); const ab = el('div', 'btnrow');
+              const ok = el('button', 'big', 'Join'); ok.onclick = async () => { const e = await ONLINE.teamRespond(iv.team, true); if (e) toast(e, 'bad'); else toast('Welcome to ' + iv.name, 'good'); socPoll(true).then(renderPanel); }; const no = el('button', 'ghost', 'Decline'); no.onclick = async () => { await ONLINE.teamRespond(iv.team, false); socPoll(true).then(renderPanel); }; ab.append(ok, no); row2.appendChild(ab); box.appendChild(row2); } }
+            if (!T2) { H2('Create a team'); const ni = el('input'); ni.type = 'text'; ni.maxLength = 24; ni.placeholder = 'Team name (3 to 24)'; const ti = el('input'); ti.type = 'text'; ti.maxLength = 4; ti.placeholder = 'Tag (2 to 4, e.g. SKR)'; ti.style.textTransform = 'uppercase'; ti.style.marginTop = '6px'; box.append(ni, ti); const out = el('p', 'tip', '');
+              B2('Create team', 'big', async b => { b.disabled = true; const e = await ONLINE.teamCreate(ni.value, ti.value); b.disabled = false; if (e) { out.textContent = e; return; } toast('Team created. Invite drivers from their profile or below.', 'good'); socPoll(true).then(renderPanel); }); box.appendChild(out);
+              P2('You\'re the captain of a team you create: only you can invite drivers. Players accept the invite to join. One team per driver.'); return; }
+            H2(T2.name + ' [' + T2.tag + ']', T2.members.length + ' driver' + (T2.members.length > 1 ? 's' : ''));
+            for (const m of T2.members) { const row2 = el('div', 'conv frow'), top = el('div'), nm = el('b', '', (m.online ? '● ' : '') + m.name); if (m.owner) nm.appendChild(el('em', 'tagteam', 'CAPTAIN')); top.appendChild(nm); top.appendChild(el('small', '', 'joined ' + ago(m.joined))); row2.appendChild(top); const ab = el('div', 'btnrow');
+              const pf = el('button', 'ghost', 'Profile'); pf.onclick = () => playerCard(m.id, String(m.name)); ab.appendChild(pf);
+              if (T2.mine && !m.owner) { const k = el('button', 'ghost', 'Remove'); k.onclick = async () => { if (!k.dataset.arm) { k.dataset.arm = '1'; k.textContent = 'Tap again to remove'; return; } await ONLINE.teamKick(m.id); renderPanel(); }; ab.appendChild(k); } row2.appendChild(ab); box.appendChild(row2); }
+            if (T2.mine) { if (T2.invited && T2.invited.length) { H2('Invited, waiting', String(T2.invited.length)); for (const iv of T2.invited) { const row2 = el('div', 'conv frow'), top = el('div'); top.appendChild(el('b', '', iv.name)); top.appendChild(el('small', '', ago(iv.at))); row2.appendChild(top); const c = el('button', 'ghost', 'Cancel'); c.onclick = async () => { await ONLINE.teamUninvite(iv.id); renderPanel(); }; row2.appendChild(c); box.appendChild(row2); } }
+              H2('Invite drivers'); driverSearch(n => box.appendChild(n), null, async d => { const e = await ONLINE.teamInvite(d.id); toast(e || 'Team invite sent to ' + d.name, e ? 'bad' : 'good'); renderPanel(); });
+              P2('Only you (the captain) can invite. They get a notice and accept it from Social → Team.');
+              const dis = B2('Disband team', 'ghost', async b => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Tap again: delete the team for everyone'; return; } await ONLINE.teamDisband(); toast('Team disbanded'); socPoll(true).then(renderPanel); }); }
+            B2(T2.mine ? 'Leave team (captain passes to the longest member)' : 'Leave team', 'ghost', async b => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Tap again to leave'; return; } const e = await ONLINE.teamLeave(); if (e) toast(e, 'bad'); else toast('You left ' + T2.name); socPoll(true).then(renderPanel); });
+            if (ONLINE.isAdmin && false) { } }); }
+      }
       // ---- messages ----
       if (cv === 'messages') {
         if (!O.profile) { h('Messages'); msg(O.signedIn() ? 'Pick a driver name on the Online tab to start messaging.' : 'Sign in to message other drivers.'); if (!O.signedIn()) add(signInBtn()); }
@@ -5387,9 +5464,12 @@ const ONLINE = (() => {
           h('Messages · ' + thread.name); const back = el('button', 'ghost', '← All messages'); back.onclick = () => { thread = null; renderPanel(); };
           const box = el('div', 'thread'); if (!thread.msgs) box.textContent = 'Loading…'; else if (!thread.msgs.length) box.appendChild(el('p', 'tip', 'No messages yet. Say hi.'));
           for (const m of thread.msgs || []) { const b = el('div', 'bub' + (m.from_me ? ' me' : '')); b.appendChild(el('div', '', O.mask(m.body))); b.appendChild(el('small', '', ago(m.created_at) + (m.from_me && m.read_at ? ' · seen' : ''))); box.appendChild(b); }
+          if (thread.request) { const bar = el('div', 'reqbar'); bar.appendChild(el('p', '', thread.name + ' isn\'t on your friends list. Accept to keep talking. They can\'t send more until you do.'));
+            const ab = el('div', 'btnrow'), y = el('button', 'big', 'Accept'), n = el('button', 'ghost', 'Decline'), bk = el('button', 'ghost', 'Block'); y.onclick = async () => { await ONLINE.msgRequest(thread.id, true); thread.request = false; renderPanel(); };
+            n.onclick = async () => { await ONLINE.msgRequest(thread.id, false); toast('Request declined'); thread = null; renderPanel(); }; bk.onclick = async () => { await ONLINE.block(thread.id); toast(thread.name + ' blocked'); thread = null; renderPanel(); }; ab.append(y, n, bk); bar.appendChild(ab); add(bar); }
           add(box); setTimeout(() => { box.scrollTop = box.scrollHeight; }, 0);
           const inp = el('input'); inp.type = 'text'; inp.maxLength = 500; inp.placeholder = 'Message ' + thread.name + '…'; inp.value = F.draft; inp.oninput = () => F.draft = inp.value; const out = el('p', 'tip', '');
-          const send = el('button', 'big', 'Send'); const go = async () => { if (!inp.value.trim()) return; send.disabled = true; const e = await O.sendMessage(thread.id, inp.value); send.disabled = false; if (e) { out.textContent = e; return; } F.draft = ''; thread.msgs = await O.thread(thread.id); F.focusThread = true; renderPanel(); };
+          const send = el('button', 'big', 'Send'); const go = async () => { if (!inp.value.trim()) return; send.disabled = true; const e = await O.sendMessage(thread.id, inp.value); send.disabled = false; if (e) { out.textContent = e; return; } if (O.lastReq) toast('Message request sent. They\'ll see it when they accept.', 'good'); F.draft = ''; thread.msgs = await O.thread(thread.id); F.focusThread = true; renderPanel(); };
           send.onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); }; add(inp); if (F.focusThread) { F.focusThread = false; setTimeout(() => inp.focus(), 0); } add(send); add(out);
           const br = el('div', 'btnrow'), pf = el('button', 'ghost', 'Profile · block · report'), rf = el('button', 'ghost', 'Refresh'); pf.onclick = () => playerCard(thread.id, thread.name); rf.onclick = async () => { thread.msgs = await O.thread(thread.id); renderPanel(); }; br.append(back, pf, rf); add(br);
         } else {
@@ -5397,7 +5477,7 @@ const ONLINE = (() => {
           const box = el('div', 'inbox'); box.textContent = 'Loading…'; add(box);
           O.inbox().then(list => { if (!box.isConnected) return; box.textContent = ''; if (!list.length) { box.appendChild(el('p', 'tip', 'No messages yet. Pick a driver below, or tap any name on the leaderboards or in a room.')); return; }
             for (const c of list) { const r = el('button', 'conv' + (c.unread ? ' new' : '')); const top = el('div'); top.appendChild(el('b', '', (c.online ? '● ' : '') + c.other_name)); top.appendChild(el('small', '', ago(c.last_at))); r.appendChild(top);
-              r.appendChild(el('span', '', (c.last_from_me ? 'You: ' : '') + O.mask(c.last_body))); if (c.unread) r.appendChild(el('i', '', String(c.unread))); r.onclick = () => openThread(c.other_id, String(c.other_name)); box.appendChild(r); } });
+              r.appendChild(el('span', '', (c.request ? '📨 Message request · ' : '') + (c.last_from_me ? 'You: ' : '') + O.mask(c.last_body))); if (c.unread) r.appendChild(el('i', '', String(c.unread))); r.onclick = () => openThread(c.other_id, String(c.other_name), c.request); box.appendChild(r); } });
           h('Message someone'); driverSearch(add, null, d => openThread(d.id, String(d.name)));
         }
               }
