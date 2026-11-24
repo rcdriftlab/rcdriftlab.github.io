@@ -4210,10 +4210,12 @@ const ONLINE = (() => {
     if (c === 'steer') { CR.steer = CR.steer === 'front' ? '4ws' : CR.steer === '4ws' ? 'crab' : 'front'; toast({ front: 'FRONT STEER', '4ws': '4-WHEEL STEER · rear steers opposite, tight turns', crab: 'CRAB STEER · rear steers with the front, walks sideways' }[CR.steer]); }
     if (c === 'dig') { CR.dig = !CR.dig; toast(CR.dig ? 'DIG ON · rear wheels locked, pivot on the fronts' : 'DIG OFF'); } crawlUI(); }
   document.querySelectorAll('#crawlB button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); crawlCmd(b.dataset.c); }));
-  function rideTo(id) { if (id === 'crawl' && huntKeys() < 3) return; if (ONLINE.room) { leaveLobby(); toast('Left the room for the hidden trail'); } const i = SIM.TRACK_DEFS.findIndex(d => d.id === id); if (i < 0) return;
+  const CANYON_ROOM = { code: 'NEST', name: 'Crawler Canyon', track: 'crawl', max_players: 20, is_official: false, host: null, voice: true, is_public: false };   // v62: never listed, no DB row: the only door is the trailer
+  function rideTo(id) { if (id === 'crawl' && huntKeys() < 3) return; if (ONLINE.room) { const wasCanyon = ONLINE.room.code === CANYON_ROOM.code; leaveLobby(); toast(wasCanyon ? 'Left the canyon room' : 'Left the room for the hidden trail'); } const i = SIM.TRACK_DEFS.findIndex(d => d.id === id); if (i < 0) return;
     arrive = id === 'crawl' ? 'crawl' : 'v2trailer'; loadTrack(i); applyTune(); save(); drive(false); trailerT = 0;
     if (id === 'crawl') { S.found = Object.assign(S.found || {}, { crawl: 1 }); save(); toast(S.hunt.egg ? 'CRAWLER CANYON · off-road tires fitted · LOW / 4WS / DIG on the right' : 'CRAWLER CANYON · something is hidden up high in here… LOW / 4WS / DIG on the right', 'good'); }
-    else toast('Back on Prodigy RC V2', 'good'); }
+    else toast('Back on Prodigy RC V2', 'good');
+    if (id === 'crawl' && S.hunt.egg === 'done' && ONLINE.profile) joinLobby(CANYON_ROOM).then(e => { if (e) toast(e, 'bad'); else toast('🥚 CANYON ROOM · everyone in here found the egg', 'good'); }); }
   { const tg = document.getElementById('trailerGo'); if (tg) tg.addEventListener('click', e => { e.stopPropagation(); if (tg.dataset.to && tg.dataset.to !== 'locked') rideTo(tg.dataset.to); }); }
   // ---- v61 the hunt: three keys in three rooms unlock the V2 trailer; an egg in the canyon; carry it home for the prize ----
   const HUNT = { keys: { warehouse: { id: 'copper', name: 'COPPER KEY', col: '#d0763a', x: -7.4, y: -2.8, hint: 'Copper waits in the Warehouse, as far from the pit gate as the infield goes.' },
@@ -4222,6 +4224,8 @@ const ONLINE = (() => {
     altar: { track: 'prodigy', x: 6.7, y: -1.7 } };
   const movieOk = id => S.hunt.egg === 'done' || S.hunt.keep === id;
   function huntKeep() { const b = S.look && S.look.body; if (b && GFX.bodyInfo(b).cls === 'movie' && !movieOk(b) && !S.hunt.keep) { S.hunt.keep = b; save(); } }   // v62: grandfather the movie car you were already driving
+  function huntRefresh() { if (huntObj && huntObj.g.parent) huntObj.g.parent.remove(huntObj.g); huntSpawn(); rebuildPlayer(); }
+  function huntReset() { S.hunt = { keys: {}, egg: 0, rv: (S.hunt.rv | 0) + 1, keep: S.hunt.keep }; delete S.look.egg; save(); huntRefresh(); toast('Hunt reset · keys and egg gone, find them again', 'good'); }
   const huntKeys = () => Object.keys(HUNT.keys).filter(t => S.hunt.keys[HUNT.keys[t].id]).length;
   const huntKeyIcons = () => Object.keys(HUNT.keys).map(t => S.hunt.keys[HUNT.keys[t].id] ? '🗝️' : '▫️').join('') + ' ' + huntKeys() + '/3 KEYS';
   function huntHint() { const miss = Object.keys(HUNT.keys).filter(t => !S.hunt.keys[HUNT.keys[t].id]); if (!miss.length) return ''; return huntKeys() === 0 ? 'Three keys are hidden in three rooms. Look inside the infields.' : HUNT.keys[miss[(Math.floor(Date.now() / 6000)) % miss.length]].hint; }
@@ -4416,7 +4420,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v62', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v63', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4428,7 +4432,8 @@ const ONLINE = (() => {
   ONLINE.onProfile = p => {   // first sign-in on this device: the account's garage comes down; PBs merge (best of both)
     const g = p.garage || {}; let first = true; try { first = localStorage.getItem('rcdl_sync_' + p.id) !== '1'; localStorage.setItem('rcdl_sync_' + p.id, '1'); } catch (e) { }
     if (g.pb) for (const k of Object.keys(g.pb)) if (!(S.pb[k] >= g.pb[k])) S.pb[k] = g.pb[k];
-    if (g.hunt && typeof g.hunt === 'object') { Object.assign(S.hunt.keys, g.hunt.keys || {}); const rank = v => v === 'done' ? 2 : v === 'carry' ? 1 : 0; if (rank(g.hunt.egg) > rank(S.hunt.egg)) S.hunt.egg = g.hunt.egg; if (S.hunt.egg === 'done') S.look.egg = 1; if (g.hunt.keep && !S.hunt.keep) S.hunt.keep = g.hunt.keep; }   // v61 key hunt follows the account
+    if (g.hunt && typeof g.hunt === 'object' && (g.hunt.rv | 0) > (S.hunt.rv | 0)) { S.hunt = JSON.parse(JSON.stringify(g.hunt)); S.hunt.keys = S.hunt.keys || {}; if (S.hunt.egg !== 'done') delete S.look.egg; if (track) huntRefresh(); }   // a newer reset elsewhere wins
+    else if (g.hunt && typeof g.hunt === 'object' && (g.hunt.rv | 0) === (S.hunt.rv | 0)) { Object.assign(S.hunt.keys, g.hunt.keys || {}); const rank = v => v === 'done' ? 2 : v === 'carry' ? 1 : 0; if (rank(g.hunt.egg) > rank(S.hunt.egg)) S.hunt.egg = g.hunt.egg; if (S.hunt.egg === 'done') S.look.egg = 1; if (g.hunt.keep && !S.hunt.keep) S.hunt.keep = g.hunt.keep; }   // v61 key hunt follows the account
     if (first && g.look) { Object.assign(S.look, g.look); huntKeep(); if (g.tune) Object.assign(S.tune, g.tune); if (g.opt) Object.assign(S.opt, g.opt); if (g.slots) Object.assign(S.slots, g.slots); applyTune(); if (mode !== 'drive') newSession(); }
     S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save();
     ONLINE.syncPbs(S.pb).then(n => { if (n) { toast('Your PBs are on the leaderboards', 'good'); if (tab === 'boards' && mode !== 'drive') renderPanel(); } }); };
@@ -4471,7 +4476,7 @@ const ONLINE = (() => {
   function netSend(dt) {
     if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.066; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
     const lk = JSON.stringify(S.look); NET.lkN = (NET.lkN || 0) + 1; const sendLook = lk !== NET.lkSent || NET.lkN % 30 === 0 || NET.lkN < 15 || (NET.room.oldPeers && NET.room.oldPeers()); if (sendLook) NET.lkSent = lk;
-    try { NET.room.presence({ drift: { t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight } }).catch(() => { }); } catch (e) { }
+    try { NET.room.presence({ drift: { t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
   }
   function netRecv(dt) {
     if (!NET.room) return; let peers = []; try { peers = NET.room.peers(); } catch (e) { return; }
@@ -4481,12 +4486,16 @@ const ONLINE = (() => {
       if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
       const l = NET.looks.get(p.peer) || {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
       const sig = JSON.stringify(look), name = String(d.n || 'Driver').slice(0, 16) + (l.egg === 1 ? ' 🥚' : ''); let nc = netCars.get(p.peer);
-      if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(look); scene.add(mesh);
+      if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(isCrawl() ? Object.assign({}, look, { tires: 'crawl' }) : look); scene.add(mesh);
         const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; sp.userData.tag = 1; mesh.add(sp); const mic = new T.Sprite(new T.SpriteMaterial({ map: micTex(), depthTest: false, transparent: true })); mic.scale.set(0.05, 0.05, 1); mic.position.y = 0.215; mic.visible = false; mic.userData.tag = 1; mic.userData.mic = 1; mesh.add(mic);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
       seen.add(p.peer); nc.seenAt = now; const s = nc.sim, age = clamp((now - p.updatedAt) / 1000, 0, 0.25), k = 1 - Math.exp(-dt * 14);
       s.vx = num(d.vx, -12, 12); s.vy = num(d.vy, -12, 12); s.r = num(d.r, -30, 30); const tx = num(d.x, -50, 50) + s.vx * age, ty = num(d.y, -50, 50) + s.vy * age, tyaw = num(d.yw, -1e4, 1e4) + s.r * age;
       if (Math.hypot(tx - s.x, ty - s.y) > 1.5) { s.x = tx; s.y = ty; s.yaw = tyaw; } else { s.x += (tx - s.x) * k; s.y += (ty - s.y) * k; s.yaw += wrap(tyaw - s.yaw) * k; }
+      if (isCrawl() && d.cz && Array.isArray(d.cz.q) && d.cz.q.length === 4) { const z = d.cz, q = z.q.map(v => num(v, -1, 1)), L = Math.hypot(q[0], q[1], q[2], q[3]) || 1; q.forEach((v, i) => q[i] = v / L);
+        if (!s.q || Math.hypot(tx - s.x, ty - s.y) > 1.5) s.q = q.slice(); else { if (s.q[0] * q[0] + s.q[1] * q[1] + s.q[2] * q[2] + s.q[3] * q[3] < 0) q.forEach((v, i) => q[i] = -v); for (let i = 0; i < 4; i++) s.q[i] += (q[i] - s.q[i]) * k; const L2 = Math.hypot(...s.q); for (let i = 0; i < 4; i++) s.q[i] /= L2; }
+        s.crawl = true; s.z = s.z == null ? num(z.z, -1, 3) : s.z + (num(z.z, -1, 3) - s.z) * k; s.ws = Array.isArray(z.ws) && z.ws.length === 4 ? z.ws.map(v => num(v, 0, 0.12)) : [0.062, 0.062, 0.062, 0.062]; s.deltaR = num(z.dr, -1, 1);
+        const [w, x, y, zz] = s.q, ux = 2 * (x * zz + w * y), uy = 2 * (y * zz - w * x), uz = 1 - 2 * (x * x + y * y), o = CRAWL.AZ - 0.091; s.mx = s.x + ux * o; s.my = s.y + uy * o; s.mz = s.z + uz * o; } else s.crawl = false;
       s.delta = num(d.d, -1.4, 1.4); s.w = num(d.w, -20, 20); s.slip = num(d.sl, -1.6, 1.6); s.speed = Math.hypot(s.vx, s.vy); s.u = s.speed; s.inp.brake = d.br ? 1 : 0; s.inf = !!d.pf; s.ti = track.nearest(s.x, s.y, s.ti); s.lat = track.lateral(s.x, s.y, s.ti);
       nc.tune = { camberF: num(d.cf, -12, 0), camberR: num(d.cr, -5, 0), offset: num(d.of, 0, 12), rideHeight: num(d.rh, 4, 9), toeF: 0, toeR: 0 }; nc.score = num(d.sc, 0, 1e9); const talking = !!d.vt && ONLINE.voice.hear && !ONLINE.voice.muted.has(p.peer) && !ONLINE.blocked.has(p.peer); if (talking !== nc.vt) { nc.vt = talking; nc.mesh.children.forEach(o => { if (o.userData.mic) o.visible = talking; }); }
     }
@@ -4509,7 +4518,9 @@ const ONLINE = (() => {
     }
     const n = Math.max(1, Math.ceil(dt / H)), h = dt / n; let wallHit = 0, carHit = 0;
     for (let i = 0; i < n; i++) {
-      if (isCrawl()) { CRAWL.step(P, h, CRAWL.build(), CR); if (P.flip > 3.5) { CRAWL.reset(P); toast("Back on its wheels"); } continue; }
+      if (isCrawl()) { CRAWL.step(P, h, CRAWL.build(), CR);
+        for (const nc of netCars.values()) { const o = nc.sim; if (!o.crawl) continue; const dx = P.x - o.x, dy = P.y - o.y, d = Math.hypot(dx, dy); if (d < 0.32 && d > 1e-4 && Math.abs((P.z || 0) - (o.z || 0)) < 0.2) { const nx = dx / d, ny = dy / d, pen = 0.32 - d; P.x += nx * pen * 0.5; P.y += ny * pen * 0.5; const vn = (P.vx - o.vx) * nx + (P.vy - o.vy) * ny; if (vn < 0) { P.vx -= vn * nx * 1.2; P.vy -= vn * ny * 1.2; } } }   // other crawlers in the canyon room are solid
+ if (P.flip > 3.5) { CRAWL.reset(P); toast("Back on its wheels"); } continue; }
       for (const c of cars) { c.sim.hit = 0; SIM.stepCar(c.sim, h, track); if (c === player) wallHit = Math.max(wallHit, c.sim.hit); }
       for (let a = 0; a < cars.length; a++) { for (let b = a + 1; b < cars.length; b++) { const A = cars[a], B = cars[b], pa = A === player, pb = B === player;
         if (!!A.sim.inf !== !!B.sim.inf) continue; const v = pa ? SIM.collide(B.sim, A.sim, true) : pb ? SIM.collide(A.sim, B.sim, true) : SIM.collide(A.sim, B.sim, false); if (pa || pb) carHit = Math.max(carHit, v); } }   // an AI that touches you moves, you don't
@@ -5285,6 +5296,8 @@ const ONLINE = (() => {
     }
 
     if (tab === 'settings') {
+      if (ONLINE.isAdmin) { h('The hunt', 'admin · only you see this'); msg('Keys: ' + huntKeyIcons() + ' · egg: ' + (S.hunt.egg === 'done' ? 'turned in 🥚' : S.hunt.egg === 'carry' ? 'carrying' : 'not found') + '. Reset wipes your keys and egg on every device (movie cars lock again) so you can run it fresh.');
+        const rb = el('button', 'ghost', 'Reset my hunt'); rb.onclick = () => { if (!rb.dataset.arm) { rb.dataset.arm = '1'; rb.textContent = 'Tap again: wipe keys + egg'; setTimeout(() => { if (rb.isConnected) { rb.dataset.arm = ''; rb.textContent = 'Reset my hunt'; } }, 3500); return; } huntReset(); renderPanel(); }; add(rb); }
       h('Camera'); add(row('View', chips(CAMS.map((n, i) => ({ id: i, name: n })), S.opt.cam, v => { S.opt.cam = v; save(); }), 'Press C while driving (Y on a controller) to cycle.'));
       add(row('Stand cam zoom', slider(60, 200, 10, Math.round((S.opt.standZoom || 1) * 100), v => v + '%', v => { S.opt.standZoom = v / 100; save(); }), 'How tight the driver-stand camera follows your car.'));
       h('Display');
@@ -5375,7 +5388,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { ov: OV, camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt })) };
+  window.__game = { ov: OV, camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
