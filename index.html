@@ -828,10 +828,10 @@ if (typeof module !== 'undefined') module.exports = SIM;
 const CRAWL = (() => {
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   // ---------------- terrain grid ----------------
-  const X0 = -13, Y0 = -9, W = 26, D = 18, RES = 0.04, NX = Math.round(W / RES) + 1, NY = Math.round(D / RES) + 1;
-  const MAT = { dirt: 0, rock: 1, sand: 2, grass: 3, mud: 4, wood: 5, road: 6, gravel: 7, wall: 8, concrete: 9, rubber: 10, metal: 11 };
-  const MU = [1.0, 1.35, 0.62, 0.85, 0.48, 0.95, 1.05, 0.85, 1.0, 1.05, 1.3, 0.8];        // tire grip by surface
-  const DRAG = [0, 0, 2.2, 0.4, 3.2, 0, 0, 0.3, 0, 0, 0, 0];                          // rolling drag (sand / mud bog)
+  const X0 = -18, Y0 = -12.52, W = 36, D = 25.04, RES = 0.04, NX = Math.round(W / RES) + 1, NY = Math.round(D / RES) + 1;
+  const MAT = { dirt: 0, rock: 1, sand: 2, grass: 3, mud: 4, wood: 5, road: 6, gravel: 7, wall: 8, concrete: 9, rubber: 10, metal: 11, slick: 12 };
+  const MU = [1.0, 1.35, 0.62, 0.85, 0.48, 0.95, 1.05, 0.85, 1.0, 1.05, 1.3, 0.8, 1.4];        // tire grip by surface
+  const DRAG = [0, 0, 2.2, 0.4, 3.2, 0, 0, 0.3, 0, 0, 0, 0, 0];                          // rolling drag (sand / mud bog)
   // tiny deterministic noise
   const hash = (i, j) => { let h = (i * 374761393 + j * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   const sm = t => t * t * (3 - 2 * t);
@@ -852,7 +852,10 @@ const CRAWL = (() => {
   const TRAIL = smooth([[-10.4, -7.7], [-8.6, -7.1], [-6.2, -6.4], [-3.8, -6.6], [-1.2, -7.2], [1.4, -6.8], [3.6, -6.0], [5.4, -5.6], [7.4, -6.6], [9.6, -6.0], [11.4, -4.6], [11.6, -2.9], [10.9, -1.5], [10.4, 0.2],
     [9.7, 1.5], [9.7, 2.5], [10.6, 3.4], [11.45, 4.8], [11.0, 6.2], [11.5, 7.35], [10.4, 8.0], [8.6, 7.7], [7.2, 8.0], [5.8, 7.65], [4.6, 7.45], [3.6, 7.6], [2.0, 8.2], [0.2, 8.15], [-0.85, 7.95], [-1.05, 7.0], [-1.2, 6.2], [-1.35, 5.4], [-1.5, 4.6], [-2.6, 4.0], [-3.8, 3.2], [-5.6, 2.4], [-7.0, 1.0], [-8.6, 1.0], [-9.3, 0.2], [-9.3, -2.6],
     [-9.3, -4.6], [-10.4, -6.0], [-10.4, -7.7]], 0.2);
-  const RIVER = smooth([[-4.4, 9.6], [-3.4, 7.7], [-1.9, 6.3], [-0.2, 6.15], [1.8, 6.5], [3.5, 5.9], [5.0, 4.2], [6.3, 2.3], [8.0, 0.6], [10.0, -1.0], [11.6, -1.9], [13.4, -2.3]], 0.2);
+  const RIVER = smooth([[-5.9, 13.0], [-5.5, 11.9], [-5.0, 10.8], [-4.4, 9.6], [-3.4, 7.7], [-1.9, 6.3], [-0.2, 6.15], [1.8, 6.5], [3.5, 5.9], [5.0, 4.2], [6.3, 2.3], [8.0, 0.6], [10.0, -1.0], [11.6, -1.9], [13.4, -2.3], [15.0, -2.7], [16.8, -3.0], [18.6, -3.2]], 0.2);
+  { let acc = 0; RIVER[0].push(0); for (let i = 1; i < RIVER.length; i++) { acc += Math.hypot(RIVER[i][0] - RIVER[i - 1][0], RIVER[i][1] - RIVER[i - 1][1]); RIVER[i].push(acc); } }
+  const FALL = { s0: 2.05, s1: 2.32, top: 0.27 };   // THE FALLS: the creek drops off the mesa here (river arc length, m)
+  const bedZ = s => s < FALL.s0 ? FALL.top : s < FALL.s1 ? FALL.top + (-0.13 - FALL.top) * sm((s - FALL.s0) / (FALL.s1 - FALL.s0)) : -0.13;
   const RIV_W = 0.8, RIV_BANK = 0.3, RIV_BED = -0.13, WATER = -0.035;
   const MTN = { x: -0.4, y: 1.0, r: 3.0, h: 1.25, SUM: 1.02 };   // SUM: the flat summit pad the switchback ends on
   // switchback up the Big Rock: starts at its south-west foot, climbs at ~18%, ends on the summit
@@ -866,16 +869,39 @@ const CRAWL = (() => {
   { let bi = 0, bd = 1e9; RIVER.forEach((p, i) => { const d = Math.hypot(p[0] - 6.9, p[1] - 1.7); if (d < bd) { bd = d; bi = i; } }); const p = RIVER[bi - 2], q = RIVER[bi + 2];   // log crossing: a shortcut straight across the creek
     BRIDGES.push({ kind: 'logs', x: RIVER[bi][0], y: RIVER[bi][1], a: Math.atan2(q[1] - p[1], q[0] - p[0]) + Math.PI / 2, L: 1.9, w: 0.26, h: 0 }); }
   for (const X of CROSS) { if (X.x > 8.5) Object.assign(FORD, { x: X.x, y: X.y }); else if (X.x > 2) continue; else BRIDGES.push({ kind: 'plank', x: X.x, y: X.y, a: X.a, L: 2.0, w: 0.62, h: 0.14 }); }
+  const TRAIL2_PTS = [[-11.0, -8.35], [-13.5, -9.4], [-15.6, -9.9], [-15.9, -8.6], [-15.7, -7.3], [-15.6, -5.8], [-16.1, -3.3], [-15.3, -0.6], [-16.0, 2.0], [-15.4, 4.6], [-16.0, 7.6], [-15.2, 10.2], [-12.6, 10.8], [-10.0, 10.3], [-8.0, 10.75], [-6.8, 10.3], [-4.85, 10.3], [-2.9, 10.3], [-1.6, 10.8], [0.4, 10.4], [2.4, 10.95], [4.4, 10.5], [5.4, 10.75], [6.9, 10.75], [8.4, 10.75], [9.6, 10.4], [11.6, 10.9], [13.0, 10.3], [14.9, 9.4], [15.6, 8.2], [15.0, 7.1], [14.3, 5.6], [15.0, 4.1], [15.6, 2.4], [15.2, 0.2], [15.55, -2.85], [15.1, -5.3], [15.6, -7.7], [14.6, -10.2], [12.0, -10.75], [9.6, -10.1], [7.0, -10.7], [4.2, -10.25], [1.4, -10.8], [-1.4, -10.3], [-4.2, -10.8], [-7.0, -10.3], [-9.3, -9.85], [-11.0, -8.35]];
+  // ===== v65 the outer ring: OUTER LOOP trail through the forest, the quarry, the slickrock and the construction yard =====
+  const TRAIL2 = smooth(TRAIL2_PTS.slice(0, -1), 0.2, true);
+  const FORD2 = { x: 0, y: 0, r: 0.8 };
+  { let last = -99; for (let i = 0; i < TRAIL2.length - 1; i++) { const [d] = polyD(TRAIL2[i][0], TRAIL2[i][1], RIVER); if (d < 0.2 && i - last > 15) { last = i; const p = TRAIL2[Math.max(0, i - 6)], q = TRAIL2[Math.min(TRAIL2.length - 1, i + 6)];
+      if (TRAIL2[i][0] > 12) Object.assign(FORD2, { x: TRAIL2[i][0], y: TRAIL2[i][1] }); else BRIDGES.push({ kind: 'plank', x: TRAIL2[i][0], y: TRAIL2[i][1], a: Math.atan2(q[1] - p[1], q[0] - p[0]), L: 2.2, w: 0.62, h: 0.12 }); } } }
+  const RAV = { x: 6.9, y0: 8.5, depth: 0.4 }, ravX = y => RAV.x + 0.3 * Math.sin(y * 1.7);   // THE RAVINE: dead-end slot canyon, rope bridge across
+  { let bi = 0, bd = 1e9; TRAIL2.forEach((p, i) => { const d = Math.abs(p[0] - ravX(p[1])) + (p[1] < 9.5 ? 9 : 0); if (d < bd) { bd = d; bi = i; } }); const p = TRAIL2[bi - 6], q = TRAIL2[bi + 6];
+    BRIDGES.push({ kind: 'plank', rope: 1, x: ravX(TRAIL2[bi][1]), y: TRAIL2[bi][1], a: Math.atan2(q[1] - p[1], q[0] - p[0]), L: 1.8, w: 0.6, h: 0.03 }); }
+  const QY = { x: 15.4, y: 5.6, r: 2.15, spire: [16.45, 6.4], bridge: [17.35, 7.05] };   // THE QUARRY: benches down to a pond, a spire on a land bridge
+  const DOMES = (() => { seed = 61; const out = []; for (let k = 0; k < 26; k++) { const x = -12.6 + rnd() * 26.2, y = -12.2 + rnd() * 2.9, r = 0.55 + rnd() * 0.95, h = 0.08 + rnd() * rnd() * 0.42; out.push([x, y, r, h]); } return out; })();   // SLICKROCK
+  const ELEPHANT = { x0: 8.5, x1: 10.5, y0: -12.25, y1: -9.2, top: 0.52 };
+  const PILES = [[-16.6, 2.6, 0.95, 0.4, 0], [-14.5, 5.0, 0.7, 0.28, 0], [-16.5, 7.4, 1.05, 0.46, 0], [-14.4, 0.9, 0.6, 0.22, 7], [-17.0, -1.6, 0.55, 0.2, 7]];   // dirt / gravel piles: x, y, r, h, mat
+  const CONT = [[-15.2, -4.6, 0, 0], [-15.2, -4.36, 0, 0], [-13.9, -2.4, 1.571, 0], [-17.0, -5.9, 0.3, 0], [-17.0, -5.9, 0.3, 0.256], [-13.85, -6.2, 1.2, 0]];   // shipping containers (0.606 x 0.24 x 0.256): x, y, rot, base z
+  const RAMPS = [[-15.2 + 0.303 + 0.34, -4.48, Math.PI, 0.68, 0.3, 0, 0.256], [-15.2 - 0.303 - 0.34, -4.48, 0, 0.68, 0.3, 0, 0.256], [-13.9, -2.4 - 0.303 - 0.34, Math.PI / 2, 0.68, 0.3, 0, 0.256]];   // plank ramps: x, y, rot (+u = uphill), length, width, z0, z1   // plank ramps
+  const BARRIERS = [[-14.2, -8.4, 0.2], [-14.75, -8.1, 0.2], [-16.9, -0.9, 1.3], [-14.3, 2.9, 1.5], [-14.1, 3.32, 1.5], [-16.9, 9.2, 0.1], [-16.5, 9.3, 0.1]];   // jersey barriers: x, y, rot
+  const PSTACK = { x: -16.7, y: 0.9, rot: 0, L: 0.9, r: 0.055 };
+  const TEET = { x: -15.65, y: -7.0, a: Math.PI / 2 + 0.08, L: 1.3, w: 0.36, ph: 0.13, ang: 0, drawn: 1, base: null, cells: null };   // TEETER-TOTTER on the outer loop
+  const CAMP = { x0: 12.2, x1: 14.9, y0: 9.1, y1: 12.0, tent: [13.7, 11.35, 0.2], fire: [13.0, 10.05], table: [14.25, 9.75, 0.3], camper: [12.55, 11.45, -0.1] };
+  const DECOYS = [[MTN.x + 0.32, MTN.y - 0.22], [16.45, 6.4], [9.5, -11.95]];   // decoy nests (twigs + a broken shell) on other high points: Big Rock summit, quarry spire, Elephant Hill
+  const LOGS2 = [], CACTI = []; let RIVER_UP = null;
   // scale town (1/10): x -12.6..-5.8, y -4..6.5; roads, kerbs, buildings (solid blocks)
   const ROADS = [[[-12.7, 1.0], [-5.9, 1.0]], [[-9.3, -4.2], [-9.3, 6.6]]], ROAD_W = 0.9;
   const BUILD = [   // x, y, w(x), d(y), h, rotation, kind
     [-11.55, 3.2, 1.2, 0.8, 0.5, 0, 'gas'], [-7.55, 3.35, 1.4, 0.9, 0.62, 0, 'store'], [-7.45, -1.55, 1.3, 1.0, 0.6, 0, 'garage'], [-11.75, -1.9, 1.0, 0.85, 0.55, 0, 'church'],
-    [-7.9, 5.45, 0.8, 0.62, 0.42, 0, 'cabin'], [-11.4, 5.45, 0.85, 0.62, 0.42, 0, 'cabin2'], [-6.4, -3.4, 0.9, 0.65, 0.4, 0.2, 'shed']];
+    [-7.9, 5.45, 0.8, 0.62, 0.42, 0, 'cabin'], [-11.4, 5.45, 0.85, 0.62, 0.42, 0, 'cabin2'], [-6.4, -3.4, 0.9, 0.65, 0.4, 0.2, 'shed'], [1.7, 11.65, 1.0, 0.62, 0.44, 0, 'ranger']];
   const PILLARS = [[-10.6 - 0.3, 2.2 - 0.25], [-10.6 + 0.3, 2.2 - 0.25], [-10.6 - 0.3, 2.2 + 0.25], [-10.6 + 0.3, 2.2 + 0.25],   // gas canopy posts
     [-10.35, -3.55], [-9.95, -3.55], [-10.35, -3.15], [-9.95, -3.15]];                                                          // water tower legs
   const ROCKS = (() => { seed = 11; const out = [];
     for (let k = 0; k < 110; k++) { const x = 5.6 + rnd() * 6.9, y = -8.5 + rnd() * 4.6, a = 0.14 + rnd() * 0.42, b = a * (0.6 + rnd() * 0.6), hb = 0.06 + rnd() * rnd() * 0.5; if (polyD(x, y, TRAIL)[0] < Math.max(a, b) + 0.38) continue; out.push([x, y, a, b, hb, rnd() * 6.3]); }
     for (let k = 0; k < 26; k++) { const t = rnd(), i = Math.floor(t * (RIVER.length - 1)), p = RIVER[i]; out.push([p[0] + (rnd() - 0.5) * 0.7, p[1] + (rnd() - 0.5) * 0.7, 0.08 + rnd() * 0.12, 0.07 + rnd() * 0.1, 0.06 + rnd() * 0.12, rnd() * 6.3, 1]); }
+    for (let k = 0; k < 70; k++) { const x = 13.4 + rnd() * 4.2, y = -8.9 + rnd() * 4.9, a = 0.15 + rnd() * 0.4, hb = 0.08 + rnd() * rnd() * 0.45; if (polyD(x, y, TRAIL2_PTS)[0] < a + 0.42) continue; out.push([x, y, a, a * (0.6 + rnd() * 0.5), hb, rnd() * 6.3, 4]); }   // v65 RUBICON boulder field (east)
+    for (let k = 0; k < 60; k++) { const x = -17.4 + rnd() * 34.8, y = 9.6 + rnd() * 2.5, a = 0.12 + rnd() * 0.3, hb = 0.06 + rnd() * rnd() * 0.3; if (polyD(x, y, TRAIL2_PTS)[0] < a + 0.45 || Math.abs(x - 6.9) < 1.3 || (x > -8.3 && x < -2.7) || (x > 12 && x < 15)) continue; out.push([x, y, a, a * (0.6 + rnd() * 0.5), hb, rnd() * 6.3, 5]); }   // forest outcrops
     return out; })();
   const DUNES = { x0: -9.6, x1: -3.2, y0: -8.8, y1: -5.0 }, BOG = { x: 0.2, y: -6.95, a: 2.5, b: 1.25 };
   const HILL = { x0: 2.6, x1: 5.6, y0: -3.6, y1: -1.0, top: 0.42 };   // hill-climb: three lanes, steeper to the north
@@ -905,7 +931,7 @@ const CRAWL = (() => {
   const towerPath = t => { const K = [[0, 0], [0.12, 0.08], [0.3, 0.3], [0.48, 0.42], [0.66, 0.58], [0.85, 0.72], [1, TOWER.top]]; let z = TOWER.top;
     for (let i = 0; i < K.length - 1; i++) if (t <= K[i + 1][0]) { z = K[i][1] + (K[i + 1][1] - K[i][1]) * (t - K[i][0]) / (K[i + 1][0] - K[i][0]); break; }
     const st = t > 0.8 ? 0.092 : 0.078, q = z / st, fl = Math.floor(q); return Math.min(TOWER.top, (fl + sm(clamp((q - fl - 0.86) / 0.14, 0, 1))) * st); };   // ledges 1.4 R, the last few 1.7 R
-  const KEEP = [[-5.7, -3.75, -2.6, -0.2], [-5.7, 4.2, -3.2, 6.6], [-12.4, 7.2, -1.5, 8.6], [5.9, -2.9, 9.9, -1.7], [7.5, 3.7, 12.6, 8.7], [8.6, 1.6, 12.6, 8.7], [4.7, 6.9, 8.7, 8.6], [-1.1, -4.6, 0.3, 0.3]];   // no trees / people on features
+  const KEEP = [[-17.9, -9.1, -13.1, 9.6], [12.1, 9.0, 15.0, 12.2], [13.1, 3.2, 17.9, 8.0], [5.9, 8.4, 7.9, 12.4], [-8.2, 9.8, -2.8, 12.4], [-12.8, -12.4, 14.0, -9.1], [-5.7, -3.75, -2.6, -0.2], [-5.7, 4.2, -3.2, 6.6], [-12.4, 7.2, -1.5, 8.6], [5.9, -2.9, 9.9, -1.7], [7.5, 3.7, 12.6, 8.7], [8.6, 1.6, 12.6, 8.7], [4.7, 6.9, 8.7, 8.6], [-1.1, -4.6, 0.3, 0.3]];   // no trees / people on features
 
   // distance field to a polyline, only within `rad` of it (per-segment stamping: fast)
   function distField(P, rad, ZP) { const dist = new Float32Array(NX * NY).fill(1e9), zat = ZP ? new Float32Array(NX * NY) : null;
@@ -938,16 +964,37 @@ const CRAWL = (() => {
       // rock garden + river boulders
       // (applied after the river, below)
       // town: flat pad with roads and kerbs
-      if (x < -5.7 && y > -4.4 && y < 6.8) { const f = clamp((-5.7 - x) / 0.5, 0, 1) * clamp((y + 4.4) / 0.4, 0, 1) * clamp((6.8 - y) / 0.4, 0, 1); z = z * (1 - f) + f * 0.012; if (f > 0.5) m = MAT.grass;
+      if (x < -5.7 && x > -13.1 && y > -4.4 && y < 6.8) { const f = clamp((-5.7 - x) / 0.5, 0, 1) * clamp((y + 4.4) / 0.4, 0, 1) * clamp((6.8 - y) / 0.4, 0, 1); z = z * (1 - f) + f * 0.012; if (f > 0.5) m = MAT.grass;
         for (const R of ROADS) { const [d] = segD(x, y, R[0][0], R[0][1], R[1][0], R[1][1]); if (d < ROAD_W / 2) { z = 0.0; m = MAT.road; } else if (d < ROAD_W / 2 + 0.12 && f > 0.5) { z = 0.016; m = MAT.concrete; } } }
       // start pad (concrete) around the trailer
       if (x > -12.75 && x < -10.2 && y > -8.75 && y < -6.85) { z = 0; m = MAT.concrete; }
+      // ---- v65 outer ring ----
+      if (x < -13.1) { const f = clamp((-13.1 - x) / 0.4, 0, 1); let cz = 0.005 * fbm(x * 2, y * 2, 2), cm = fbm(x * 0.9 + 4, y * 0.9, 2) > 0.12 ? MAT.gravel : MAT.dirt;   // CONSTRUCTION YARD
+        for (const [px, py, pr, ph, pm] of PILES) { const d = Math.hypot(x - px, y - py); if (d < pr) { const pz = ph * Math.pow(1 - d / pr, 1.3) * (0.9 + 0.15 * vnoise(x * 6, y * 6)); if (pz > cz) { cz = pz; cm = pm; } } }
+        z = z * (1 - f) + cz * f; if (f > 0.5) m = cm; }
+      if (y < -9.0) { const f = clamp((-9.0 - y) / 0.45, 0, 1); let sz = 0;   // SLICKROCK
+        for (const [dx, dy, dr, dh] of DOMES) { const q = Math.hypot(x - dx, y - dy) / dr; if (q < 1) { const v = dh * Math.pow(1 - q * q, 0.85); if (v > sz) sz = v; } }
+        { const E = ELEPHANT; if (x > E.x0 && x < E.x1 + 1.6 && y > E.y0 && y < E.y1) { const u = clamp((E.y1 - y) / (E.y1 - E.y0), 0, 1), up = u < 0.45 ? u / 0.45 * 0.26 : u < 0.5 ? 0.26 : u < 0.53 ? 0.26 + 0.1 * sm((u - 0.5) / 0.03) : 0.36 + (u - 0.53) / 0.47 * (E.top - 0.36);
+          const ez = up * (x > E.x1 ? 1 - (x - E.x1) / 1.6 : 1); if (ez > sz) sz = ez; } }   // ELEPHANT HILL: slab climb, a 10 cm step halfway, cliff on the west side
+        sz += 0.008 * fbm(x * 3, y * 3, 2); z = z * (1 - f) + sz * f; if (f > 0.4) m = sz > 0.035 ? MAT.slick : MAT.sand; }
+      if (x > 13.0) { const d = Math.hypot(x - QY.x, y - QY.y), R = QY.r;   // THE QUARRY
+        if (d < R + 0.2) { let qz = 0; if (d < R) { const lv = (R - d) / 0.3, fl = Math.floor(lv), fr = lv - fl; qz = -0.07 * Math.min(6, fl + sm(clamp((fr - 0.8) / 0.2, 0, 1))); }
+          if (d < 0.62) qz = Math.min(qz, -0.5 + 0.12 * sm(d / 0.62));
+          const ds = Math.hypot(x - QY.spire[0], y - QY.spire[1]); if (ds < 0.34) qz = Math.max(qz, 0.07 + 0.01 * fbm(x * 8, y * 8, 1)); else if (ds < 0.46) qz = Math.max(qz, 0.07 - (ds - 0.34) * 3.5);
+          const [db] = segD(x, y, QY.spire[0], QY.spire[1], QY.bridge[0], QY.bridge[1]); if (db < 0.16) qz = Math.max(qz, 0.05 + 0.006 * fbm(x * 9, y * 9, 1)); else if (db < 0.24) qz = Math.max(qz, 0.05 - (db - 0.16) * 4);
+          z = Math.min(z, 0.02) + qz + 0.006 * fbm(x * 5, y * 5, 2); if (d < R) { m = MAT.rock; if (d < 0.58) wl[k] = -0.38; } } }
+      if (y > 9.0) { const f = clamp((y - 9.0) / 0.5, 0, 1); z += f * (0.045 * fbm(x * 0.7 + 11, y * 0.7, 3) + 0.012 * fbm(x * 4, y * 4, 2)); if (f > 0.5 && m !== MAT.rock && fbm(x * 1.7, y * 1.7 + 5, 2) > -0.15) m = MAT.grass;   // FOREST
+        if (y > 10.4) { if (!RIVER_UP) RIVER_UP = RIVER.filter(p => p[2] < 1.95); const [du] = polyD(x, y, RIVER_UP), mz = 0.44 * sm(clamp((1.55 - du) / 0.6, 0, 1)) * sm(clamp((y - 10.8) / 0.4, 0, 1)); if (mz > 0.01) { z = Math.max(z, mz + 0.04 * fbm(x * 2.5, y * 2.5, 2) * sm(mz / 0.44)); if (mz > 0.05) m = MAT.rock; } }   // the falls mesa
+        if (y > RAV.y0 - 0.3) { const dx = Math.abs(x - ravX(y)), fl = -RAV.depth * sm(clamp((y - RAV.y0) / 1.2, 0, 1)); if (dx < 0.42) { z = Math.min(z, fl + 0.01 * fbm(x * 6, y * 6, 1)); if (fl < -0.03) m = MAT.gravel; } else if (dx < 0.78 && fl < -0.02) { const q = (dx - 0.42) / 0.36, st = Math.floor(q * 5) / 5; z = Math.min(z, fl * (1 - st) + 0.008 * fbm(x * 7, y * 7, 1)); m = MAT.rock; } }   // the ravine (ledged walls)
+        if (x > CAMP.x0 && x < CAMP.x1 && y > CAMP.y0 && y < CAMP.y1) { const e = Math.min(x - CAMP.x0, CAMP.x1 - x, y - CAMP.y0, CAMP.y1 - y), g = sm(clamp(e / 0.4, 0, 1)); z = z * (1 - g) + 0.01 * g; if (g > 0.5) m = fbm(x * 2, y * 2, 2) > 0 ? MAT.dirt : MAT.grass; } }
       hr[k] = z; mat[k] = m;
     }
     // trails: packed dirt, eased into whatever they cross (not on top of the mountain switchback, the town roads or dunes)
     { const DF = distField(TRAIL, 0.43).dist;
       for (let k = 0; k < NX * NY; k++) { const d = DF[k]; if (d >= 0.42) continue; if (mat[k] === MAT.road || mat[k] === MAT.concrete || mat[k] === MAT.mud || mat[k] === MAT.sand) continue;
         const x = X0 + (k % NX) * RES, y = Y0 + Math.floor(k / NX) * RES, f = sm(clamp((0.42 - d) / 0.14, 0, 1)); if (hr[k] < 0.12) { hr[k] = hr[k] * (1 - f * 0.6) + f * 0.6 * (0.006 * fbm(x * 3, y * 3, 2)); if (f > 0.5) mat[k] = MAT.dirt; } } }
+    { const DF = distField(TRAIL2, 0.4).dist; for (let k = 0; k < NX * NY; k++) { const d = DF[k]; if (d >= 0.38) continue; const mk = mat[k]; if (mk === MAT.road || mk === MAT.concrete || mk === MAT.mud || mk === MAT.rock || mk === MAT.slick || mk === MAT.sand || Math.abs(hr[k]) > 0.07) continue;
+        const f = sm(clamp((0.38 - d) / 0.12, 0, 1)); hr[k] *= 1 - f * 0.55; if (f > 0.5) mat[k] = MAT.dirt; } }
     // ---- v61 features ----
     for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const x = X0 + i * RES, y = Y0 + j * RES, k = I(i, j);
       // JUMP LINE + river gap
@@ -967,7 +1014,7 @@ const CRAWL = (() => {
     { const TW_ = TOWER; for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const x = X0 + i * RES, y = Y0 + j * RES, dx = x - TW_.x, dy = y - TW_.y, r = Math.hypot(dx, dy); if (r > TW_.r0 + 0.45) continue; const k = I(i, j);
         const t = (((Math.atan2(dy, dx) - TW_.th0) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI), rp = TW_.r0 + (TW_.r1 - TW_.r0) * t, zp = towerPath(t), hw = t > 0.32 && t < 0.5 ? 0.165 : TW_.w / 2;
         let z; const n = 0.012 * fbm(x * 6, y * 6, 2);
-        if (r < TW_.r1 + 0.12) z = TW_.top + 0.004 * fbm(x * 9, y * 9, 1);
+        if (r < TW_.r1 + 0.12) z = TW_.top + 0.004 * fbm(x * 9, y * 9, 1) - 0.055 * sm(clamp(1 - r / 0.14, 0, 1));   // v65: the egg sits in a hollow
         else if (Math.abs(r - rp) < hw) { z = zp + n * 0.4; if (t > 0.3 && t < 0.5) { z -= (r - rp) * 0.46; mat[k] = MAT.gravel; }   // loose off-camber shelf leaning out over the drop
           const gt = Math.abs(t - 0.6) * 2 * Math.PI * rp; if (gt < 0.04) z -= 0.16; }   // a crack across the trail you have to bridge
         else if (r < rp) z = Math.min(TW_.top + 0.06, zp + 0.3 + n);
@@ -984,11 +1031,13 @@ const CRAWL = (() => {
       for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const x = X0 + i * RES, y = Y0 + j * RES, dx = Math.abs(x - S.x); if (dx > S.hw + 0.16 || y < S.y0 - 0.05 || y > S.y1 + 0.1) continue; const k = I(i, j), st = stepZ(y); if (SF.dist[k] < 0.3) continue;
         if (dx < S.hw) { hr[k] = st + 0.004 * fbm(x * 9, y * 9, 1); mat[k] = MAT.rock; } else { hr[k] = Math.max(hr[k], st + 0.06); mat[k] = MAT.rock; } } }
     // the river: banks, gravel bed, water; ford is a raised gravel bar
-    { const RF = distField(RIVER, RIV_W / 2 + RIV_BANK + 0.01).dist, half = RIV_W / 2;
-      for (let k = 0; k < NX * NY; k++) { const d = RF[k]; if (d >= half + RIV_BANK) continue; const x = X0 + (k % NX) * RES, y = Y0 + Math.floor(k / NX) * RES;
-        const bed = RIV_BED + 0.02 * fbm(x * 3, y * 3, 2), t = d < half ? 0 : (d - half) / RIV_BANK, f = sm(t); let z = bed * (1 - f) + hr[k] * f;
-        const fd = Math.hypot(x - FORD.x, y - FORD.y); if (fd < FORD.r) z = Math.max(z, -0.055 + 0.01 * fbm(x * 6, y * 6, 1) - (1 - sm(clamp((FORD.r - fd) / 0.35, 0, 1))) * 0.07);
-        hr[k] = Math.min(hr[k], z); if (d < half + 0.06) { mat[k] = MAT.gravel; if (hr[k] < WATER) wl[k] = WATER; } } }
+    { const RFD = distField(RIVER, RIV_W / 2 + RIV_BANK + 0.01, true), RF = RFD.dist, half = RIV_W / 2;
+      for (let k = 0; k < NX * NY; k++) { const d = RF[k]; if (d >= half + RIV_BANK) continue; const x = X0 + (k % NX) * RES, y = Y0 + Math.floor(k / NX) * RES, b0 = bedZ(RFD.zat[k]);
+        const bed = b0 + 0.02 * fbm(x * 3, y * 3, 2), t = d < half ? 0 : (d - half) / RIV_BANK, f = sm(t); let z = bed * (1 - f) + hr[k] * f;
+        for (const F of [FORD, FORD2]) { const fd = Math.hypot(x - F.x, y - F.y); if (fd < F.r) z = Math.max(z, -0.055 + 0.01 * fbm(x * 6, y * 6, 1) - (1 - sm(clamp((F.r - fd) / 0.35, 0, 1))) * 0.07); }
+        hr[k] = Math.min(hr[k], z); if (d < half + 0.06) { mat[k] = MAT.gravel; const wv = b0 + 0.095; if (hr[k] < wv) wl[k] = wv; } } }
+    { const TW_ = TOWER; for (let a = 0; a < 6.283; a += 0.42) { const r = 0.5, t = (((a - TW_.th0) % 6.2832) + 6.2832) % 6.2832 / 6.2832, rp = TW_.r0 + (TW_.r1 - TW_.r0) * t; if (Math.abs(r - rp) < TW_.w / 2 + 0.1 || t > 0.9) continue;
+        ROCKS.push([TW_.x + Math.cos(a) * r, TW_.y + Math.sin(a) * r, 0.085, 0.065, 0.2 + 0.08 * Math.abs(Math.sin(a * 3.7)), a, 3]); } }   // v65: a crown of rock spires hides the egg
     // boulders (rock garden + river rocks)
     for (const [cx, cy, a, b, hb, rot] of ROCKS) { const c = Math.cos(rot), s = Math.sin(rot), ext = Math.max(a, b) + 0.05;
       for (let j = Math.max(0, Math.floor((cy - ext - Y0) / RES)); j <= Math.min(NY - 1, Math.ceil((cy + ext - Y0) / RES)); j++) for (let i = Math.max(0, Math.floor((cx - ext - X0) / RES)); i <= Math.min(NX - 1, Math.ceil((cx + ext - X0) / RES)); i++) {
@@ -1012,10 +1061,34 @@ const CRAWL = (() => {
     for (const [x, y, L, r, , lift] of LOGPILE) stamp(x, y, 0, L / 2, r, (u, v) => [(lift || 0) + r + Math.sqrt(Math.max(0, r * r - v * v)), MAT.wood]);
     for (const [x, y, n] of TIRES) stamp(x, y, 0, 0.14, 0.14, (u, v) => { const r = Math.hypot(u, v); if (r > 0.136 || r < 0.056) return null; const e = Math.min(r - 0.056, 0.136 - r); return [n * 0.072 - 0.012 * (1 - sm(clamp(e / 0.02, 0, 1))), MAT.rubber]; });
     for (const [x, y, rot, L, r] of PIPES) stamp(x, y, rot, L / 2, r, (u, v) => [Math.sqrt(Math.max(0, r * r - v * v)) - 0.005, MAT.concrete]);
+    // ---- v65 outer-ring solids ----
+    for (const [x, y, rot, z0] of CONT) stamp(x, y, rot, 0.303, 0.12, () => [z0 + 0.256, MAT.metal]);
+    for (const [x, y, rot, L, w, z0, z1] of RAMPS) stamp(x, y, rot, L / 2, w / 2, u => [z0 + (z1 - z0) * (u + L / 2) / L, MAT.wood]);
+    for (const [x, y, rot] of BARRIERS) stamp(x, y, rot, 0.15, 0.036, (u, v) => [Math.abs(v) < 0.014 ? 0.085 : 0.085 * (0.036 - Math.abs(v)) / 0.022, MAT.concrete]);
+    { const P = PSTACK, r = P.r, C = [[-2 * r, r], [0, r], [2 * r, r], [-r, r + r * 1.732], [r, r + r * 1.732], [0, r + 2 * r * 1.732]]; stamp(P.x, P.y, P.rot, P.L / 2, 3 * r + 0.002, (u, v) => { let z = -1; for (const [cv, cz] of C) { const q = r * r - (v - cv) * (v - cv); if (q > 0) z = Math.max(z, cz + Math.sqrt(q)); } return z > 0 ? [z, MAT.concrete] : null; }); }
+    { const C = CAMP; stamp(C.camper[0], C.camper[1], C.camper[2], 0.27, 0.12, () => [0.26, MAT.metal]); stamp(C.tent[0], C.tent[1], C.tent[2], 0.17, 0.16, (u, v) => [0.19 * (1 - Math.abs(v) / 0.16), MAT.wood]);
+      stamp(C.table[0], C.table[1], C.table[2], 0.16, 0.13, (u, v) => Math.abs(v) < 0.07 ? [0.075, MAT.wood] : Math.abs(Math.abs(v) - 0.11) < 0.02 ? [0.045, MAT.wood] : null);
+      stamp(C.fire[0], C.fire[1], 0, 0.13, 0.13, (u, v) => { const r = Math.hypot(u, v); return r > 0.085 && r < 0.125 ? [0.035, MAT.rock] : null; }); }
+    { let acc = 0; for (let i = 1; i < TRAIL2.length; i++) { const p = TRAIL2[i], q = TRAIL2[i - 1]; acc += Math.hypot(p[0] - q[0], p[1] - q[1]); if (acc < 2.4 || p[1] < 9.7 || p[0] < -14.5 || p[0] > 12.0) continue;
+        if (polyD(p[0], p[1], RIVER)[0] < 1.3 || Math.abs(p[0] - ravX(p[1])) < 1.3 || Math.abs(p[0] - 1.7) < 0.9) continue; acc = 0; const a = Math.atan2(p[1] - q[1], p[0] - q[0]), r = 0.03 + 0.016 * hash(i, 5);
+        LOGS2.push([p[0], p[1], a + Math.PI / 2 + (hash(i, 9) - 0.5) * 0.5, r]); } }   // log steps across the forest trail
+    for (const [x, y, rot, r] of LOGS2) { const g0 = hr[I(clamp(Math.round((x - X0) / RES), 0, NX - 1), clamp(Math.round((y - Y0) / RES), 0, NY - 1))]; stamp(x, y, rot, 0.36, r, (u, v) => [g0 + r * 0.8 + Math.sqrt(Math.max(0, r * r - v * v)), MAT.wood]); }
+    { seed = 77; for (let k = 0, n = 0; k < 600 && n < 46; k++) { const x = -12.5 + rnd() * 26.5, y = -12.0 + rnd() * 2.8, kk = I(Math.round((x - X0) / RES), Math.round((y - Y0) / RES)); if (polyD(x, y, TRAIL2)[0] < 0.6 || (x > ELEPHANT.x0 - 0.3 && x < ELEPHANT.x1 + 1.7)) continue;
+        const hh = 0.14 + rnd() * 0.12; CACTI.push([x, y, hh, rnd() * 6.3, rnd() < 0.6 ? 2 : rnd() < 0.5 ? 1 : 0]); n++; } }
+    for (const [x, y, hh] of CACTI) stamp(x, y, 0, 0.026, 0.026, (u, v) => Math.hypot(u, v) < 0.026 ? [hr[I(clamp(Math.round((x - X0) / RES), 0, NX - 1), clamp(Math.round((y - Y0) / RES), 0, NY - 1))] + hh, MAT.wood] : null);
+    stamp(-14.25, 7.95, 0.8, 0.36, 0.21, () => [0.25, MAT.metal]);   // the dozer
+    // teeter-totter: remember the ground under it, then lay the board level
+    { const TT = TEET, c = Math.cos(TT.a), sn = Math.sin(TT.a), ext = TT.L / 2 + 0.06; TT.cells = []; TT.us = [];
+      for (let j = Math.floor((TT.y - ext - Y0) / RES); j <= Math.ceil((TT.y + ext - Y0) / RES); j++) for (let i = Math.floor((TT.x - ext - X0) / RES); i <= Math.ceil((TT.x + ext - X0) / RES); i++) { const x = X0 + i * RES - TT.x, y = Y0 + j * RES - TT.y, u = x * c + y * sn, v = -x * sn + y * c; if (Math.abs(u) > TT.L / 2 || Math.abs(v) > TT.w / 2) continue; TT.cells.push(I(i, j)); TT.us.push(u); }
+      TT.base = Float32Array.from(TT.cells, k => h[k]); teeterLay(TT, h, mat, 0); }
     { const T = TRAILER; stamp(T.x, T.y, T.a, T.L / 2 + T.ramp, T.w / 2, u => u > -T.L / 2 ? [T.deck, MAT.wood] : [T.deck * (1 - (-T.L / 2 - u) / T.ramp), MAT.wood]); }
-    TER = { NX, NY, RES, X0, Y0, W, D, h, hr, mat, wl, MAT, TOWER, towerPath, GULLY, ALCOVE, aFloor: TER_ALC, STAIRS, JUMP, SPINE, TIRES, PIPES, BONEYARD, KEEP, TRAIL, RIVER, RIV_W, WATER, MTN, SWB, BRIDGES, FORD, ROADS, ROAD_W, BUILD, PILLARS, ROCKS, CRATES, LOGPILE, TRAILER, BOG, DUNES, HILL };
+    TER = { NX, NY, RES, X0, Y0, W, D, h, hr, mat, wl, MAT, TRAIL2, FORD2, RAV, ravX, QY, DOMES, ELEPHANT, PILES, CONT, RAMPS, BARRIERS, PSTACK, TEET, CAMP, DECOYS, LOGS2, CACTI, FALL, bedZ, TOWER, towerPath, GULLY, ALCOVE, aFloor: TER_ALC, STAIRS, JUMP, SPINE, TIRES, PIPES, BONEYARD, KEEP, TRAIL, RIVER, RIV_W, WATER, MTN, SWB, BRIDGES, FORD, ROADS, ROAD_W, BUILD, PILLARS, ROCKS, CRATES, LOGPILE, TRAILER, BOG, DUNES, HILL };
     return TER;
   }
+  function teeterLay(TT, h, mat, ang) { const ta = Math.tan(ang); for (let n = 0; n < TT.cells.length; n++) { const k = TT.cells[n]; h[k] = Math.max(TT.base[n], TT.ph + TT.us[n] * ta); mat[k] = MAT.wood; } TT.drawn = ang; }
+  function teeterTick(c, dt, T) { const TT = T.TEET; if (!TT || !TT.cells) return; const dx = c.x - TT.x, dy = c.y - TT.y, u = dx * Math.cos(TT.a) + dy * Math.sin(TT.a), v = -dx * Math.sin(TT.a) + dy * Math.cos(TT.a), mx = Math.asin(TT.ph / (TT.L / 2));
+    const on = Math.abs(u) < TT.L / 2 + 0.05 && Math.abs(v) < TT.w / 2 + 0.1 && (c.z || 0) - (TT.ph + u * Math.tan(TT.ang)) < 0.16; let tgt = TT.ang; if (on && Math.abs(u) > 0.04) tgt = -Math.sign(u) * mx;
+    TT.ang += clamp(tgt - TT.ang, -dt * 1.3, dt * 1.3); if (Math.abs(TT.ang - TT.drawn) > 0.002) teeterLay(TT, T.h, T.mat, TT.ang); }
   // bilinear height (physics field), material, water level
   function H(T, x, y) { const fx = clamp((x - T.X0) / T.RES, 0, T.NX - 1.001), fy = clamp((y - T.Y0) / T.RES, 0, T.NY - 1.001), i = fx | 0, j = fy | 0, u = fx - i, v = fy - j, k = j * T.NX + i, a = T.h[k], b = T.h[k + 1], c = T.h[k + T.NX], d = T.h[k + T.NX + 1];
     return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
@@ -1157,6 +1230,7 @@ const CRAWL = (() => {
   }
   function step(c, dt, T, mode) {
     if (!c.q) makeState(c, c.x, c.y, c.yaw || 0);
+    teeterTick(c, dt, T);
     const n = Math.max(1, Math.ceil(dt / 0.0012)), h = dt / n; for (let i = 0; i < n; i++) substep(c, h, T, mode); pose(c); }
   function okSpot(T, x, y, yaw) { const st = settle(T, x, y, yaw), top = Math.max(...st.hc), cs = Math.cos(yaw), sn = Math.sin(yaw); if (top - Math.min(...st.hc) > 0.05 || top > 1.1) return false;
     for (let a = -0.24; a <= 0.24; a += 0.08) for (let b = -0.15; b <= 0.15; b += 0.075) { const hh = H(T, x + cs * a - sn * b, y + sn * a + cs * b); if (hh > top - R + 0.035 || T.mat[cell(T, x + cs * a - sn * b, y + sn * a + cs * b)] === MAT.wall) return false; } return true; }
@@ -1175,14 +1249,14 @@ const CRAWL = (() => {
     const cyl = (r0, r1, h, m, x, y, z, seg = 12) => { const o = new T.Mesh(new T.CylinderGeometry(r0, r1, h, seg), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; return add(o); };
     const gH = (x, y) => HR(Tz, x, y);
     // ---- terrain mesh with vertex colours by surface ----
-    { const st = quality >= 2 ? 0.05 : quality >= 1 ? 0.07 : 0.1, nx = Math.round(W / st) + 1, ny = Math.round(D / st) + 1, P = new Float32Array(nx * ny * 3), C = new Float32Array(nx * ny * 3), U = new Float32Array(nx * ny * 2), idx = new Uint32Array((nx - 1) * (ny - 1) * 6);
-      const PAL = { 0: [0.40, 0.29, 0.19], 1: [0.36, 0.3, 0.25], 2: [0.66, 0.53, 0.34], 3: [0.30, 0.42, 0.20], 4: [0.24, 0.17, 0.11], 5: [0.5, 0.36, 0.22], 6: [0.17, 0.17, 0.18], 7: [0.52, 0.49, 0.44], 8: [0.3, 0.3, 0.3], 9: [0.62, 0.61, 0.58], 10: [0.12, 0.12, 0.12], 11: [0.4, 0.4, 0.42] };
+    { const st = quality >= 2 ? 0.06 : quality >= 1 ? 0.08 : 0.12, nx = Math.round(W / st) + 1, ny = Math.round(D / st) + 1, P = new Float32Array(nx * ny * 3), C = new Float32Array(nx * ny * 3), U = new Float32Array(nx * ny * 2), idx = new Uint32Array((nx - 1) * (ny - 1) * 6);
+      const PAL = { 0: [0.40, 0.29, 0.19], 1: [0.36, 0.3, 0.25], 2: [0.66, 0.53, 0.34], 3: [0.30, 0.42, 0.20], 4: [0.24, 0.17, 0.11], 5: [0.5, 0.36, 0.22], 6: [0.17, 0.17, 0.18], 7: [0.52, 0.49, 0.44], 8: [0.3, 0.3, 0.3], 9: [0.62, 0.61, 0.58], 10: [0.12, 0.12, 0.12], 11: [0.4, 0.4, 0.42], 12: [0.64, 0.41, 0.28] };
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const x = X0 + i * st, y = Y0 + j * st, k = j * nx + i, c = cell(Tz, x, y); let z = HR(Tz, x, y), m = Tz.mat[c];
         if (m === MAT.wall) { z = 0; m = MAT.concrete; }
         P[k * 3] = x; P[k * 3 + 1] = z; P[k * 3 + 2] = -y; U[k * 2] = x / 0.6; U[k * 2 + 1] = y / 0.6;
         const e = 0.06, sl = Math.hypot(HR(Tz, x + e, y) - HR(Tz, x - e, y), HR(Tz, x, y + e) - HR(Tz, x, y - e)) / (2 * e), n = 0.82 + 0.3 * vnoise(x * 4.3, y * 4.3) + 0.08 * fbm(x * 13, y * 13, 2);
         let col = PAL[m].slice(); if (sl > 0.9 && m !== MAT.road) { const f = Math.min(1, (sl - 0.9) / 1.2); col = col.map((v, q) => v * (1 - f) + [0.25, 0.2, 0.165][q] * f); }   // steep = bare, darker rock
-        if (m === MAT.rock) { const b = 0.78 + 0.34 * vnoise(x * 2.1 + 7, y * 2.1), r2 = vnoise(x * 0.7, y * 0.7), strata = 0.88 + 0.12 * Math.sin(z * 55 + fbm(x * 1.3, y * 1.3, 2) * 6); col = [(col[0] * b + r2 * 0.07) * strata, (col[1] * b + r2 * 0.025) * strata, col[2] * b * strata]; }   // banded sandstone
+        if (m === MAT.rock || m === MAT.slick) { const b = 0.78 + 0.34 * vnoise(x * 2.1 + 7, y * 2.1), r2 = vnoise(x * 0.7, y * 0.7), strata = 0.88 + 0.12 * Math.sin(z * 55 + fbm(x * 1.3, y * 1.3, 2) * 6); col = [(col[0] * b + r2 * 0.07) * strata, (col[1] * b + r2 * 0.025) * strata, col[2] * b * strata]; }   // banded sandstone
         if (Tz.wl[c] > -1 || (z < 0.0 && (m === MAT.gravel || m === MAT.dirt))) col = col.map(v => v * 0.62);   // wet
         if (m === MAT.road) { const dash = (Math.abs(y - 1.0) < 0.015 && (Math.floor((x + 20) / 0.3) % 2 === 0)) || (Math.abs(x + 9.3) < 0.015 && (Math.floor((y + 20) / 0.3) % 2 === 0)); if (dash) col = [0.85, 0.72, 0.18]; }
         C[k * 3] = col[0] * n; C[k * 3 + 1] = col[1] * n; C[k * 3 + 2] = col[2] * n; }
@@ -1198,11 +1272,14 @@ const CRAWL = (() => {
       const wm = new T.MeshStandardMaterial({ color: 0x3f7f8c, map: rip, transparent: true, opacity: 0.72, roughness: 0.08, metalness: 0.15, depthWrite: false });
       const R = Tz.RIVER, pos = [], uv = [], ix = []; let acc = 0; const hw = Tz.RIV_W / 2 + 0.1;
       for (let i = 0; i < R.length; i++) { const p = R[i], q = R[Math.min(R.length - 1, i + 1)], o = R[Math.max(0, i - 1)], tx = q[0] - o[0], ty = q[1] - o[1], L = Math.hypot(tx, ty) || 1, nx = -ty / L, ny = tx / L; if (i) acc += Math.hypot(p[0] - R[i - 1][0], p[1] - R[i - 1][1]);
-        pos.push(p[0] + nx * hw, Tz.WATER, -(p[1] + ny * hw), p[0] - nx * hw, Tz.WATER, -(p[1] - ny * hw)); uv.push(acc / 0.8, 0, acc / 0.8, 1); if (i) { const a = (i - 1) * 2; ix.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
+        const wy = Tz.bedZ(p[2]) + 0.095; pos.push(p[0] + nx * hw, wy, -(p[1] + ny * hw), p[0] - nx * hw, wy, -(p[1] - ny * hw)); uv.push(acc / 0.8, 0, acc / 0.8, 1); if (i) { const a = (i - 1) * 2; ix.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
       const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); g.setIndex(ix); g.computeVertexNormals(); const w2 = new T.Mesh(g, wm); w2.renderOrder = 2; add(w2);
       w2.onBeforeRender = () => { rip.offset.x = -(performance.now() / 1000) * 0.35 % 1; };
       const bog = new T.Mesh(new T.CircleGeometry(1, 40), new T.MeshStandardMaterial({ color: 0x3b2a1a, transparent: true, opacity: 0.85, roughness: 0.15, depthWrite: false })); bog.scale.set(Tz.BOG.a * 0.95, Tz.BOG.b * 0.9, 1); bog.rotation.x = -Math.PI / 2; bog.position.set(Tz.BOG.x, -0.075, -Tz.BOG.y); bog.renderOrder = 2; add(bog); }
     const woodM = std(0x8a6440, 0.9), woodD = std(0x5e4128, 0.9), ropeM = std(0xc9b68a, 0.95), barkM = std(0x5a4330, 0.95), metalM = std(0x8a8d92, 0.5, 0.6), dark = std(0x1b1c1f, 0.7);
+    { const foamT = ctex(64, 64, (c, w, h) => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.5, 'rgba(255,255,255,0.4)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
+      const R = Tz.RIVER; for (const p of R) { if (p[2] < Tz.FALL.s1 - 0.05 || p[2] > Tz.FALL.s1 + 0.7) continue; for (let k = 0; k < 3; k++) { const f = new T.Sprite(new T.SpriteMaterial({ map: foamT, transparent: true, opacity: 0.55, depthWrite: false })); const sc = 0.16 + Math.random() * 0.2; f.scale.set(sc, sc * 0.6, 1); f.position.set(p[0] + (Math.random() - 0.5) * 0.5, -0.02 + Math.random() * 0.03, -(p[1] + (Math.random() - 0.5) * 0.5)); add(f); } }
+      for (const p of R) { if (Math.abs(p[2] - (Tz.FALL.s0 + Tz.FALL.s1) / 2) > 0.12) continue; const m = new T.Sprite(new T.SpriteMaterial({ map: foamT, transparent: true, opacity: 0.35, depthWrite: false })); m.scale.set(0.9, 0.45, 1); m.position.set(p[0], 0.12, -p[1]); m.onBeforeRender = () => { m.material.opacity = 0.28 + 0.08 * Math.sin(performance.now() / 300); }; add(m); } }
     // ---- bridges ----
     for (const B of Tz.BRIDGES) { const g = new T.Group(); g.position.set(B.x, 0, -B.y); g.rotation.y = B.a; add(g); const P = (o, u, h, v) => { o.position.set(u, h, -v); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
       if (B.kind === 'plank') { const n = Math.round(B.L / 0.065); for (let k = 0; k < n; k++) { const u = -B.L / 2 + (k + 0.5) * B.L / n; P(new T.Mesh(new T.BoxGeometry(0.055, 0.014, B.w), k % 3 ? woodM : woodD), u, B.h - 0.007 + (k % 2) * 0.002, 0).rotation.z = (Math.random() - 0.5) * 0.04; }
@@ -1217,8 +1294,8 @@ const CRAWL = (() => {
       box(x1 - x0, Hh, 0.1, wallM, (x0 + x1) / 2, Hh / 2, -(y1 + 0.05)); box(x1 - x0, Hh, 0.1, wallM, (x0 + x1) / 2, Hh / 2, -(y0 - 0.05)); box(0.1, Hh, y1 - y0, wallM, x0 - 0.05, Hh / 2, -(y0 + y1) / 2); box(0.1, Hh, y1 - y0, wallM, x1 + 0.05, Hh / 2, -(y0 + y1) / 2);
       const kick = std(0x6a4a2a, 0.9); for (const [w, d, x, z] of [[x1 - x0, 0.04, (x0 + x1) / 2, -(y1 - 0.02)], [x1 - x0, 0.04, (x0 + x1) / 2, -(y0 + 0.02)], [0.04, y1 - y0, x0 + 0.02, -(y0 + y1) / 2], [0.04, y1 - y0, x1 - 0.02, -(y0 + y1) / 2]]) box(w, 0.2, d, kick, x, 0.1, z);
       const ceil = new T.Mesh(new T.PlaneGeometry(W, D), std(0x121316, 1)); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, Hh, 0); add(ceil);
-      const lamp = new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff4e0, emissiveIntensity: 1.2 }); for (let i = -5; i <= 5; i++) for (let j = -2; j <= 2; j++) box(1.2, 0.04, 0.25, lamp, i * 2.2, Hh - 0.05, j * 3.4).castShadow = false;
-      for (let i = -6; i <= 6; i++) box(0.08, 0.3, D - 0.5, std(0x3a3d42, 0.6, 0.5), i * 2, Hh - 0.25, 0).castShadow = false;
+      const lamp = new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff4e0, emissiveIntensity: 1.2 }); for (let i = -7; i <= 7; i++) for (let j = -3; j <= 3; j++) box(1.2, 0.04, 0.25, lamp, i * 2.3, Hh - 0.05, j * 3.5).castShadow = false;
+      for (let i = -8; i <= 8; i++) box(0.08, 0.3, D - 0.5, std(0x3a3d42, 0.6, 0.5), i * 2.2, Hh - 0.25, -(Y0 + D / 2)).castShadow = false;
       const ban = (txt, sub, col, w, h) => ctex(1024, 256, (c, cw, ch) => { c.fillStyle = col; c.fillRect(0, 0, cw, ch); c.fillStyle = '#fff'; c.font = '900 120px Arial'; c.textAlign = 'center'; c.fillText(txt, cw / 2, 140); c.font = '700 44px Arial'; c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText(sub, cw / 2, 210); });
       const bn = new T.Mesh(new T.PlaneGeometry(6, 1.5), new T.MeshStandardMaterial({ map: ban('CRAWLER CANYON', 'LOW AND SLOW · PICK YOUR LINE', '#b5471b') })); bn.position.set(0, 2.1, -(y1 - 0.01)); bn.rotation.y = Math.PI; bn.rotation.y = 0; bn.position.z = -(y1 - 0.01); bn.lookAt(0, 2.1, 0); add(bn);
       const bn2 = new T.Mesh(new T.PlaneGeometry(4, 1), new T.MeshStandardMaterial({ map: ban('STRANGER KREATIONS', 'RC DRIFT LAB · TRAIL DIVISION', '#1d1f24') })); bn2.position.set(4, 2.0, -(y0 + 0.01)); bn2.lookAt(4, 2.0, -20); bn2.rotation.y += Math.PI; add(bn2); }
@@ -1244,6 +1321,61 @@ const CRAWL = (() => {
     // ---- jump line: lip boards + flags; river gap posts ----
     { const lip = std(0xc49a5a, 0.85); for (const [x, hh] of [[-10.2, 0.13], [-4.31, 0.21]]) { box(0.02, 0.012, 0.9, lip, x, hh - 0.004, -Tz.JUMP.y); }
       for (let x = -11.6; x < -4.6; x += 1.2) for (const sd of [-1, 1]) { const y = Tz.JUMP.y + sd * 0.62; cyl(0.004, 0.004, 0.2, woodD, x, gH(x, y) + 0.1, -y, 5); const f = new T.Mesh(new T.PlaneGeometry(0.06, 0.04), std(sd > 0 ? 0xff6a00 : 0xf2f2f2, 0.8, 0, { side: T.DoubleSide })); f.position.set(x + 0.03, gH(x, y) + 0.18, -y); add(f); } }
+    // ---- v65: OUTER LOOP stakes (yellow) + gate flags every few metres ----
+    { const sk = std(0xffd21a, 0.6), red = std(0xd4202a, 0.7, 0, { side: T.DoubleSide }), blue = std(0x2a5fd8, 0.7, 0, { side: T.DoubleSide }); let acc = 0, ga = 0, gn = 0; const P2 = Tz.TRAIL2;
+      for (let i = 1; i < P2.length; i++) { const p = P2[i], q = P2[i - 1], dl = Math.hypot(p[0] - q[0], p[1] - q[1]); acc += dl; ga += dl; const t0 = P2[(i + 1) % P2.length], dx = t0[0] - q[0], dy = t0[1] - q[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+        if (acc >= 1.6) { acc = 0; const sx = p[0] + nx * 0.36, sy = p[1] + ny * 0.36; if (H(Tz, sx, sy) - gH(sx, sy) < 0.01 && Tz.wl[cell(Tz, sx, sy)] < -1) { const z = gH(sx, sy); cyl(0.005, 0.006, 0.09, woodD, sx, z + 0.045, -sy, 6); cyl(0.0065, 0.0065, 0.02, sk, sx, z + 0.09, -sy, 6); } }
+        if (ga >= 4.2) { ga = 0; gn++; for (const sd of [-1, 1]) { const gx = p[0] + nx * 0.46 * sd, gy = p[1] + ny * 0.46 * sd; if (H(Tz, gx, gy) - gH(gx, gy) > 0.01 || Tz.wl[cell(Tz, gx, gy)] > -1) continue; const z = gH(gx, gy); cyl(0.0035, 0.0035, 0.26, metalM, gx, z + 0.13, -gy, 5);
+          const f = new T.Mesh(new T.PlaneGeometry(0.07, 0.05), sd > 0 ? red : blue); f.position.set(gx + 0.035 * Math.cos(Math.atan2(dy, dx)), z + 0.23, -(gy + 0.035 * Math.sin(Math.atan2(dy, dx)))); f.rotation.y = Math.atan2(dy, dx); add(f); } } } }
+    sign(-10.3, -9.0, 0.4, 'OUTER LOOP →', '#ffd21a'); sign(-6.4, 11.55, 0, 'THE FALLS', '#2a5fd8', '#fff'); sign(-11.2, 9.55, 0, 'FOREST TRAIL', '#3f7a2c', '#fff'); sign(5.6, 9.7, 0, 'RAVINE ⚠', '#d4202a', '#fff');
+    sign(12.4, 9.35, 0.2, 'CAMP', '#6b4a2a', '#fff'); sign(13.3, 7.9, -0.4, 'QUARRY', '#8a8d92', '#111'); sign(13.2, -4.1, 0.3, 'RUBICON', '#5a3a2a', '#fff'); sign(5.0, -9.2, 0, 'SLICKROCK', '#c9734a', '#fff');
+    sign(8.2, -9.25, 0, 'ELEPHANT HILL', '#d4202a', '#fff'); sign(-13.6, -3.6, 1.2, 'CONTAINER YARD', '#2a5fd8', '#fff'); sign(-14.6, -7.0, 1.5, 'TEETER', '#ff6a00', '#fff'); sign(15.9, -2.0, 1.6, 'FORD', '#2a5fd8', '#fff');
+    // ---- construction yard: ramps, jersey barriers, pipe stack, cones, porta-potty, the teeter-totter ----
+    { const plank = std(0xb08a58, 0.9); for (const [x, y, rot, L, w, z0, z1] of Tz.RAMPS) { const g = new T.Group(); g.position.set(x, 0, -y); g.rotation.y = rot; add(g); const len = Math.hypot(L, z1 - z0), m = new T.Mesh(new T.BoxGeometry(len, 0.014, w), plank); m.position.y = (z0 + z1) / 2; m.rotation.z = Math.atan2(z1 - z0, L); m.castShadow = m.receiveShadow = true; g.add(m); }
+      const jm = std(0xb9b6ad, 0.92), sh = new T.Shape(); sh.moveTo(-0.036, 0); sh.lineTo(0.036, 0); sh.lineTo(0.014, 0.085); sh.lineTo(-0.014, 0.085); sh.lineTo(-0.036, 0); const jg = new T.ExtrudeGeometry(sh, { depth: 0.3, bevelEnabled: false }); jg.translate(0, 0, -0.15);
+      for (const [x, y, rot] of Tz.BARRIERS) { const m = new T.Mesh(jg, jm); m.position.set(x, gH(x, y), -y); m.rotation.y = rot + Math.PI / 2; m.castShadow = m.receiveShadow = true; add(m); }
+      const P = Tz.PSTACK, pg = new T.Group(); pg.position.set(P.x, 0, -P.y); pg.rotation.y = P.rot; add(pg); const pm2 = std(0x7d7a72, 0.9), r = P.r;
+      for (const [cv, cz] of [[-2 * r, r], [0, r], [2 * r, r], [-r, r + r * 1.732], [r, r + r * 1.732], [0, r + 2 * r * 1.732]]) { const c = new T.Mesh(new T.CylinderGeometry(r, r, P.L, 16, 1, true), pm2); c.rotation.z = Math.PI / 2; c.position.set(0, cz, -cv); c.castShadow = true; pg.add(c); const e = new T.Mesh(new T.RingGeometry(r * 0.75, r, 16), pm2); e.rotation.y = Math.PI / 2; e.position.set(P.L / 2, cz, -cv); pg.add(e); }
+      const cone = std(0xff6a00, 0.6); for (const [x, y] of [[-13.6, -8.9], [-13.4, -8.5], [-14.9, -3.5], [-15.5, -3.5], [-16.1, 1.6], [-13.7, 6.6], [-13.9, 6.9]]) { const c = new T.Mesh(new T.ConeGeometry(0.022, 0.06, 10), cone); c.position.set(x, gH(x, y) + 0.03, -y); c.castShadow = true; add(c); }
+      box(0.09, 0.2, 0.09, std(0x2a7ad8, 0.6), -17.3, 0.1, 8.6); box(0.1, 0.01, 0.1, std(0xf2f2f2, 0.6), -17.3, 0.205, 8.6);   // porta-potty
+      const TT = Tz.TEET, tg = new T.Group(); tg.position.set(TT.x, 0, -TT.y); tg.rotation.y = TT.a; add(tg); const piv = new T.Mesh(new T.CylinderGeometry(0.0, 0.07, TT.ph, 3), std(0x5a5d62, 0.7, 0.3)); piv.rotation.x = Math.PI / 2; piv.rotation.y = 0; piv.position.y = TT.ph / 2; tg.add(piv);
+      const bp = new T.Group(); bp.position.y = TT.ph; tg.add(bp); const bd = new T.Mesh(new T.BoxGeometry(TT.L, 0.018, TT.w), std(0xa47a48, 0.88)); bd.position.y = -0.009; bd.castShadow = bd.receiveShadow = true; bp.add(bd);
+      for (const sd of [-1, 1]) { const st2 = new T.Mesh(new T.BoxGeometry(0.03, 0.006, TT.w), std(0xffd21a, 0.6)); st2.position.set(sd * (TT.L / 2 - 0.03), 0.001, 0); bp.add(st2); }
+      bd.onBeforeRender = () => { bp.rotation.z = Tz.TEET.ang; }; }
+    // ---- campsite: tent, fire ring, picnic table, camper, chairs, lantern ----
+    { const C = Tz.CAMP, tent = new T.Mesh(new T.CylinderGeometry(0.19, 0.19, 0.34, 3, 1), std(0x2f7a4a, 0.85)); tent.rotation.set(0, C.tent[2], Math.PI / 2); tent.position.set(C.tent[0], 0.095, -C.tent[1]); tent.scale.set(1, 1, 0.9); tent.castShadow = true; add(tent);
+      for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283, st3 = new T.Mesh(new T.DodecahedronGeometry(0.022), std(0x6e6a64, 0.9)); st3.position.set(C.fire[0] + Math.cos(a) * 0.105, 0.02, -(C.fire[1] + Math.sin(a) * 0.105)); st3.castShadow = true; add(st3); }
+      for (const a of [0.3, 1.9, 3.6]) { const lg = new T.Mesh(new T.CylinderGeometry(0.01, 0.01, 0.12, 6), barkM); lg.position.set(C.fire[0], 0.025, -C.fire[1]); lg.rotation.set(0.9, a, 0); add(lg); }
+      const emb = new T.Sprite(new T.SpriteMaterial({ map: ctex(64, 64, (c, w, h) => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,220,120,1)'); g.addColorStop(0.4, 'rgba(255,110,20,0.6)'); g.addColorStop(1, 'rgba(255,60,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); }), transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+      emb.position.set(C.fire[0], 0.06, -C.fire[1]); emb.scale.set(0.22, 0.22, 1); emb.onBeforeRender = () => { const f = 0.85 + 0.15 * Math.sin(performance.now() / 90) * Math.sin(performance.now() / 37); emb.scale.set(0.2 * f, 0.24 * f, 1); }; add(emb);
+      const tg2 = new T.Group(); tg2.position.set(C.table[0], 0, -C.table[1]); tg2.rotation.y = C.table[2]; add(tg2); const tw = std(0x8a6440, 0.9); const tb = (w, h, d, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), tw); m.position.set(x, y, z); m.castShadow = true; tg2.add(m); };
+      tb(0.32, 0.012, 0.14, 0, 0.07, 0); tb(0.32, 0.01, 0.04, 0, 0.04, 0.11); tb(0.32, 0.01, 0.04, 0, 0.04, -0.11); for (const x of [-0.13, 0.13]) tb(0.012, 0.07, 0.25, x, 0.035, 0);
+      const cg = new T.Group(); cg.position.set(C.camper[0], 0, -C.camper[1]); cg.rotation.y = C.camper[2]; add(cg); const cam = new T.Mesh(new T.BoxGeometry(0.54, 0.2, 0.24), [std(0xf2efe6, 0.6), std(0xf2efe6, 0.6), std(0xf2efe6, 0.6), std(0xf2efe6, 0.6), new T.MeshStandardMaterial({ map: ctex(256, 96, (c, w, h) => { c.fillStyle = '#f2efe6'; c.fillRect(0, 0, w, h); c.fillStyle = '#b5471b'; c.fillRect(0, 54, w, 10); c.fillStyle = '#2a3440'; for (const x of [30, 150]) c.fillRect(x, 18, 60, 26); c.fillStyle = '#8a8d92'; c.fillRect(110, 20, 26, 66); }) }), std(0xf2efe6, 0.6)]);
+      cam.position.y = 0.16; cam.castShadow = true; cg.add(cam); for (const sd of [-1, 1]) { const wh = new T.Mesh(new T.CylinderGeometry(0.035, 0.035, 0.03, 14), dark); wh.rotation.x = Math.PI / 2; wh.position.set(0.02, 0.035, sd * 0.12); cg.add(wh); } const hitch = new T.Mesh(new T.BoxGeometry(0.14, 0.012, 0.012), dark); hitch.position.set(0.33, 0.05, 0); cg.add(hitch);
+      for (const [x, y, c2] of [[13.25, 9.7, 0x2a5fd8], [12.75, 9.75, 0xd4202a]]) { const ch = new T.Mesh(new T.BoxGeometry(0.05, 0.05, 0.05), std(c2, 0.8)); ch.position.set(x, 0.035, -y); add(ch); }
+      const lan = new T.Mesh(new T.CylinderGeometry(0.012, 0.012, 0.03, 8), new T.MeshStandardMaterial({ color: 0xfff0c0, emissive: 0xffd080, emissiveIntensity: 1.4 })); lan.position.set(C.table[0], 0.094, -C.table[1]); add(lan); }
+    // ---- log steps across the forest trail ----
+    for (const [x, y, rot, r] of Tz.LOGS2) { const lg = new T.Mesh(new T.CylinderGeometry(r, r * 1.05, 0.72, 10), barkM); lg.position.set(x, gH(x, y) + r * 0.8, -y); lg.rotation.set(0, rot, Math.PI / 2); lg.castShadow = lg.receiveShadow = true; add(lg); }
+    // ---- cacti on the slickrock ----
+    { const cm = std(0x3f6a35, 0.85); for (const [x, y, hh, ry, arms] of Tz.CACTI) { const g = new T.Group(); g.position.set(x, gH(x, y), -y); g.rotation.y = ry; add(g); const tr = new T.Mesh(new T.CylinderGeometry(0.018, 0.022, hh, 8), cm); tr.position.y = hh / 2; tr.castShadow = true; g.add(tr);
+      for (let a = 0; a < arms; a++) { const sd = a ? -1 : 1, ah = hh * (0.35 + 0.15 * a), ar = new T.Mesh(new T.CylinderGeometry(0.011, 0.013, 0.05, 6), cm); ar.rotation.z = Math.PI / 2; ar.position.set(sd * 0.035, ah, 0); g.add(ar); const up = new T.Mesh(new T.CylinderGeometry(0.011, 0.012, hh * 0.35, 6), cm); up.position.set(sd * 0.058, ah + hh * 0.175, 0); g.add(up); } } }
+    // ---- ground detail: grass tufts, pebbles, bushes (instanced, visual only) ----
+    { let sd2 = 91; const r3 = () => (sd2 = (sd2 * 16807) % 2147483647) / 2147483647, o = new T.Object3D(), trailD = (x, y) => Math.min(polyD(x, y, Tz.TRAIL)[0], polyD(x, y, Tz.TRAIL2)[0]);
+      const NG = quality >= 2 ? 2600 : quality >= 1 ? 1500 : 700, gm = new T.InstancedMesh(new T.ConeGeometry(0.012, 0.05, 4), std(0x4f8a34, 0.9), NG); let n = 0;
+      for (let k = 0; k < NG * 6 && n < NG; k++) { const x = X0 + 0.4 + r3() * (W - 0.8), y = Y0 + 0.4 + r3() * (D - 0.8), c = cell(Tz, x, y); if (Tz.mat[c] !== MAT.grass || Tz.wl[c] > -1 || H(Tz, x, y) - gH(x, y) > 0.005 || trailD(x, y) < 0.3) continue;
+        o.position.set(x, gH(x, y) + 0.02, -y); o.rotation.set((r3() - 0.5) * 0.4, r3() * 6.3, (r3() - 0.5) * 0.4); const sc = 0.6 + r3() * 0.9; o.scale.set(sc, sc * (0.8 + r3() * 0.8), sc); o.updateMatrix(); gm.setMatrixAt(n++, o.matrix); }
+      gm.count = n; add(gm);
+      const NP = quality >= 2 ? 1800 : quality >= 1 ? 1000 : 500, pm3 = new T.InstancedMesh(new T.DodecahedronGeometry(0.012), std(0x8a8278, 0.95), NP); n = 0;
+      for (let k = 0; k < NP * 6 && n < NP; k++) { const x = X0 + 0.4 + r3() * (W - 0.8), y = Y0 + 0.4 + r3() * (D - 0.8), c = cell(Tz, x, y), m = Tz.mat[c]; if (!(m === MAT.dirt || m === MAT.gravel || m === MAT.slick || m === MAT.sand || m === MAT.rock) || H(Tz, x, y) - gH(x, y) > 0.005) continue;
+        o.position.set(x, gH(x, y) + 0.003, -y); o.rotation.set(r3() * 3, r3() * 3, r3() * 3); const sc = 0.4 + r3() * r3() * 1.8; o.scale.set(sc, sc * 0.6, sc); o.updateMatrix(); pm3.setMatrixAt(n++, o.matrix); }
+      pm3.count = n; pm3.receiveShadow = true; add(pm3);
+      const NB = quality >= 1 ? 220 : 110, bm = new T.InstancedMesh(new T.IcosahedronGeometry(0.05, 1), std(0x56702f, 0.92), NB); n = 0;
+      for (let k = 0; k < NB * 8 && n < NB; k++) { const x = X0 + 0.5 + r3() * (W - 1), y = Y0 + 0.5 + r3() * (D - 1), c = cell(Tz, x, y), m = Tz.mat[c]; if (!(m === MAT.grass || m === MAT.dirt || m === MAT.sand) || Tz.wl[c] > -1 || H(Tz, x, y) - gH(x, y) > 0.005 || trailD(x, y) < 0.55 || Tz.KEEP.some(b => x > b[0] && x < b[2] && y > b[1] && y < b[3])) continue;
+        o.position.set(x, gH(x, y) + 0.015, -y); o.rotation.set(0, r3() * 6.3, 0); const sc = 0.6 + r3() * 1.0; o.scale.set(sc, sc * 0.6, sc); o.updateMatrix(); bm.setMatrixAt(n++, o.matrix); }
+      bm.count = n; bm.castShadow = true; add(bm); }
+    // ---- decoy nests (twigs + a broken shell) on other high points: you have to check more than one ----
+    { const tw = std(0x6b4f2e, 0.95), shell = std(0xf4e9d0, 0.5); for (const [dx, dy] of Tz.DECOYS) { const z = gH(dx, dy); for (let k = 0; k < 22; k++) { const a = k / 22 * 6.283, st2 = new T.Mesh(new T.CylinderGeometry(0.004, 0.005, 0.11 + (k % 3) * 0.02, 4), tw); st2.position.set(dx + Math.cos(a) * 0.085, z + 0.02 + (k % 2) * 0.01, -(dy + Math.sin(a) * 0.085)); st2.rotation.set(Math.PI / 2 + (k % 5 - 2) * 0.2, 0, a + 1.2); add(st2); }
+      for (const [ox, rot] of [[-0.02, 0.6], [0.025, 2.4]]) { const h2 = new T.Mesh(new T.SphereGeometry(0.026, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), shell); h2.material.side = T.DoubleSide; h2.position.set(dx + ox, z + 0.02, -dy); h2.rotation.set(rot, rot * 2, 0.3); add(h2); } } }
     // ---- the Nest: twig ring on top of the tower (the egg itself is placed by the game) ----
     { const TWR = Tz.TOWER, z = gH(TWR.x, TWR.y), tw = std(0x6b4f2e, 0.95); for (let k = 0; k < 26; k++) { const a = k / 26 * 6.283, st2 = new T.Mesh(new T.CylinderGeometry(0.004, 0.005, 0.12 + (k % 3) * 0.02, 4), tw); st2.position.set(TWR.x + Math.cos(a) * 0.09, z + 0.02 + (k % 2) * 0.01, -(TWR.y + Math.sin(a) * 0.09)); st2.rotation.set(Math.PI / 2 + (k % 5 - 2) * 0.2, 0, a + 1.2); add(st2); }
       info.eggAt = { x: TWR.x, y: TWR.y, z: z + 0.035 }; }
@@ -1282,13 +1414,18 @@ const CRAWL = (() => {
     // street lamps along main street
     for (let x = -12.2; x < -6.2; x += 1.5) for (const sd of [-1, 1]) { const px = x, py = 1.0 + sd * 0.62; cyl(0.006, 0.008, 0.36, dark, px, 0.18, -py, 6); box(0.05, 0.012, 0.025, new T.MeshStandardMaterial({ color: 0xfff2d0, emissive: 0xffe0a0, emissiveIntensity: 0.6 }), px, 0.36, -(py - sd * 0.02)); }
     // ---- props (trees, people) and parked cars in town; positions on the ground ----
-    const props = []; let sd = 3; const r2 = () => (sd = (sd * 16807) % 2147483647) / 2147483647, ok = (x, y, r) => Tz.mat[cell(Tz, x, y)] !== MAT.road && polyD(x, y, Tz.TRAIL)[0] > 0.6 + r && polyD(x, y, Tz.RIVER)[0] > Tz.RIV_W / 2 + 0.3 && H(Tz, x, y) - gH(x, y) < 0.005 && Math.abs(x) < 12.3 && Math.abs(y) < 8.3 && !Tz.KEEP.some(b => x > b[0] - r && x < b[2] + r && y > b[1] - r && y < b[3] + r) && gH(x, y) < 0.3;
+    const props = []; let sd = 3; const r2 = () => (sd = (sd * 16807) % 2147483647) / 2147483647, ok = (x, y, r) => Tz.mat[cell(Tz, x, y)] !== MAT.road && polyD(x, y, Tz.TRAIL)[0] > 0.6 + r && polyD(x, y, Tz.RIVER)[0] > Tz.RIV_W / 2 + 0.3 && H(Tz, x, y) - gH(x, y) < 0.005 && x > X0 + 0.6 && x < X0 + W - 0.6 && y > Y0 + 0.6 && y < Y0 + D - 0.6 && polyD(x, y, Tz.TRAIL2)[0] > 0.6 + r && (Tz.wl[cell(Tz, x, y)] < -1) && !Tz.KEEP.some(b => x > b[0] - r && x < b[2] + r && y > b[1] - r && y < b[3] + r) && gH(x, y) < 0.3;
     for (let k = 0, n = 0; k < 400 && n < 46; k++) { const x = X0 + 0.8 + r2() * (W - 1.6), y = Y0 + 0.8 + r2() * (D - 1.6); if (!ok(x, y, 0.35) || (x < -5.7 && y > -4.4)) continue; if (Tz.mat[cell(Tz, x, y)] === MAT.sand && r2() < 0.8) continue;
       props.push({ id: ['tree1', 'tree2', 'tree3'][n % 3], x, y, z: gH(x, y), ry: r2() * 6.3, s: 0.05 + r2() * 0.035, seed: 1 + n }); n++; }
     for (const [x, y, ry] of [[-6.2, 5.6, 2], [-12.2, 4.6, 0.5], [-12.2, -3.9, 1.2], [-6.2, -0.2, 3.5]]) props.push({ id: 'tree' + (1 + ((x * 7) & 1)), x, y, z: 0.012, ry, s: 0.07, seed: 9 });
     const ppl = ['p_tommy', 'p_reach', 'p_hips', 'p_walk', 'ep0', 'ep1', 'ep2', 'ep3', 'ep4', 'ep5', 'ep_pair', 'p_family'];
-    for (let k = 0, n = 0; k < 300 && n < 22; k++) { const side = k % 2, x = -11.5 + r2() * 23, y = side ? 8.35 : -8.35; if (!ok(x, y, 0.05)) continue; props.push({ id: ppl[n % ppl.length], x, y, z: gH(x, y), ry: side ? -Math.PI / 2 : Math.PI / 2, s: 0.1, seed: 50 + n }); n++; }
+    for (let k = 0, n = 0; k < 400 && n < 30; k++) { const side = k % 2, x = X0 + 1.5 + r2() * (W - 3), y = side ? Y0 + D - 0.62 : Y0 + 0.62; if (!ok(x, y, 0.05)) continue; props.push({ id: ppl[n % ppl.length], x, y, z: gH(x, y), ry: side ? -Math.PI / 2 : Math.PI / 2, s: 0.1, seed: 50 + n }); n++; }
     props.push({ id: 'p_street', x: -8.3, y: 2.0, z: 0.012, ry: 0.4, s: 0.1, seed: 99 }, { id: 'ep_duo', x: MTN.x + 0.35, y: MTN.y + 0.3, z: gH(MTN.x + 0.35, MTN.y + 0.3), ry: 2, s: 0.1, seed: 98 }, { id: 'p_kneel', x: -10.9, y: -6.6, z: 0, ry: -0.6, s: 0.1, seed: 97 });
+    for (let k = 0, n = 0; k < 1400 && n < 95; k++) { const x = X0 + 0.7 + r2() * (W - 1.4), y = 9.3 + r2() * 2.9; if (!ok(x, y, 0.3) || Math.abs(x - Tz.ravX(y)) < 0.95 || (x > Tz.CAMP.x0 - 0.3 && x < Tz.CAMP.x1 + 0.3 && y > Tz.CAMP.y0 - 0.3)) continue; props.push({ id: ['tree1', 'tree2', 'tree3'][n % 3], x, y, z: gH(x, y), ry: r2() * 6.3, s: 0.055 + r2() * 0.04, seed: 300 + n }); n++; }   // FOREST
+    for (let k = 0, n = 0; k < 300 && n < 14; k++) { const x = 15.2 + r2() * 2.4, y = 8.4 + r2() * 3.7; if (!ok(x, y, 0.3)) continue; props.push({ id: 'tree' + (1 + n % 3), x, y, z: gH(x, y), ry: r2() * 6.3, s: 0.05 + r2() * 0.03, seed: 500 + n }); n++; }
+    { const C = Tz.CAMP; props.push({ id: 'ep_pair', x: C.fire[0] + 0.22, y: C.fire[1] - 0.15, z: gH(C.fire[0] + 0.22, C.fire[1] - 0.15), ry: 2.4, s: 0.1, seed: 611 }, { id: 'p_kneel', x: C.fire[0] - 0.2, y: C.fire[1] + 0.05, z: gH(C.fire[0] - 0.2, C.fire[1] + 0.05), ry: -1.2, s: 0.1, seed: 612 }); }
+    props.push({ id: 'dozer', x: -14.25, y: 7.95, z: gH(-14.25, 7.95) * 0, ry: 0.8, s: 0.1, seed: 700 });
+    for (const [x, y, rot, z0] of Tz.CONT) props.push({ id: 'box20', x, y, z: z0, ry: rot, s: 0.1, seed: 710 + Math.round(x * 7 + y * 3 + z0 * 50) });
     info.props = props;
     info.propCars = [[-10.15, 2.2, Math.PI / 2, '#c8141c', 'k5', 0, 1], [-7.0, 2.25, 0, '#e8e8ea', 'hilux', 0.012, 1], [-8.1, 2.25, 0, '#1f5fff', 'sr5', 0.012, 1], [-7.0, -0.35, Math.PI, '#141416', 'jaban', 0.012, 1], [-10.4, -0.2, 0.0, '#f4e9d0', 'beetle', 0.012, 1]].concat(Tz.BONEYARD.map(([x, y, a], k) => [x, y, a, ['#6a5a4a', '#8a3a2a', '#3a4a5a', '#7a7a6a', '#5a6a3a'][k], null, gH(x, y), 1]), [[-4.38, -2.02, -0.15, '#a05a2a', null, 0.125, 1], [9.95, 7.25, 2.2, '#4a5a6a', null, gH(9.95, 7.25), 1], [3.9, -7.6, 0.4, '#7a2a2a', null, gH(3.9, -7.6), 1]]);
     info.exposure = 0.86; info.crawl = true;
@@ -3601,7 +3738,7 @@ const GFX = (function () {
 
   // ---------------- track / world ----------------
   function buildWorld(tr, scene, quality) {
-    if (tr.def.crawl) { const grp = new T.Group(), info = { cx: 0, cy: 0, sx: 26, sy: 18, minX: -13, maxX: 13, minY: -9, maxY: 9, night: false, prodNight: false, dusk: false, env: 'crawl', stand: { x: -11.0, y: -8.2, h: 1.0 } };
+    if (tr.def.crawl) { const grp = new T.Group(), info = { cx: 0, cy: 0, sx: 36, sy: 25, minX: -18, maxX: 18, minY: -12.5, maxY: 12.5, night: false, prodNight: false, dusk: false, env: 'crawl', stand: { x: -11.0, y: -8.2, h: 1.0 } };
       CRAWL.buildWorld(T, grp, info, quality); scene.add(grp); info.group = grp; return info; }
     const def = tr.def, grp = new T.Group(), env = def.env, N = tr.N, dbk = env === 'diamondback', trc = env === 'tandem', pv2 = env === 'prodigy2', brt = env === 'britt', own = trc || pv2 || brt, ptl = env === 'prodigy' || dbk || trc || pv2;   // ptl: indoor P-tile venue on a platform
     let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9; for (let i = 0; i < N; i++) { minX = Math.min(minX, tr.X[i]); maxX = Math.max(maxX, tr.X[i]); minY = Math.min(minY, tr.Y[i]); maxY = Math.max(maxY, tr.Y[i]); }
@@ -3899,7 +4036,7 @@ const GFX = (function () {
       eggTex = new T.CanvasTexture(c); eggTex.encoding = T.sRGBEncoding; }
     const g = new T.Group(), egg = new T.Mesh(new T.SphereGeometry(0.03, 24, 18), new T.MeshStandardMaterial({ map: eggTex, roughness: 0.25, metalness: 0.35, emissive: 0x332200, emissiveIntensity: 0.4 }));
     egg.scale.set(1, 1.32, 1); egg.position.y = 0.04; egg.castShadow = true; g.add(egg);
-    const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex(), color: 0xffe08a, transparent: true, opacity: 0.6, blending: T.AdditiveBlending, depthWrite: false })); glow.scale.set(0.24, 0.24, 1); glow.position.y = 0.04; g.add(glow);
+    const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex(), color: 0xffe08a, transparent: true, opacity: 0.6, blending: T.AdditiveBlending, depthWrite: false })); glow.scale.set(0.24, 0.24, 1); glow.position.y = 0.04; glow.userData.glow = 1; g.add(glow);
     g.scale.setScalar(sc || 1); return g; }
   function huntAltar() { const g = new T.Group(), st = new T.MeshStandardMaterial({ color: 0x8b8378, roughness: 0.8 }), gold = new T.MeshStandardMaterial({ color: 0xd4a93a, metalness: 0.9, roughness: 0.3, emissive: 0x3a2a00 });
     const ring = new T.Mesh(new T.RingGeometry(0.22, 0.3, 40), new T.MeshBasicMaterial({ color: 0xffd36a, transparent: true, opacity: 0.75, side: T.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.003; g.add(ring);
@@ -4252,6 +4389,7 @@ const ONLINE = (() => {
     if (!huntObj || mode !== 'drive') { if (huntObj) huntObj.g.rotation.y += dt; return; }
     const h = huntObj, P = player.sim; h.t += dt; h.g.rotation.y += dt * (h.kind === 'altar' || h.kind === 'beacon' ? 0.4 : 1.6); if (h.kind !== 'altar' && h.kind !== 'beacon') h.g.position.y = h.at.z + Math.sin(h.t * 2.2) * 0.012;
     const d = Math.hypot(P.x - h.at.x, P.y - h.at.y), dz = P.crawl ? Math.abs((P.z || 0) - 0.03 - h.at.z) : 0;
+    if (h.kind === 'egg') h.g.traverse(o => { if (o.userData.glow) o.visible = d < 2.2; });   // v65: the egg doesn't shine across the map; you find it by looking
     if (h.kind === 'key' && d < 0.22) { S.hunt.keys[h.key.id] = 1; save(); world.group.remove(h.g); huntObj = null; const n = huntKeys(); toast('🗝️ ' + h.key.name + ' · ' + n + '/3' + (n === 3 ? ' · the trailer on Prodigy V2 will move now…' : ''), 'good'); sfxWin(); }
     else if (h.kind === 'egg' && d < 0.2 && dz < 0.12) { S.hunt.egg = 'carry'; save(); world.group.remove(h.g); huntObj = null; toast('🥚 YOU GOT THE EGG! Now take it home… where it all began.', 'good'); sfxWin(); huntSpawn(); }
     else if (h.kind === 'altar' && d < 0.32) { S.hunt.egg = 'done'; S.look.egg = 1; save(); world.group.remove(h.g); huntObj = null; huntWin(); } }
@@ -4430,7 +4568,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v64.2', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v65', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
