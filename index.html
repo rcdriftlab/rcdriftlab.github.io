@@ -3305,7 +3305,7 @@ const GFX = (function () {
     { id: 'k5', name: 'K5 Blazer', tag: 'Square-body two-door 4x4', cls: 'truck', ds: 1 },
     { id: 'cyber', name: 'Cyber Truck', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
     { id: 'ecto', name: 'Ecto Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
-    { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie' },
+    { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie', ds: 1 },
     { id: 'kitt', name: 'Knight Car', tag: '82 T-top, red scanner', cls: 'movie' },
     { id: 'christine', name: 'Fury 58', tag: 'Red fin-car with a temper', cls: 'movie' },
     { id: 'ateam', name: 'Team Van', tag: 'Black-and-grey G-van', cls: 'movie' },
@@ -4594,7 +4594,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v66', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v67', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
