@@ -4115,7 +4115,7 @@ const ONLINE = (() => {
     if (O.profile) { O.loadBlocks(); O.ping(); O.checkAdmin(); } if (O.profile && O.onProfile) O.onProfile(O.profile);
   }
   O.signInGoogle = async () => { if (!O.sb) return; const { error } = await O.sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) { O.err = error.message; fire(); } };
-  O.signOut = async () => { if (!O.sb) return; await O.sb.auth.signOut(); O.user = null; O.profile = null; O.isAdmin = false; fire(); };
+  O.signOut = async () => { if (!O.sb) return; O.flushGarage(); O.synced = false; await O.sb.auth.signOut(); O.user = null; O.profile = null; O.isAdmin = false; fire(); };
   O.claimName = async (name, look) => {
     const n = O.cleanName(name); if (n.length < 3) return 'Pick a 3–16 character name (letters, numbers, space . _ -).';
     const row = { id: O.user.id, driver_name: n, look: look || {}, updated_at: new Date().toISOString() };
@@ -4123,7 +4123,13 @@ const ONLINE = (() => {
     if (error) return /duplicate|unique/i.test(error.message) ? 'That name is taken. Try another.' : 'Could not save the name.';
     pSeq++; const had = !!O.profile; let data = null; try { ({ data } = await O.sb.rpc('my_profile')); } catch (e) { } O.profile = data && data.id ? data : Object.assign({}, O.profile || {}, { id: O.user.id, driver_name: n, look: row.look }); fire(); if (!had && O.profile && O.onProfile) O.onProfile(O.profile); if (!had) { O.loadBlocks(); O.ping(); } return '';
   };
-  let gT = null; O.saveGarage = g => { if (!O.profile) return; clearTimeout(gT); gT = setTimeout(() => { O.sb.rpc('save_garage', { g }).then(() => { }, () => { }); if (g.look) O.sb.from('profiles').update({ look: g.look }).eq('id', O.user.id).then(() => { }, () => { }); }, 4000); };
+  // v69: account sync. The server merges (newest car/tune wins, best PBs, furthest hunt) and hands back the merged garage.
+  let gT = null, gPend = null; O.synced = false;
+  const gSend = () => { clearTimeout(gT); gT = null; const g = gPend; gPend = null; if (!g || !O.profile || !O.sb) return;
+    O.sb.rpc('save_garage', { g }).then(r => { if (r && r.data && typeof r.data === 'object' && O.onGarage) O.onGarage(r.data); }, () => { }); };
+  O.saveGarage = g => { if (!O.profile || !O.synced) return; gPend = g; clearTimeout(gT); gT = setTimeout(gSend, 2500); };
+  O.flushGarage = () => { if (gPend) gSend(); };
+  O.pullGarage = async () => { if (!O.profile || !O.sb) return null; try { const { data } = await O.sb.rpc('my_profile'); return data && data.id === O.profile.id ? data.garage || {} : null; } catch (e) { return null; } };
   O.submitLap = async (track, pts, body, ms) => { if (!O.profile || !(pts > 0)) return null; try { const { data } = await O.sb.rpc('submit_lap', { p_track: track, p_pts: Math.round(pts), p_body: body || null, p_ms: Math.max(1, Math.round(ms || 0)) }); return data; } catch (e) { return null; } };
   O.leaderboard = async (track, n) => { if (!O.sb) return []; const { data } = await O.sb.rpc('leaderboard', { p_track: track, p_limit: n || 25 }); return data || []; };
   O.trackLeaders = async () => { if (!O.sb) return []; const { data } = await O.sb.rpc('track_leaders'); return data || []; };
@@ -4303,7 +4309,11 @@ const ONLINE = (() => {
     opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, angleAssistPad: true, angleAssistKb: true, physTouch: 'classic', physPad: 'new', physKb: 'new', voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
     pad: { mode: 'auto', steerAxis: 0, thrAxis: 1, steerInv: false, thrInv: true, cS: 0, cT: 0, dead: 4 }, best: {}, bestPts: {}, pb: {}, slots: {}, hunt: { keys: {}, egg: 0 } };
   try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v21) { S.opt.physTouch = 'classic'; S.opt.physPad = 'new'; S.opt.physKb = 'new'; S.opt.angleAssist = false; S.opt.angleAssistPad = true; }   /* v49: physics + steering follow the device */ if (j && !j.v20) { S.opt.angleAssistPad = true; S.opt.angleAssistKb = true; } /* v46: assist default for controllers + keyboard, phones stay Direct */ if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
-  let saveT = 0; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 300); if (window.ONLINE && ONLINE.profile) ONLINE.saveGarage({ look: S.look, tune: S.tune, pb: S.pb, opt: { cam: S.opt.cam, kbThrottle: S.opt.kbThrottle, kbAssist: S.opt.kbAssist, angleMix: S.opt.angleMix, angleAssist: S.opt.angleAssist, angleAssistPad: S.opt.angleAssistPad }, slots: S.slots, hunt: S.hunt }); };
+  let saveT = 0; const saveLocal = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }, 300); }, save = () => { saveLocal(); syncPush(); };
+  // v69: what follows the account (car, tune, saved setups, camera, PBs, hunt + egg). Steering assist and physics stay per device (S.opt).
+  const syncBody = () => ({ look: S.look, tune: S.tune, slots: S.slots, opt: { cam: S.opt.cam } });
+  function syncPush() { if (typeof ONLINE === 'undefined' || !ONLINE.profile || !ONLINE.synced) return; const b = syncBody(), h = JSON.stringify(b); if (h !== S.syncH) { S.syncH = h; S.syncT = Date.now(); }
+    ONLINE.saveGarage(Object.assign(b, { t: S.syncT || 0, pb: S.pb, hunt: S.hunt })); }
 
   // ---------------- renderer ----------------
   const canvas = $('#c'); let renderer;
@@ -4595,7 +4605,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v68', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v69', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -4605,12 +4615,25 @@ const ONLINE = (() => {
       ONLINE.findLobby(invite).then(async lb => { if (!lb) { toast('Room ' + invite + ' is closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else { toast('Joined room ' + lb.code, 'good'); tab = 'online'; if (mode !== 'drive') { renderNav(); renderPanel(); } } }); }
     if (mode !== 'drive' && nav) renderNav(); const a = document.activeElement; if (mode === 'drive' || (tab !== 'online' && tab !== 'boards' && tab !== 'drive') || (a && a.tagName === 'INPUT' && a.type === 'text' && panel.contains(a))) return; renderPanel(); };
   ONLINE.onUnread = n => { toast('NEW MESSAGE · ' + (ONLINE.unread) + ' unread (Social tab)', 'good'); if (mode !== 'drive' && tab === 'community' && F.cv === 'messages' && !thread) { const a = document.activeElement; if (!(a && panel.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) renderPanel(); } };
-  ONLINE.onProfile = p => {   // first sign-in on this device: the account's garage comes down; PBs merge (best of both)
-    const g = p.garage || {}; let first = true; try { first = localStorage.getItem('rcdl_sync_' + p.id) !== '1'; localStorage.setItem('rcdl_sync_' + p.id, '1'); } catch (e) { }
-    if (g.pb) for (const k of Object.keys(g.pb)) if (!(S.pb[k] >= g.pb[k])) S.pb[k] = g.pb[k];
-    if (g.hunt && typeof g.hunt === 'object' && (g.hunt.rv | 0) > (S.hunt.rv | 0)) { S.hunt = JSON.parse(JSON.stringify(g.hunt)); S.hunt.keys = S.hunt.keys || {}; if (S.hunt.egg !== 'done') delete S.look.egg; if (track) huntRefresh(); }   // a newer reset elsewhere wins
-    else if (g.hunt && typeof g.hunt === 'object' && (g.hunt.rv | 0) === (S.hunt.rv | 0)) { Object.assign(S.hunt.keys, g.hunt.keys || {}); const rank = v => v === 'done' ? 2 : v === 'carry' ? 1 : 0; if (rank(g.hunt.egg) > rank(S.hunt.egg)) S.hunt.egg = g.hunt.egg; if (S.hunt.egg === 'done') S.look.egg = 1; if (g.hunt.keep && !S.hunt.keep) S.hunt.keep = g.hunt.keep; }   // v61 key hunt follows the account
-    if (first && g.look) { Object.assign(S.look, g.look); huntKeep(); if (g.tune) Object.assign(S.tune, g.tune); if (g.opt) Object.assign(S.opt, g.opt); if (g.slots) Object.assign(S.slots, g.slots); applyTune(); if (mode !== 'drive') newSession(); }
+  // merge the account's garage into this device. Car / tune / setups: newest edit wins. PBs: best of both. Hunt: newer reset wins, else furthest progress.
+  function applyGarage(g, first) { if (!g || typeof g !== 'object') return false; let carChanged = false;
+    if (g.pb && typeof g.pb === 'object') for (const k of Object.keys(g.pb)) if (+g.pb[k] > 0 && !(S.pb[k] >= g.pb[k])) S.pb[k] = +g.pb[k];
+    const H = g.hunt, rank = v => v === 'done' ? 2 : v === 'carry' ? 1 : 0, eggWas = S.hunt.egg;
+    if (H && typeof H === 'object' && (H.rv | 0) > (S.hunt.rv | 0)) { S.hunt = JSON.parse(JSON.stringify(H)); S.hunt.keys = S.hunt.keys || {}; }
+    else if (H && typeof H === 'object' && (H.rv | 0) === (S.hunt.rv | 0)) { Object.assign(S.hunt.keys, H.keys || {}); if (rank(H.egg) > rank(S.hunt.egg)) S.hunt.egg = H.egg; if (H.keep && !S.hunt.keep) S.hunt.keep = H.keep; }
+    if (S.hunt.egg === 'done') S.look.egg = 1; else delete S.look.egg;
+    const st = +g.t || 0, lt = +S.syncT || 0;
+    if (g.look && typeof g.look === 'object' && (first || st > lt)) { const keepEgg = S.look.egg; S.look = Object.assign({}, g.look); if (keepEgg) S.look.egg = 1; else delete S.look.egg;
+      if (g.tune && typeof g.tune === 'object') Object.assign(S.tune, g.tune); if (g.slots && typeof g.slots === 'object') S.slots = Object.assign({}, g.slots);
+      if (g.opt && g.opt.cam !== undefined) S.opt.cam = g.opt.cam; S.syncT = Math.max(st, lt); carChanged = true; }
+    S.syncH = JSON.stringify(syncBody());
+    if (carChanged) { huntKeep(); if (player) { applyTune(); rebuildPlayer(); } if (mode !== 'drive') renderPanel(); }
+    if (eggWas !== S.hunt.egg && track) huntRefresh();
+    return carChanged; }
+  ONLINE.onGarage = g => { if (applyGarage(g, false)) toast('Car and tune synced from your account', 'good'); saveLocal(); };   // no push here: that would ping-pong
+  ONLINE.onProfile = p => {   // every sign-in / boot: the account's garage merges in (see applyGarage), then this device's newer bits go up
+    let first = true; try { first = localStorage.getItem('rcdl_sync2_' + p.id) !== '1'; localStorage.setItem('rcdl_sync2_' + p.id, '1'); } catch (e) { }
+    const g = p.garage || {}, has = !!(g.look && typeof g.look === 'object'); applyGarage(g, first && has); if (!has && !S.syncT) S.syncT = Date.now(); ONLINE.synced = true;   // the account's car wins on a device's first sync; an empty account takes this device's
     S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save(); setTimeout(() => socPoll(false), 4000);
     ONLINE.syncPbs(S.pb).then(n => { if (n) { toast('Your PBs are on the leaderboards', 'good'); if (tab === 'boards' && mode !== 'drive') renderPanel(); } }); };
   async function joinLobby(lb, keepPos) {
@@ -4645,6 +4668,9 @@ const ONLINE = (() => {
     pingNow(); }, 60000);
   document.addEventListener('visibilitychange', () => { if (inClaude || ONLINE.status !== 'ready') return; if (document.visibilityState === 'hidden') ONLINE.pingOff(); else pingNow(); });
   addEventListener('pagehide', () => { if (!inClaude && ONLINE.status === 'ready') ONLINE.pingOff(); });
+  { let lastPull = 0; const pull = () => { if (inClaude || !ONLINE.profile || !ONLINE.synced || Date.now() - lastPull < 15000) return; lastPull = Date.now(); ONLINE.pullGarage().then(g => { if (g && applyGarage(g, false)) { toast('Car and tune synced from your account', 'good'); save(); } }); };
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') ONLINE.flushGarage && ONLINE.flushGarage(); else pull(); });
+    addEventListener('pagehide', () => ONLINE.flushGarage && ONLINE.flushGarage()); addEventListener('focus', pull); }
   async function netInit() {
     if (!inClaude) { ONLINE.init(); return; }
     try { const r = await window.claude.use('room'); if (!r) { NET.status = 'solo'; return; } NET.room = r; NET.status = 'online'; r.onPeers(() => { }, () => { NET.room = null; NET.status = 'solo'; }); } catch (e) { NET.status = 'solo'; }
@@ -5639,7 +5665,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { ov: OV, camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
+  window.__game = { ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
