@@ -113,6 +113,7 @@ canvas.escg{width:100%;height:auto;display:block;border-radius:10px;background:r
 .sl input{flex:1;accent-color:var(--ac);min-width:0}
 .sl output{min-width:86px;text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 input[type=text]{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px solid var(--ln);border-radius:4px}
+.nameform{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px}.nameform input[type=text]{font-size:16px;padding:10px 12px}.nameform .tip{margin:0}
 .keys{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px;margin-bottom:8px}
 kbd{display:inline-block;min-width:26px;padding:2px 7px;margin-right:8px;border:1px solid rgba(255,255,255,.25);border-bottom-width:2px;border-radius:4px;font:inherit;font-size:12px;font-weight:600;background:rgba(255,255,255,.06)}
 .keys span{color:var(--mut)}
@@ -4594,9 +4595,10 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v67', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v68', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
+    if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
     if (!ONLINE._pinged && ONLINE.status === 'ready' && track) { ONLINE._pinged = true; setTimeout(pingNow, 500); }
     if (invite && !inviteTried && ONLINE.status === 'ready' && player) { inviteTried = true; try { history.replaceState(null, '', location.pathname); } catch (e) { }
@@ -5030,7 +5032,22 @@ const ONLINE = (() => {
     return (thumbs[i] = c.toDataURL());
   }
   const locked = i => ONLINE.isGuest && ONLINE.isGuest() && !ONLINE.TRIAL.includes(SIM.TRACK_DEFS[i].id) && !SIM.TRACK_DEFS[i].hidden;
+  // v68: signed in with Google but no driver name yet. Every gate used to offer "Sign in with Google" again here, so new players
+  //      looped through Google over and over and thought sign-up wasn't sticking. This card finishes the job instead.
+  function nameForm(done) { const O = ONLINE, w = el('div', 'nameform'), ni = el('input'); ni.type = 'text'; ni.maxLength = 16; ni.placeholder = 'Driver name'; ni.value = S.opt.name && S.opt.name !== 'Driver' ? S.opt.name : '';
+    const sv = el('button', 'big', 'Claim this name'), out = el('p', 'tip', '3–16 letters or numbers. This is the name everyone sees on the boards.');
+    sv.onclick = async () => { if (sv.disabled) return; sv.disabled = true; const e = await O.claimName(ni.value, S.look); sv.disabled = false; if (e) { out.textContent = e; return; }
+      S.opt.name = O.profile.driver_name; if (player) player.name = S.opt.name; save(); toast('You\'re in, ' + O.profile.driver_name + '. Garage, tunes and every track unlocked.', 'good'); if (done) done(); renderPanel(); };
+    ni.onkeydown = e => { if (e.key === 'Enter') sv.click(); }; w.append(ni, sv, out); setTimeout(() => { try { ni.focus(); } catch (e) { } }, 50); return w; }
+  function nameCard() { if (document.querySelector('.pcard.namecard') || !ONLINE.signedIn() || ONLINE.profile) return;
+    const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard namecard'; document.body.appendChild(ov); const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov) close(); };
+    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'SIGNED IN · ONE LAST STEP')); card.appendChild(el('h2', '', 'Pick your driver name'));
+    const body = el('div', 'tbody'); card.appendChild(body); body.appendChild(el('p', '', 'Your Google sign-in worked. Claim a driver name and your account is done: garage, liveries, saved tunes, every track and online rooms all unlock.'));
+    body.appendChild(nameForm(close)); const btns = el('div', 'tbtns'); card.appendChild(btns); const nb = el('button', 'ghost', 'Later'); nb.onclick = close; btns.append(nb); }
+  const nameBtn = () => { const b = el('button', 'big', 'Pick my driver name'); b.onclick = () => nameCard(); return b; };
+  const needName = () => ONLINE.signedIn && ONLINE.signedIn() && !ONLINE.profile && !ONLINE.pLoading;
   function freeCard(what) {   // the "it's free, the account is just for scoring" pitch
+    if (needName()) { nameCard(); return; }
     const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard'; document.body.appendChild(ov); const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov) close(); };
     const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', '100% FREE')); card.appendChild(el('h2', '', 'Unlock ' + what));
     const body = el('div', 'tbody'); card.appendChild(body);
@@ -5106,7 +5123,7 @@ const ONLINE = (() => {
   function forumOpen(id) { F.ft = id; F.fth = null; F.freply = ''; renderPanel(); ONLINE.forum.thread(id).then(t => { if (F.ft !== id) return; F.fth = t || { gone: true, id }; if (t) fSeen.set(id, t.last_at); if (tab === 'community' && F.cv === 'forum' && mode !== 'drive') renderPanel(); }); }
   function forumView({ h, add, msg, signInBtn, badges }) {
     const O = ONLINE, canPost = !!O.profile, admin = !!O.isAdmin;
-    const sign = () => { if (!O.signedIn()) { msg('Anyone can read. Sign in to post or reply.'); add(signInBtn()); } else if (!O.profile) msg('Pick a driver name on the Online tab to post.'); };
+    const sign = () => { if (!O.signedIn()) { msg('Anyone can read. Sign in to post or reply.'); add(signInBtn()); } else if (!O.profile) { msg('Pick a driver name to post.'); add(nameBtn()); } };
     // -- one thread --
     if (F.ft) {
       const back = el('button', 'ghost', '← All threads'); back.onclick = () => { F.ft = null; F.fth = null; renderPanel(); };
@@ -5230,6 +5247,7 @@ const ONLINE = (() => {
     }
 
     if (tab === 'garage') {
+      if (web && O.isGuest() && needName()) { h('Garage', 'pick a name'); msg('You\'re signed in. Claim a driver name and the garage unlocks: paint, bodies, wheels, wings and liveries, saved to your account.'); add(nameForm()); return; }
       if (web && O.isGuest()) { h('Garage', 'free account'); msg('Paint, bodies, wheels, wings and liveries are all free. Make a free account (Google, 10 seconds) so your garage saves to you and your scores count. Right now you\'re driving the standard Stranger Kreations car.'); add(signInBtn('Sign in free with Google')); return; }
       const pickBody = v => { const was = GFX.bodyInfo(S.look.body).cls, now = GFX.bodyInfo(v).cls;
         if (now === 'movie') { if (was !== 'movie') S.driftLook = Object.assign({}, S.look); Object.assign(S.look, GFX.MOVIE[v] || {}); }
@@ -5274,7 +5292,7 @@ const ONLINE = (() => {
       add(chips(Object.keys(SIM.PRESETS).map(n => ({ id: n, name: n === 'Baseline' ? 'Stock' : n, sub: n === 'Baseline' ? 'reset everything' : '' })), Object.keys(SIM.PRESETS).find(isP), n => { Object.assign(S.tune, SIM.DEF_TUNE, SIM.PRESETS[n]); applyTune(); save(); toast('Setup: ' + (n === 'Baseline' ? 'Stock' : n)); }));
       msg('Changes apply instantly. While driving, press T (or pause) to tweak, then resume.');
       h('My setups', O.profile ? 'saved to your account' : 'saved on this device');
-      if (web && O.isGuest()) msg('Saving setups needs a free account (it\'s just so they follow you). You can still tune everything above.');
+      if (web && O.isGuest()) { if (needName()) { msg('Claim a driver name to save setups to your account.'); add(nameForm()); } else { msg('Saving setups needs a free account (it\'s just so they follow you). You can still tune everything above.'); add(signInBtn('Sign in free with Google', 'ghost')); } }
       if (!(web && O.isGuest())) for (const n of [1, 2, 3]) { const s = S.slots[n], r = el('div', 'slot'), lab = el('div'); lab.appendChild(el('b', '', s ? s.name : 'Slot ' + n));
         lab.appendChild(el('small', '', s ? 'gyro ' + s.tune.gyroGain + '% · lock ' + s.tune.steerLock + '° · ' + ((SIM.MOTORS[s.tune.motor] || {}).name || '') + ' · FDR ' + s.tune.fdr : 'Empty. Save your current tune here.')); r.appendChild(lab);
         const ld = el('button', 'ghost', 'Load'); ld.disabled = !s; ld.onclick = () => { Object.assign(S.tune, SIM.DEF_TUNE, s.tune); applyTune(); save(); renderPanel(); toast('Loaded ' + s.name, 'good'); };
@@ -5378,7 +5396,7 @@ const ONLINE = (() => {
         const rf = el('button', 'ghost', 'Refresh list'); rf.onclick = () => O.refreshLobbies(); add(rf);
         // ---- host ----
         h('Host a room');
-        if (!O.profile) { msg(O.signedIn() ? 'Claim a driver name above to host rooms.' : 'Sign in to host your own room. It is free.'); if (!O.signedIn()) add(signInBtn('Sign in with Google', 'ghost')); }
+        if (!O.profile) { msg(O.signedIn() ? 'Claim a driver name above to host rooms.' : 'Sign in to host your own room. It is free.'); if (O.signedIn()) add(nameBtn()); else add(signInBtn('Sign in with Google', 'ghost')); }
         else {
           if (F.hostTrack == null || SIM.TRACK_DEFS[F.hostTrack].hidden) F.hostTrack = SIM.TRACK_DEFS[S.opt.track].hidden ? SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2') : S.opt.track;
           const nm = el('input'); nm.type = 'text'; nm.maxLength = 32; nm.placeholder = O.profile.driver_name + "'s room"; nm.value = F.hostName; nm.oninput = () => F.hostName = nm.value; add(row('Room name', nm));
@@ -5422,7 +5440,7 @@ const ONLINE = (() => {
       }
       // ---- friends ----
       if (cv === 'friends') {
-        if (!O.profile) { h('Friends'); msg(O.signedIn() ? 'Pick a driver name on the Online tab first.' : 'Sign in to add friends.'); if (!O.signedIn()) add(signInBtn()); }
+        if (!O.profile) { h('Friends'); msg(O.signedIn() ? 'Pick a driver name on the Online tab first.' : 'Sign in to add friends.'); if (O.signedIn()) add(nameBtn()); else add(signInBtn()); }
         else { const box = el('div'); box.textContent = 'Loading…'; add(box);
           O.myFriends().then(f => { if (!box.isConnected) return; SOC.f = f; box.textContent = ''; const H2 = (t, s2) => { const x = el('h3', 'sh', t); if (s2) x.appendChild(el('small', '', s2)); box.appendChild(x); };
             const rowF = (d, sub, acts) => { const r = el('div', 'conv frow'), top = el('div'), nm = el('b'); nm.appendChild(dot(d.color)); nm.appendChild(document.createTextNode(String(d.name))); top.appendChild(nm); if (sub) top.appendChild(el('small', '', sub)); r.appendChild(top); const ab = el('div', 'btnrow'); for (const [lab, cls, fn] of acts) { const b = el('button', cls, lab); b.onclick = e => { e.stopPropagation(); fn(b); }; ab.appendChild(b); } r.appendChild(ab); return r; };
@@ -5437,7 +5455,7 @@ const ONLINE = (() => {
       }
       // ---- team ----
       if (cv === 'team') {
-        if (!O.profile) { h('Team'); msg(O.signedIn() ? 'Pick a driver name on the Online tab first.' : 'Sign in to join or create a team.'); if (!O.signedIn()) add(signInBtn()); }
+        if (!O.profile) { h('Team'); msg(O.signedIn() ? 'Pick a driver name on the Online tab first.' : 'Sign in to join or create a team.'); if (O.signedIn()) add(nameBtn()); else add(signInBtn()); }
         else { const box = el('div'); box.textContent = 'Loading…'; add(box);
           O.myTeam().then(r => { if (!box.isConnected) return; SOC.t = r; box.textContent = ''; const T2 = r.team, H2 = (t, s2) => { const x = el('h3', 'sh', t); if (s2) x.appendChild(el('small', '', s2)); box.appendChild(x); }, P2 = t => box.appendChild(el('p', 'tip', t)), B2 = (lab, cls, fn) => { const b = el('button', cls, lab); b.onclick = () => fn(b); box.appendChild(b); return b; };
             if (r.invites.length) { H2('Team invites', String(r.invites.length)); for (const iv of r.invites) { const row2 = el('div', 'conv frow'), top = el('div'); top.appendChild(el('b', '', iv.name + ' [' + iv.tag + ']')); top.appendChild(el('small', '', 'from ' + iv.by + ' · ' + ago(iv.at))); row2.appendChild(top); const ab = el('div', 'btnrow');
@@ -5458,7 +5476,7 @@ const ONLINE = (() => {
       }
       // ---- messages ----
       if (cv === 'messages') {
-        if (!O.profile) { h('Messages'); msg(O.signedIn() ? 'Pick a driver name on the Online tab to start messaging.' : 'Sign in to message other drivers.'); if (!O.signedIn()) add(signInBtn()); }
+        if (!O.profile) { h('Messages'); msg(O.signedIn() ? 'Pick a driver name on the Online tab to start messaging.' : 'Sign in to message other drivers.'); if (O.signedIn()) add(nameBtn()); else add(signInBtn()); }
         else {
         if (thread) {
           h('Messages · ' + thread.name); const back = el('button', 'ghost', '← All messages'); back.onclick = () => { thread = null; renderPanel(); };
@@ -5506,7 +5524,7 @@ const ONLINE = (() => {
       if (lbMonth) msg('This month\'s board only counts laps actually driven this month while signed in. Resets on the 1st.');
       // ---- my bests ----
       h('My bests', O.profile ? 'rank on each track' : 'this device'); const mineBox = el('div', 'lb'); add(mineBox);
-      if (!O.profile) { msg(O.signedIn() ? 'Claim a driver name on the Online tab and these go on the boards automatically.' : 'Sign in and every PB you set goes on the boards automatically, including the ones below.'); if (!O.signedIn()) add(signInBtn('Sign in with Google', 'ghost')); }
+      if (!O.profile) { msg(O.signedIn() ? 'Claim a driver name on the Online tab and these go on the boards automatically.' : 'Sign in and every PB you set goes on the boards automatically, including the ones below.'); if (O.signedIn()) add(nameBtn()); else add(signInBtn('Sign in with Google', 'ghost')); }
       // ---- feed ----
       h('Latest PBs'); const feed = el('div', 'lb'); feed.textContent = 'Loading…'; add(feed);
       const rf = el('button', 'ghost', 'Refresh'); rf.onclick = () => boardsData(true).then(() => renderPanel()); add(rf);
@@ -5556,8 +5574,8 @@ const ONLINE = (() => {
   if (!GFX.BODIES.some(b => b.id === S.look.body)) S.look.body = GFX.BODIES[0].id; if (!GFX.WINGS.some(w => w.id === S.look.wing)) S.look.wing = 'none';
   resize(); const ld = document.getElementById('loading'), lb = document.getElementById('loadbar');
   let last = performance.now(), booted = false;
-  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isCrawl() || S.hunt.egg !== 'done' || !ONLINE.profile || joining || Date.now() < nextTry) return; if (ONLINE.room && ONLINE.room.code === CANYON_ROOM.code) return;
-      if (ONLINE.room) leaveLobby(); joining = true; joinLobby(CANYON_ROOM, true).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Canyon room: ' + e, 'bad'); } } else { told = false; toast('🥚 CANYON ROOM · only egg finders get in here', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
+  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isCrawl() || huntKeys() < 3 || !ONLINE.profile || joining || Date.now() < nextTry) return; if (ONLINE.room && ONLINE.room.code === CANYON_ROOM.code) return;
+      if (ONLINE.room) leaveLobby(); joining = true; joinLobby(CANYON_ROOM, true).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Canyon room: ' + e, 'bad'); } } else { told = false; toast('🗝️ CANYON ROOM · only key holders get in here. Everyone hunts their own egg', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
   ASSETS.setRenderer(renderer); const texP = ASSETS.preloadAll(14000);
   const CORE = ['s15', 'ae86', 'r33', 'supra', 'm4']; if (!CORE.includes(S.look.body)) CORE.push(S.look.body);
   // v64.1: one failed car download no longer blocks the game: boot with whatever arrived, swap to a loaded body if yours didn't, retry button if nothing did
