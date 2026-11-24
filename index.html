@@ -3467,7 +3467,7 @@ const GFX = (function () {
   }
   // v58 per-body wheel fit (measured from each shell: tools/fit/solve.py). fx/rx: wheel x shift to centre it in the arch (m),
   // dy: body raise so the arch clears the tire, tk: tuck the wheels inward, ws: wheel scale for small-arch shells. Visual only (physics WB unchanged).
-  const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.0005, "ah": 0.048}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"rx": -0.007, "dy": 0.001, "tk": 0.004, "ws": 0.86}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045}};
+  const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"rx": -0.007, "dy": 0.001, "tk": 0.004, "ws": 0.86}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}};
   const wheelFace = style => Math.max(0, 0.013 - 0.002 - (style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : 0.0015));   // z of the wheel face (outward), matches buildWheel
   // v60: off-road crawler wheel (knobby tire + beadlock), drawn at the drift wheel's scale (R 0.031) and scaled up by buildCar
   function buildCrawlWheel(color) {
@@ -3611,7 +3611,7 @@ const GFX = (function () {
     const side = (h.side || []).slice(0, 12), n = side.length, A = [], B = [];
     for (let i = 0; i < 12; i++) { const p = side[i % Math.max(1, n)] || [0, 0], q = side[(i + 1) % Math.max(1, n)] || [0, 0]; A.push(new T.Vector2(p[0], p[1])); B.push(new T.Vector2(q[0], q[1])); }
     mat.onBeforeCompile = sh => {
-      const mt = maskTex(h); if (mt) Object.assign(sh.uniforms, { glMask: { value: mt }, mLo: { value: new T.Vector3(...h.lo) }, mSz: { value: new T.Vector3(h.hi[0] - h.lo[0], h.hi[1] - h.lo[1], h.hi[2] - h.lo[2]) }, uHeadI: { get value() { return lights ? lights.head.emissiveIntensity : 0.3; } }, uTailI: { get value() { return lights ? lights.tail.emissiveIntensity : 0.4; } } });
+      const mt = maskTex(h); if (mt) Object.assign(sh.uniforms, { glMask: { value: mt }, mLo: { value: new T.Vector3(...h.lo) }, mSz: { value: new T.Vector3(h.hi[0] - h.lo[0], h.hi[1] - h.lo[1], h.hi[2] - h.lo[2]) }, uHeadI: { get value() { return lights ? lights.head.emissiveIntensity : 0.3; } }, uTailI: { get value() { return lights ? lights.tail.emissiveIntensity : 0.4; } }, uSG: { value: (FIT[h.id] && FIT[h.id].sg !== undefined) ? FIT[h.id].sg : 1 } });
       Object.assign(sh.uniforms, { lvX0: { value: h.x0 }, lvLen: { value: h.len }, lvH: { value: h.H }, lvWz: { value: h.Wz }, glWs: { value: new T.Vector2(h.ws[0], h.ws[1]) }, glRg: { value: new T.Vector2(h.rg[0], h.rg[1]) }, glBelt: { value: h.belt }, glBan: { value: noLivery ? 0 : (ban || 0) }, glA: { value: A }, glB: { value: B }, glN: { value: n } });
       sh.vertexShader = 'varying vec3 vLP; varying vec3 vLN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vLP = position; vLN = normal;');
       const liv = noLivery ? '' : `
@@ -3622,7 +3622,7 @@ const GFX = (function () {
         vec2 uvF = vec2((vLP.x > 0.0 ? 0.5 : 0.75) + wz * 0.25, vy * 0.5);
         vec4 tS = mapTexelToLinear(texture2D(map, uvS)), tT = mapTexelToLinear(texture2D(map, uvT)), tF = mapTexelToLinear(texture2D(map, uvF));
         diffuseColor *= tS * wt.z + tT * wt.y + tF * wt.x;`;
-      sh.fragmentShader = (mt ? '#define BODY_MASK\nuniform sampler2D glMask; uniform vec3 mLo, mSz; uniform float uHeadI, uTailI;\nvec2 mq(vec2 t, vec2 off) { return (off + 0.01 + clamp(t, 0.0, 1.0) * 0.98) * 0.5; }\n' : '') + 'uniform float lvX0, lvLen, lvH, lvWz, glBelt, glBan; uniform vec2 glWs, glRg; uniform vec2 glA[12]; uniform vec2 glB[12]; uniform int glN; varying vec3 vLP; varying vec3 vLN;\n' + sh.fragmentShader
+      sh.fragmentShader = (mt ? '#define BODY_MASK\nuniform sampler2D glMask; uniform vec3 mLo, mSz; uniform float uHeadI, uTailI, uSG;\nvec2 mq(vec2 t, vec2 off) { return (off + 0.01 + clamp(t, 0.0, 1.0) * 0.98) * 0.5; }\n' : '') + 'uniform float lvX0, lvLen, lvH, lvWz, glBelt, glBan; uniform vec2 glWs, glRg; uniform vec2 glA[12]; uniform vec2 glB[12]; uniform int glN; varying vec3 vLP; varying vec3 vLN;\n' + sh.fragmentShader
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(roughnessFactor, 0.04, max(gm, max(hm, tm) * 0.8));')
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix(metalnessFactor, 0.0, gm);')
         .replace('#include <map_fragment>', `
@@ -3639,7 +3639,7 @@ const GFX = (function () {
         { vec3 tq = (vLP - mLo) / mSz;
           float mS = texture2D(glMask, mq(tq.xy, vec2(0.0, 0.0))).r, mT = texture2D(glMask, mq(tq.xz, vec2(1.0, 0.0))).r;
           vec2 mHH = texture2D(glMask, mq(tq.zy, vec2(0.0, 1.0))).rg; float mH = mHH.r, mR = texture2D(glMask, mq(tq.zy, vec2(1.0, 1.0))).r;
-          gm = max(max(mS * smoothstep(0.3, 0.45, abs(gn.z)), mT * smoothstep(0.12, 0.28, gn.y)), mHH.g * smoothstep(0.3, 0.5, gn.x) * step(0.0, vLP.x));
+          gm = max(max(mS * mix(1.0, smoothstep(0.14, 0.3, abs(gn.z)), uSG), mT * smoothstep(0.12, 0.28, gn.y)), mHH.g * smoothstep(0.3, 0.5, gn.x) * step(0.0, vLP.x));
           inWs = mT * step(glWs.x - 0.01, gx) * step(gx, glWs.y + 0.01);
           hm = mH * smoothstep(0.25, 0.45, gn.x) * step(0.0, vLP.x); tm = mR * smoothstep(0.25, 0.45, -gn.x) * step(vLP.x, 0.0); }
         #endif
@@ -4605,7 +4605,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v70', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v71', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
