@@ -3213,8 +3213,12 @@ const GFX = (function () {
     if (BODY[id]) return Promise.resolve(BODY[id]); if (pending[id]) return pending[id];
     let p;
     if (window.__BODY_B64 && window.__BODY_B64[id]) { const s = atob(window.__BODY_B64[id]), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); p = Promise.resolve(u.buffer); }
-    else { const bin = () => fetch('bodies/' + id + '.bin').then(r => { if (!r.ok) throw new Error('body ' + id); return r.arrayBuffer(); }), png = () => pngBytes('bodies/' + id + '.png');
-      p = (window.claude && window.claude.use) ? png().catch(bin) : bin().catch(png); }   // website: real .bin first (no wasted 404); inside Claude: PNG-packed first
+    else { // v64.1: the website only ships .bin files. A dropped download (phones on LTE) used to fall through to a PNG that isn't there (the "HTTP 404") and kill the boot.
+      // Now: retry the .bin up to 3 more times, the retries bypass any cached copy, and a corrupt download counts as a failure too.
+      const bin = n => fetch('bodies/' + id + '.bin' + (n ? '?r=' + n + '-' + (Date.now() % 100000) : ''), n ? { cache: 'no-store' } : undefined).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status + ' (' + id + ')'); return r.arrayBuffer(); })
+          .then(buf => { const d = decodeBody(buf); if (!d.hdr || d.hdr.id !== id) throw new Error('bad download (' + id + ')'); return buf; }),
+        tries = n => bin(n).catch(e => n < 3 ? new Promise(r => setTimeout(r, [700, 1600, 3200][n])).then(() => tries(n + 1)) : Promise.reject(e));
+      p = (window.claude && window.claude.use) ? pngBytes('bodies/' + id + '.png').catch(() => tries(0)) : tries(0); }
     return (pending[id] = p.then(buf => { const d = decodeBody(buf); if (!d.hdr || d.hdr.id !== id) throw new Error('body ' + id + ' corrupt'); BODY[id] = d; delete pending[id]; return d; }, e => { delete pending[id]; throw e; }));
   }
   function loadBodies(ids, onProgress) {
@@ -4382,6 +4386,12 @@ const ONLINE = (() => {
       if (e.pointerId === TCH.tId) { TCH.tId = null; TCH.thr = 0; TCH.brk = 0; knob(th, 0, 0); th.classList.remove('on'); th.style.left = '84%'; th.style.top = '72%'; }
     };
     tz.addEventListener('pointerup', up); tz.addEventListener('pointercancel', up);
+    // v64.1: in-app browsers (Facebook / Messenger / Instagram on iPhone) sometimes lose the finger-up, which left the stick stuck at full lock.
+    // Belt and braces: any finger-up anywhere, a lost capture, or no fingers left on the glass releases the sticks.
+    const relAll = () => { if (TCH.sId !== null) up({ pointerId: TCH.sId }); if (TCH.tId !== null) up({ pointerId: TCH.tId }); };
+    addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true); tz.addEventListener('lostpointercapture', up);
+    addEventListener('touchend', e => { if (!e.touches || e.touches.length === 0) relAll(); }, true); addEventListener('touchcancel', e => { if (!e.touches || e.touches.length === 0) relAll(); }, true);
+    addEventListener('blur', relAll); document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') relAll(); });
     // top-bar buttons fire when the finger lifts (pointerup), not on 'click': iOS Safari drops clicks during touch-heavy play, which left PAUSE and CAM dead on iPhones.
     // The action runs before audio (an iOS audio hiccup can't block it), the stray click that follows is swallowed, and the lap-score box is a second pause button.
     let swallowT = 0;
@@ -4420,7 +4430,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v64', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v64.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -5330,11 +5340,14 @@ const ONLINE = (() => {
   let last = performance.now(), booted = false;
   ASSETS.setRenderer(renderer); const texP = ASSETS.preloadAll(14000);
   const CORE = ['s15', 'ae86', 'r33', 'supra', 'm4']; if (!CORE.includes(S.look.body)) CORE.push(S.look.body);
-  Promise.all([GFX.loadBodies(CORE, f => { if (lb) lb.style.width = Math.round(f * 100) + '%'; }), texP]).then(() => {
+  // v64.1: one failed car download no longer blocks the game: boot with whatever arrived, swap to a loaded body if yours didn't, retry button if nothing did
+  let coreDone = 0; const coreP = Promise.all(CORE.map(id => GFX.ensureBody(id).then(() => true, () => false).then(ok => { coreDone++; if (lb) lb.style.width = Math.round(coreDone / CORE.length * 100) + '%'; return ok; })))
+    .then(oks => { const got = CORE.filter((id, i) => oks[i]); if (!got.length) throw new Error('none'); if (!GFX.BODY[S.look.body]) S.look.body = got[0]; if (!GFX.BODY[GUEST_LOOK.body]) GUEST_LOOK.body = got[0]; });
+  Promise.all([coreP, texP]).then(() => {
     setTimeout(() => GFX.loadBodies(GFX.BODIES.map(b => b.id).filter(id => !CORE.includes(id))).catch(() => {}), 1500);
     huntKeep(); loadTrack(clamp(S.opt.track | 0, 0, SIM.TRACK_DEFS.length - 1)); applyTune(); openMenu('main', 'drive'); netInit(); booted = true; maybeTour(); if (ld) ld.style.display = 'none';
     last = performance.now(); requestAnimationFrame(frame);
-  }).catch(e => { if (ld) ld.querySelector('div').textContent = 'Could not load the car bodies: ' + e.message; });
+  }).catch(e => { if (!ld) return; const d = ld.querySelector('div'); d.textContent = 'Couldn\'t download the cars. Your connection may have dropped. '; const b = document.createElement('button'); b.textContent = 'Try again'; b.style.cssText = 'margin-left:6px;padding:6px 14px;border-radius:8px;border:0;background:#ff6a00;color:#fff;font:inherit;cursor:pointer'; b.onclick = () => location.reload(); d.appendChild(b); });
   function frame(now) {
     requestAnimationFrame(frame); const dt = Math.min(0.05, (now - last) / 1000); last = now; if (dt <= 0) return;
     readInput(dt); netRecv(dt);
