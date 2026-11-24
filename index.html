@@ -4219,7 +4219,7 @@ const ONLINE = (() => {
     arrive = id === 'crawl' ? 'crawl' : 'v2trailer'; loadTrack(i); applyTune(); save(); drive(false); trailerT = 0;
     if (id === 'crawl') { S.found = Object.assign(S.found || {}, { crawl: 1 }); save(); toast(S.hunt.egg ? 'CRAWLER CANYON · off-road tires fitted · LOW / 4WS / DIG on the right' : 'CRAWLER CANYON · something is hidden up high in here… LOW / 4WS / DIG on the right', 'good'); }
     else toast('Back on Prodigy RC V2', 'good');
-    if (id === 'crawl' && S.hunt.egg === 'done' && ONLINE.profile) joinLobby(CANYON_ROOM).then(e => { if (e) toast(e, 'bad'); else toast('🥚 CANYON ROOM · only egg finders get in here', 'good'); }); }
+  }
   { const tg = document.getElementById('trailerGo'); if (tg) tg.addEventListener('click', e => { e.stopPropagation(); if (tg.dataset.to && tg.dataset.to !== 'locked') rideTo(tg.dataset.to); }); }
   // ---- v61 the hunt: three keys in three rooms unlock the V2 trailer; an egg in the canyon; carry it home for the prize ----
   const HUNT = { keys: { warehouse: { id: 'copper', name: 'COPPER KEY', col: '#d0763a', x: -7.4, y: -2.8, hint: 'Copper waits in the Warehouse, as far from the pit gate as the infield goes.' },
@@ -4430,7 +4430,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v64.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v64.2', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4447,14 +4447,14 @@ const ONLINE = (() => {
     if (first && g.look) { Object.assign(S.look, g.look); huntKeep(); if (g.tune) Object.assign(S.tune, g.tune); if (g.opt) Object.assign(S.opt, g.opt); if (g.slots) Object.assign(S.slots, g.slots); applyTune(); if (mode !== 'drive') newSession(); }
     S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save();
     ONLINE.syncPbs(S.pb).then(n => { if (n) { toast('Your PBs are on the leaderboards', 'good'); if (tab === 'boards' && mode !== 'drive') renderPanel(); } }); };
-  async function joinLobby(lb) {
+  async function joinLobby(lb, keepPos) {
     const ti = SIM.TRACK_DEFS.findIndex(d => d.id === lb.track); if (ti < 0) return 'That room is on a track this version does not have.';
     if (NET.room && NET.room !== ONLINE.room) NET.room = null;
     if (S.opt.track !== ti) { S.opt.track = ti; loadTrack(ti); }
     if (NET.aiBefore === undefined) NET.aiBefore = S.opt.ai; S.opt.ai = 0;
     const r = await ONLINE.join(lb, { name: S.opt.name }); if (r.err) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; return r.err; }
     NET.looks.clear(); NET.firstSeen.clear(); NET.room = r.room; NET.status = 'online'; if (r.spill) setTimeout(() => toast(r.spill), 400); voiceSync(); if (S.opt.voice !== 'off' && !VO.track) micOn().then(ok => { if (!ok) { S.opt.voice = 'off'; save(); } }); r.room.onChat(chatShow); r.room.onPeers(() => { }, () => { if (NET.room === r.room) { NET.room = null; NET.status = 'solo'; } if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } });
-    newSession(); save(); return '';
+    const P0 = player.sim, keep = keepPos && isCrawl() && P0.q ? { x: P0.x, y: P0.y, yaw: P0.yaw } : null; newSession(); if (keep) CRAWL.makeState(player.sim, keep.x, keep.y, keep.yaw); save(); return '';
   }
   function leaveLobby() { ONLINE.leave(); if (VO.track) { const keep = S.opt.voice; micOff(); S.opt.voice = keep; } newSession(); }
   // ---------------- room chat while driving (Enter to talk) ----------------
@@ -5338,6 +5338,8 @@ const ONLINE = (() => {
   if (!GFX.BODIES.some(b => b.id === S.look.body)) S.look.body = GFX.BODIES[0].id; if (!GFX.WINGS.some(w => w.id === S.look.wing)) S.look.wing = 'none';
   resize(); const ld = document.getElementById('loading'), lb = document.getElementById('loadbar');
   let last = performance.now(), booted = false;
+  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isCrawl() || S.hunt.egg !== 'done' || !ONLINE.profile || joining || Date.now() < nextTry) return; if (ONLINE.room && ONLINE.room.code === CANYON_ROOM.code) return;
+      if (ONLINE.room) leaveLobby(); joining = true; joinLobby(CANYON_ROOM, true).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Canyon room: ' + e, 'bad'); } } else { told = false; toast('🥚 CANYON ROOM · only egg finders get in here', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
   ASSETS.setRenderer(renderer); const texP = ASSETS.preloadAll(14000);
   const CORE = ['s15', 'ae86', 'r33', 'supra', 'm4']; if (!CORE.includes(S.look.body)) CORE.push(S.look.body);
   // v64.1: one failed car download no longer blocks the game: boot with whatever arrived, swap to a loaded body if yours didn't, retry button if nothing did
