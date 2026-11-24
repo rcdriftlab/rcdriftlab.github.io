@@ -3293,8 +3293,8 @@ const GFX = (function () {
     { id: 'body2', name: 'Classic Coupe', tag: 'Old-school box flares', cls: 'drift' },
     { id: 'body1', name: 'GT Sedan', tag: 'Wide four-door missile', cls: 'drift' },
     { id: 'body0', name: 'Fastback Sedan', tag: 'Sleek four-door', cls: 'drift' },
-    { id: 'a85', name: 'AE85 Wide', tag: 'Tuned hatch on boxed flares', cls: 'drift', ds: 1 },
-    { id: 'evo', name: 'Evo Wide', tag: 'Tuned rally sedan, big wing', cls: 'drift', ds: 1 },
+    { id: 'a85', egg: 1, name: 'AE85 Wide', tag: 'Tuned hatch on boxed flares', cls: 'drift', ds: 1 },
+    { id: 'evo', egg: 1, name: 'Evo Wide', tag: 'Tuned rally sedan, big wing', cls: 'drift', ds: 1 },
     { id: 'chaser', name: 'Chaser', tag: 'Four-door drift sedan', cls: 'drift', ds: 1 },
     { id: 'camaro', name: 'Camaro 70', tag: 'Split-bumper muscle coupe', cls: 'drift', ds: 1 },
     { id: 'golf', name: 'Mk1 Hatch', tag: 'Boxy 80s hot hatch', cls: 'drift', ds: 1 },
@@ -3307,7 +3307,7 @@ const GFX = (function () {
     { id: 'k5vert', name: 'K5 Topless', tag: 'Square-body with a roll bar', cls: 'truck', ds: 1 },
     { id: 'runner', name: '4Runner', tag: 'Third-gen SUV', cls: 'truck', ds: 1 },
     { id: 'gvan', name: 'G-Van', tag: 'Square-nose shorty van', cls: 'truck', ds: 1 },
-    { id: 'stepvan', name: 'Step Van', tag: 'Bread truck on 1/10 wheels', cls: 'truck', ds: 1 },
+    { id: 'stepvan', egg: 1, name: 'Step Van', tag: 'Bread truck on 1/10 wheels', cls: 'truck', ds: 1 },
     { id: 'monte', name: 'Monte Carlo', tag: '72 long-hood coupe', cls: 'drift', ds: 1 },
     { id: 'elcamino', name: 'El Camino', tag: 'Car up front, truck out back', cls: 'drift', ds: 1 },
     { id: 'malibu', name: 'Malibu', tag: '81 G-body coupe', cls: 'drift', ds: 1 },
@@ -3316,6 +3316,7 @@ const GFX = (function () {
     { id: 'cyber', name: 'Cyber Truck', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
     { id: 'ecto', name: 'Ecto Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
     { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie', ds: 1 },
+    { id: 'chibidm', name: 'Mini Time Machine', tag: 'Chibi gullwing, giant wheels', cls: 'movie', ds: 1 },
     { id: 'kitt', name: 'Knight Car', tag: '82 T-top, red scanner', cls: 'movie' },
     { id: 'christine', name: 'Fury 58', tag: 'Red fin-car with a temper', cls: 'movie' },
     { id: 'ateam', name: 'Team Van', tag: 'Black-and-grey G-van', cls: 'movie' },
@@ -3396,6 +3397,7 @@ const GFX = (function () {
     tree: [[0x5a3c22, 0x6a4a2a, 0x4a3018], [0x3f7a2c, 0x2f6a2a, 0x5a8a30, 0x4a7a3a, 0x6a9a3a]],
     vehicle: [[0x16171a], [0xf2f2f0, 0x111214, 0xc8141c, 0x2a4dd4, 0x9aa0a8, 0x1f6a3a]],
     dozer: [[0x1a1b1d], [0xf2b81a, 0xe8a010]],
+    bone: [[0xe6dcc4], [0xe6dcc4], [0xe6dcc4]],
     solid: [[0x222222], [0xb3261e, 0x1f4fa8, 0x2a7a3a, 0xd8661c, 0x8a8f98, 0xe8e8e2, 0x6a2a7a]] };
   function decodeProp(buf) {
     const dv = new DataView(buf), hl = dv.getUint32(0, true), hdr = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))); let o = 4 + hl; const nv = hdr.nv, nf = hdr.nf;
@@ -3431,6 +3433,30 @@ const GFX = (function () {
       if (!propMat) propMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.05, side: T.DoubleSide });
       const m = new T.Mesh(g, propMat); m.castShadow = true; m.receiveShadow = true; return m;
     });
+  }
+  // ---------------- v73 drivers (egg reward): seated figure, arm on the window, see-through glass when one is on board ----------------
+  const DRIVERS = [{ id: 'drv_homie1', name: 'Homie', sub: 'Cap backwards' }, { id: 'drv_homie2', name: 'Homie', sub: 'Cap forward' }, { id: 'drv_skel1', name: 'Bones', sub: 'Skeleton crew' }, { id: 'drv_skel2', name: 'Lil Bones', sub: 'Shorter skeleton' }];
+  const RHD = { s15: 1, ae86: 1, r33: 1, supra: 1, rx7: 1, datsun: 1, a85: 1, evo: 1, chaser: 1, interceptor: 1, hilux: 1 };
+  let drvMat = null;
+  function driverMesh(id, h, seed) {
+    const d = PROP[id]; if (!d) return null; const k = d.hdr.kind, pal = PROP_PAL[k] || PROP_PAL.solid; let sd = (seed || 7) * 9301 + 49297;
+    const pick = arr => { sd = (sd * 9301 + 49297) % 233280; return arr[Math.floor(sd / 233280 * arr.length)]; }, col = new T.Color();
+    const cols = pal.map(a => { col.setHex(pick(a)); return [col.r, col.g, col.b]; });
+    // fit: head just under the roof, hips on the floor pan, head behind the windshield / inside the front side window
+    const floor = 0.019, Hd = Math.min(0.092, Math.max(0.03, (h.top - floor) * 0.86)), sc = Hd;
+    const fw = Math.max(h.fender[0], h.fender[1]), rhd = !!RHD[h.id], side = rhd ? -1 : 1;
+    let hx = h.ws ? h.ws[0] - 0.014 : h.xf * 0.2;
+    const sp = (h.masks && h.masks.side || []).filter(q => q.length > 2).map(q => { let a = 1e9, b = -1e9; for (const p of q) { a = Math.min(a, p[0]); b = Math.max(b, p[0]); } return [a, b]; }).filter(r => r[1] - r[0] > 0.02);
+    if (sp.length) { const fr = sp.reduce((m, r) => (r[0] + r[1] > m[0] + m[1] ? r : m)); hx = Math.min(hx, fr[0] + (fr[1] - fr[0]) * 0.45); }
+    if (!sp.length) hx = Math.min(hx, (h.xf + h.xr) / 2 + 0.03 * (h.xf - h.xr));   // no side glass to go by: never up at the dash
+    const ox = hx - d.hdr.headx * sc, oz = side * fw * 0.4, mz = (d.hdr.arm === side) ? 1 : -1;   // mirror so the arm goes out the near window
+    const n = d.hdr.nv, P = new Float32Array(n * 3), N = new Float32Array(n * 3), C = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const j = i * 3; P[j] = ox + d.pos[j] * sc; P[j + 1] = floor + d.pos[j + 1] * sc; P[j + 2] = oz + d.pos[j + 2] * sc * mz;
+      N[j] = d.nor[j]; N[j + 1] = d.nor[j + 1]; N[j + 2] = d.nor[j + 2] * mz; const cc = cols[Math.min(d.band[i], cols.length - 1)]; C[j] = cc[0]; C[j + 1] = cc[1]; C[j + 2] = cc[2]; }
+    let I = d.idx; if (mz < 0) { I = new (d.idx.constructor)(d.idx.length); for (let i = 0; i < d.idx.length; i += 3) { I[i] = d.idx[i]; I[i + 1] = d.idx[i + 2]; I[i + 2] = d.idx[i + 1]; } }
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(P, 3)); g.setAttribute('normal', new T.BufferAttribute(N, 3)); g.setAttribute('color', new T.BufferAttribute(C, 3)); g.setIndex(new T.BufferAttribute(I, 1));
+    if (!drvMat) drvMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.05 });
+    const me = new T.Mesh(g, drvMat); me.castShadow = true; return me;
   }
   const loadedBodies = () => BODIES.filter(b => BODY[b.id]);
   const bodyInfo = id => BODIES.find(b => b.id === id) || BODIES[0];
@@ -3476,7 +3502,7 @@ const GFX = (function () {
   }
   // v58 per-body wheel fit (measured from each shell: tools/fit/solve.py). fx/rx: wheel x shift to centre it in the arch (m),
   // dy: body raise so the arch clears the tire, tk: tuck the wheels inward, ws: wheel scale for small-arch shells. Visual only (physics WB unchanged).
-  const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"bs": 1.25, "ws": 1.075, "dy": 0.00125, "tk": 0.005, "fx": 0.0291, "rx": -0.0404}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}, "monte": {"fx": 0.0051, "rx": 0.0071}, "elcamino": {"fx": 0.01, "rx": 0.0015}, "malibu": {"fx": -0.0036}, "malwagon": {"fx": -0.0036}, "stepvan": {"fx": 0.0068, "rx": 0.0076}, "k5vert": {"fx": 0.0164, "rx": 0.0056}, "gvan": {"rx": 0.0029}, "bel55": {"fx": 0.0043, "rx": -0.0016}, "chibidm": {"fx": -0.04, "rx": 0.04, "ws": 1.34}};
+  const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"bs": 1.25, "ws": 1.075, "dy": 0.00125, "tk": 0.005, "fx": 0.0291, "rx": -0.0404}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}, "monte": {"fx": 0.0051, "rx": 0.0071}, "elcamino": {"fx": 0.01, "rx": 0.0015}, "malibu": {"fx": -0.0036}, "malwagon": {"fx": -0.0036}, "stepvan": {"fx": 0.0068, "rx": 0.0076}, "k5vert": {"fx": 0.0164, "rx": 0.0056}, "gvan": {"fx": 0.0011, "rx": 0.0021}, "bel55": {"fx": 0.0043, "rx": -0.0016}, "chibidm": {"fx": -0.04, "rx": 0.04, "ws": 1.34}};
   const wheelFace = style => Math.max(0, 0.013 - 0.002 - (style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : 0.0015));   // z of the wheel face (outward), matches buildWheel
   // v60: off-road crawler wheel (knobby tire + beadlock), drawn at the drift wheel's scale (R 0.031) and scaled up by buildCar
   function buildCrawlWheel(color) {
@@ -3616,12 +3642,12 @@ const GFX = (function () {
     g.globalCompositeOperation = 'lighter'; g.fillStyle = '#0f0'; draw(h.masks.fglass, uz, vy, 0, 1); g.globalCompositeOperation = 'source-over';
     const t = new T.CanvasTexture(c); t.flipY = false; t.encoding = T.LinearEncoding; t.anisotropy = 4; return (MASKT[h.id] = t);
   }
-  function triplanarLivery(mat, h, noLivery, ban, lights) {
+  function triplanarLivery(mat, h, noLivery, ban, lights, see) {
     const side = (h.side || []).slice(0, 12), n = side.length, A = [], B = [];
     for (let i = 0; i < 12; i++) { const p = side[i % Math.max(1, n)] || [0, 0], q = side[(i + 1) % Math.max(1, n)] || [0, 0]; A.push(new T.Vector2(p[0], p[1])); B.push(new T.Vector2(q[0], q[1])); }
     mat.onBeforeCompile = sh => {
       const mt = maskTex(h); if (mt) Object.assign(sh.uniforms, { glMask: { value: mt }, mLo: { value: new T.Vector3(...h.lo) }, mSz: { value: new T.Vector3(h.hi[0] - h.lo[0], h.hi[1] - h.lo[1], h.hi[2] - h.lo[2]) }, uHeadI: { get value() { return lights ? lights.head.emissiveIntensity : 0.3; } }, uTailI: { get value() { return lights ? lights.tail.emissiveIntensity : 0.4; } }, uSG: { value: (FIT[h.id] && FIT[h.id].sg !== undefined) ? FIT[h.id].sg : 1 } });
-      Object.assign(sh.uniforms, { lvX0: { value: h.x0 }, lvLen: { value: h.len }, lvH: { value: h.H }, lvWz: { value: h.Wz }, glWs: { value: new T.Vector2(h.ws[0], h.ws[1]) }, glRg: { value: new T.Vector2(h.rg[0], h.rg[1]) }, glBelt: { value: h.belt }, glBan: { value: noLivery ? 0 : (ban || 0) }, glA: { value: A }, glB: { value: B }, glN: { value: n } });
+      Object.assign(sh.uniforms, { uSee: { value: see ? 1 : 0 }, lvX0: { value: h.x0 }, lvLen: { value: h.len }, lvH: { value: h.H }, lvWz: { value: h.Wz }, glWs: { value: new T.Vector2(h.ws[0], h.ws[1]) }, glRg: { value: new T.Vector2(h.rg[0], h.rg[1]) }, glBelt: { value: h.belt }, glBan: { value: noLivery ? 0 : (ban || 0) }, glA: { value: A }, glB: { value: B }, glN: { value: n } });
       sh.vertexShader = 'varying vec3 vLP; varying vec3 vLN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vLP = position; vLN = normal;');
       const liv = noLivery ? '' : `
         vec3 an = abs(gn); vec3 wt = pow(an, vec3(6.0)); wt /= (wt.x + wt.y + wt.z + 1e-5);
@@ -3631,7 +3657,7 @@ const GFX = (function () {
         vec2 uvF = vec2((vLP.x > 0.0 ? 0.5 : 0.75) + wz * 0.25, vy * 0.5);
         vec4 tS = mapTexelToLinear(texture2D(map, uvS)), tT = mapTexelToLinear(texture2D(map, uvT)), tF = mapTexelToLinear(texture2D(map, uvF));
         diffuseColor *= tS * wt.z + tT * wt.y + tF * wt.x;`;
-      sh.fragmentShader = (mt ? '#define BODY_MASK\nuniform sampler2D glMask; uniform vec3 mLo, mSz; uniform float uHeadI, uTailI, uSG;\nvec2 mq(vec2 t, vec2 off) { return (off + 0.01 + clamp(t, 0.0, 1.0) * 0.98) * 0.5; }\n' : '') + 'uniform float lvX0, lvLen, lvH, lvWz, glBelt, glBan; uniform vec2 glWs, glRg; uniform vec2 glA[12]; uniform vec2 glB[12]; uniform int glN; varying vec3 vLP; varying vec3 vLN;\n' + sh.fragmentShader
+      sh.fragmentShader = (mt ? '#define BODY_MASK\nuniform sampler2D glMask; uniform vec3 mLo, mSz; uniform float uHeadI, uTailI, uSG;\nvec2 mq(vec2 t, vec2 off) { return (off + 0.01 + clamp(t, 0.0, 1.0) * 0.98) * 0.5; }\n' : '') + 'uniform float uSee, lvX0, lvLen, lvH, lvWz, glBelt, glBan; uniform vec2 glWs, glRg; uniform vec2 glA[12]; uniform vec2 glB[12]; uniform int glN; varying vec3 vLP; varying vec3 vLN;\n' + sh.fragmentShader
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(roughnessFactor, 0.04, max(gm, max(hm, tm) * 0.8));')
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix(metalnessFactor, 0.0, gm);')
         .replace('#include <map_fragment>', `
@@ -3653,6 +3679,7 @@ const GFX = (function () {
           hm = mH * smoothstep(0.25, 0.45, gn.x) * step(0.0, vLP.x); tm = mR * smoothstep(0.25, 0.45, -gn.x) * step(vLP.x, 0.0); }
         #endif
         gm *= 1.0 - inWs * step(gx, glWs.x + (glWs.y - glWs.x) * glBan) * step(0.001, glBan);
+        if (uSee > 0.5 && gm > 0.5) { vec2 fq = mod(floor(gl_FragCoord.xy), 2.0); if (fq.x + fq.y > 0.5) discard; }   // v73: driver on board, tinted see-through glass (screen-door, no sorting)
         ${liv}
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.004, 0.005, 0.007), gm); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.65, 0.7), hm); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.32, 0.0, 0.01), tm);`)
         .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n #ifdef BODY_MASK\n totalEmissiveRadiance += vec3(1.0, 0.95, 0.86) * hm * uHeadI + vec3(1.0, 0.07, 0.03) * tm * uTailI;\n #endif');
@@ -3664,10 +3691,12 @@ const GFX = (function () {
     const m = mats(), bd = BODY[look.body] || BODY[BODIES[0].id], h = bd.hdr, fin = FINISHES.find(f => f.id === look.finish) || FINISHES[0];
     const livery = paintLivery(h, look, hq ? 2048 : 1024);
     const paint = new T.MeshPhysicalMaterial({ map: livery, metalness: fin.m, roughness: Math.max(0.1, fin.r * 0.75), clearcoat: fin.cc, clearcoatRoughness: 0.03, envMapIntensity: 1.15 });
-    triplanarLivery(paint, h, false, look.livery === 'sponsor' ? 0.3 : 0, { get head() { return head; }, get tail() { return tail; } });
+    const see = !!(look.driver && DRIVERS.some(d => d.id === look.driver));
+    triplanarLivery(paint, h, false, look.livery === 'sponsor' ? 0.3 : 0, { get head() { return head; }, get tail() { return tail; } }, see);
     const paintSolid = new T.MeshPhysicalMaterial({ color: new T.Color(look.color), metalness: fin.m, roughness: fin.r, clearcoat: fin.cc, envMapIntensity: 1.0 });
     const paint2 = new T.MeshPhysicalMaterial({ color: new T.Color(look.color2), metalness: fin.m, roughness: fin.r, clearcoat: fin.cc, envMapIntensity: 1.0 });
     const glass = new T.MeshPhysicalMaterial({ color: 0x010203, metalness: 0.0, roughness: 0.06, clearcoat: 0.6, clearcoatRoughness: 0.03, envMapIntensity: 0.55, side: T.DoubleSide });
+    if (see) { glass.transparent = true; glass.opacity = 0.42; glass.depthWrite = false; }
     const trim = look.chrome ? new T.MeshStandardMaterial({ color: 0xe6e8ec, roughness: 0.12, metalness: 1, envMapIntensity: 1.3 }) : new T.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.55, metalness: 0.1 });
     const head = new T.MeshPhysicalMaterial({ color: 0xd8dfe8, metalness: 0.6, roughness: 0.1, clearcoat: 1, emissive: 0xfff4dc, emissiveIntensity: 0.25, envMapIntensity: 1.4 });
     const tail = new T.MeshPhysicalMaterial({ color: 0x5a0006, metalness: 0.1, roughness: 0.12, clearcoat: 1, emissive: 0xff1408, emissiveIntensity: 0.45 });
@@ -3677,6 +3706,7 @@ const GFX = (function () {
     const BS = (FIT[h.id] || {}).bs || 1; body.scale.setScalar(BS);   // v59: tuned 'chibi' bodies are shrunk so full-size wheels fill the flares
     if (bodyInfo(h.id).ds) [paint, trim].forEach(mm => mm.side = T.DoubleSide);
     const shell = new T.Mesh(bd.geo, [paint, glass, trim, head, tail, plate, amber]); shell.castShadow = true; shell.receiveShadow = true; body.add(shell);
+    if (see) { const put = () => { if (car.userData.gone) return; const dm = driverMesh(look.driver, h, look.dseed); if (dm) body.add(dm); }; if (PROP[look.driver]) put(); else ensureProp(look.driver).then(put, () => { }); }
     const box2 = (w, hh, d, mat, x, y, z) => { const o = box(w, hh, d, mat, x, y, z); body.add(o); return o; };
     // optional add-on wing
     const wx = h.xr + 0.03, wy = h.tailTop;
@@ -4071,7 +4101,7 @@ const GFX = (function () {
     cols.forEach((col, i) => { const k = huntKey(col); k.scale.setScalar(0.8); const a = i / cols.length * Math.PI * 2; k.position.set(Math.cos(a) * 0.17, 0.2, Math.sin(a) * 0.17); k.rotation.y = -a; g.add(k); });
     return g; }
   let _glowT = null; function glowTex() { if (_glowT) return _glowT; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return (_glowT = new T.CanvasTexture(c)); }
-  return { huntKey, huntEgg, huntAltar, huntBeacon, PROP_SETS, PROP, ensureProp, buildProps, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, FIT, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
+  return { DRIVERS, huntKey, huntEgg, huntAltar, huntBeacon, PROP_SETS, PROP, ensureProp, buildProps, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, FIT, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
 })();
 
 </script>
@@ -4410,7 +4440,8 @@ const ONLINE = (() => {
       diamondback: { id: 'crystal', name: 'CRYSTAL KEY', col: '#bfeaff', x: 8.5, y: 2.6, hint: 'Crystal glints inside Diamondback\'s infield, a long way from the gate.' } },
     altar: { track: 'prodigy', x: 6.7, y: -1.7 } };
   const movieOk = id => S.hunt.egg === 'done' || S.hunt.keep === id;
-  function huntKeep() { const b = S.look && S.look.body; if (b && GFX.bodyInfo(b).cls === 'movie' && !movieOk(b) && !S.hunt.keep) { S.hunt.keep = b; save(); } }   // v62: grandfather the movie car you were already driving
+  const eggCar = id => { const i = GFX.bodyInfo(id); return i.cls === 'movie' || !!i.egg; };   // v73: movie cars + egg-reward bodies (chibis, step van)
+  function huntKeep() { const b = S.look && S.look.body; if (b && eggCar(b) && !movieOk(b) && !S.hunt.keep) { S.hunt.keep = b; save(); } }   // v62: grandfather the movie car you were already driving
   function huntRefresh() { if (huntObj && huntObj.g.parent) huntObj.g.parent.remove(huntObj.g); huntSpawn(); rebuildPlayer(); }
   function huntReset() { S.hunt = { keys: {}, egg: 0, rv: (S.hunt.rv | 0) + 1, keep: S.hunt.keep }; delete S.look.egg; save(); huntRefresh(); toast('Hunt reset · keys and egg gone, find them again', 'good'); }
   const huntKeys = () => Object.keys(HUNT.keys).filter(t => S.hunt.keys[HUNT.keys[t].id]).length;
@@ -4614,7 +4645,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v72', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v73', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5006,7 +5037,8 @@ const ONLINE = (() => {
   function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface, physK()); player.tune = S.tune; }
   // guests drive the one standard car: the stock S15 in the Stranger Kreations sticker kit (their own garage comes back when they sign in)
   const GUEST_LOOK = Object.assign({}, GFX.DEF_LOOK, { body: 's15', color: '#ff5a1f', color2: '#101114', livery: 'sponsor', finish: 'gloss', wheel: 'five', wheelColor: '#e8e8ea', wing: 'none', glow: '' });
-  function myLook() { if (ONLINE.isGuest && ONLINE.isGuest()) return GUEST_LOOK; const b = S.look.body; if (b && GFX.bodyInfo(b).cls === 'movie' && !movieOk(b)) { huntKeep(); if (!movieOk(b)) return Object.assign({}, S.look, { body: GFX.DEF_LOOK.body }); } return S.look; }
+  function myLook() { if (ONLINE.isGuest && ONLINE.isGuest()) return GUEST_LOOK; let L = S.look; if (L.driver && S.hunt.egg !== 'done') { L = Object.assign({}, L); delete L.driver; }
+    const b = L.body; if (b && eggCar(b) && !movieOk(b)) { huntKeep(); if (!movieOk(b)) return Object.assign({}, L, { body: GFX.DEF_LOOK.body }); } return L; }
   function rebuildPlayer() { GFX.disposeTree(player.mesh); let L = myLook(); if (isCrawl()) L = Object.assign({}, L, { tires: 'crawl' }); player.mesh = GFX.buildCar(L, !isTouchDev()); player.look = L; scene.add(player.mesh); save(); }
   function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && (ONLINE.unread || SOC.n)) b.appendChild(el('i', 'badge', String((ONLINE.unread | 0) + SOC.n))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
   function drawEsc(cv) {   // v54: ESC curve graph like the programmer apps (wheel speed / motor rpm vs trigger)
@@ -5309,11 +5341,17 @@ const ONLINE = (() => {
         else { delete S.look.chrome; if (was === 'movie' && S.driftLook) { const d = S.driftLook; Object.assign(S.look, { color: d.color, color2: d.color2, finish: d.finish, livery: d.livery, wheel: d.wheel, wheelColor: d.wheelColor, wing: d.wing }); } }
         S.look.body = v; const tk = (pickBody.tk = (pickBody.tk || 0) + 1); toast('Loading ' + GFX.bodyInfo(v).name + '…');
         GFX.ensureBody(v).then(() => { if (tk === pickBody.tk) { rebuildPlayer(); toast(GFX.bodyInfo(v).name, 'good'); } }, () => toast('Could not load that body', 'bad')); };
-      h('Drift cars', GFX.BODIES.filter(b => b.cls === 'drift').length); add(chips(GFX.BODIES.filter(b => b.cls === 'drift').map(b => ({ id: b.id, name: b.name, sub: b.tag })), S.look.body, pickBody, 'grid'));
-      h('Trucks', GFX.BODIES.filter(b => b.cls === 'truck').length); add(chips(GFX.BODIES.filter(b => b.cls === 'truck').map(b => ({ id: b.id, name: b.name, sub: b.tag })), S.look.body, pickBody, 'grid'));
+      const bChip = b => !b.egg || movieOk(b.id) ? { id: b.id, name: (b.egg ? '🥚 ' : '') + b.name, sub: b.tag } : { id: b.id, name: b.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg, unlock the ' + b.name + '.') };
+      h('Drift cars', GFX.BODIES.filter(b => b.cls === 'drift').length); add(chips(GFX.BODIES.filter(b => b.cls === 'drift').map(bChip), S.look.body, pickBody, 'grid'));
+      h('Trucks', GFX.BODIES.filter(b => b.cls === 'truck').length); add(chips(GFX.BODIES.filter(b => b.cls === 'truck').map(bChip), S.look.body, pickBody, 'grid'));
       { const mv = GFX.BODIES.filter(b => b.cls === 'movie'), open = S.hunt.egg === 'done'; h('Movie cars', open ? '🥚 unlocked' : '🔒 find the egg');
         add(chips(mv.map(b => movieOk(b.id) ? { id: b.id, name: b.name, sub: b.tag } : { id: b.id, name: b.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg, unlock the cars.') }), S.look.body, pickBody, 'grid movies'));
         msg(open ? 'You found the egg. Every movie car is yours. They keep their screen look and stock stance but run the same drift chassis. Repaint them below if you want.' : 'Find the egg, unlock the cars. Some cars are earned, not given…' + (S.hunt.keep ? ' (You keep the ' + GFX.bodyInfo(S.hunt.keep).name + ' you were already driving.)' : '')); }
+      { const open = S.hunt.egg === 'done'; h('Driver', open ? '🥚 unlocked' : '🔒 find the egg');
+        const ds = [{ id: 'none', name: 'No driver', sub: 'Blacked-out glass' }].concat(GFX.DRIVERS.map(d => open ? { id: d.id, name: d.name, sub: d.sub } : { id: d.id, name: d.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg to put a driver in your car.') }));
+        add(chips(ds, S.look.driver || 'none', v => { if (v === 'none') delete S.look.driver; else { S.look.driver = v; S.look.dseed = S.look.dseed || (1 + Math.floor(Math.random() * 9999)); } rebuildPlayer(); save(); }, 'grid'));
+        msg(open ? 'Pick who rides in your car. With a driver on board your windows turn tinted see-through so everyone can see them. Hit Re-roll for new clothes.' : 'Drivers are an egg reward. Find the egg and you can put a homie or a skeleton behind the wheel.');
+        if (open && S.look.driver) { const rr = el('button', 'ghost', 'Re-roll clothes'); rr.onclick = () => { S.look.dseed = 1 + Math.floor(Math.random() * 9999); rebuildPlayer(); save(); }; add(rr); } }
       h('Paint'); add(row('Colour', swatches(S.look.color, v => { S.look.color = v; rebuildPlayer(); })));
       add(row('Finish', chips(GFX.FINISHES, S.look.finish, v => { S.look.finish = v; rebuildPlayer(); })));
       add(row('Style', chips(GFX.LIVERIES, S.look.livery, v => { S.look.livery = v; rebuildPlayer(); })));
