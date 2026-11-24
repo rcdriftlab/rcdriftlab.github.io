@@ -3387,17 +3387,22 @@ const GFX = (function () {
   // each vertex carries a palette band, so every placed copy gets its own colours (shirt / pants / skin, trunk / leaves, body / running gear)
   const PROP = {}, propPend = {};
   const PROP_SETS = {
-    people: ['p_tommy', 'p_bad', 'p_reach', 'p_hips', 'p_walk', 'ep_woman', 'ep0', 'ep1', 'ep2', 'ep3', 'ep4', 'ep5', 'ep6', 'ep7'],
+    people: ['p_tommy', 'p_bad', 'p_reach', 'p_hips', 'p_walk', 'ep_woman', 'w_stand', 'w_skirt', 'ep0', 'ep1', 'ep2', 'ep3', 'ep4', 'ep5', 'ep6', 'ep7'],
     groups: ['ep_pair', 'ep_duo', 'p_family', 'p_hug', 'ep8'],
     scenes: ['p_brawl', 'p_street', 'p_trash', 'p_kneel'],
     trees: ['tree1', 'tree2', 'tree3'],
-    rigs: ['limo', 'trash', 'dozer', 'semi', 'box20', 'box40', 'box10'] };
+    rigs: ['limo', 'trash', 'dozer', 'semi', 'box20', 'box40', 'box10'],
+    lounge: ['w_chair1', 'w_chair2', 'w_sit', 'w_lay'] };   // v75: girls on chairs / a cooler / a beach towel (tools/pit2)
   const PROP_PAL = {
     person: [[0x1c2333, 0x2a3a5a, 0x111214, 0x4a4a40, 0x6b5a40, 0x3a3f47, 0x23324f], [0xc8202a, 0xf2f2f2, 0x111214, 0x2a4dd4, 0x0f5a3a, 0xc8a050, 0x7a1f1f, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0x1f8a8a, 0xe8c840], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d]],
     tree: [[0x5a3c22, 0x6a4a2a, 0x4a3018], [0x3f7a2c, 0x2f6a2a, 0x5a8a30, 0x4a7a3a, 0x6a9a3a]],
     vehicle: [[0x16171a], [0xf2f2f0, 0x111214, 0xc8141c, 0x2a4dd4, 0x9aa0a8, 0x1f6a3a]],
     dozer: [[0x1a1b1d], [0xf2b81a, 0xe8a010]],
     bone: [[0xe6dcc4], [0xe6dcc4], [0xe6dcc4]],
+    lady: [[0xc8102e, 0x111214, 0xf2f2f2, 0xff3d8b, 0x1fb5c8, 0x2a4dd4, 0x6a2a9a, 0x0f8a5a], [0x1a1210, 0x3b2314, 0x6b4423, 0xd9b26a, 0x8a3a1c, 0x1a1210], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d], [0xb3261e, 0x1f4fa8, 0xe8e8e2, 0x2a7a3a, 0xf2b81a, 0x111214], [0x1a1a1c, 0x2a2a2e]],
+    homie: [[0x1c2333, 0x111214, 0x6b6b6b, 0x23324f, 0x8a7a5a], [0xf2f2f2, 0x111214, 0x2a4dd4, 0x7a1f1f, 0x1f6a3a, 0xf2f2f2], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d], [0x111214, 0xf2f2f2, 0xc8102e, 0x2a4dd4]],
+    wreck: [[0x16171a], [0x6b3a22, 0x7a7f74, 0x4a4a42, 0x8a5a2a, 0x3a4a3a]],
+    plate: [[0x222222], [0xd8d8dc, 0xd4a640, 0xc0c4cc]],
     solid: [[0x222222], [0xb3261e, 0x1f4fa8, 0x2a7a3a, 0xd8661c, 0x8a8f98, 0xe8e8e2, 0x6a2a7a]] };
   function decodeProp(buf) {
     const dv = new DataView(buf), hl = dv.getUint32(0, true), hdr = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))); let o = 4 + hl; const nv = hdr.nv, nf = hdr.nf;
@@ -4487,7 +4492,7 @@ const ONLINE = (() => {
       if (p[4] && !GFX.BODY[p[4]] && GFX.BODIES.some(b => b.id === p[4])) { const wg = world.group; GFX.ensureBody(p[4]).then(() => { if (world.group === wg) put(p[4]); }, () => { if (world.group === wg) put(fb()); }); }
       else put(p[4] && GFX.BODY[p[4]] ? p[4] : fb()); });
     // v49 props: scanned people / scenes / trees / big rigs, merged into one mesh. Venue figures (world.props) + pit dressing inside the infield gate.
-    { const plist = (world.props || []).slice(), pd = pitDress(track); plist.push(...pd);
+    { const plist = (world.props || []).slice(), pd = pitDress(track); plist.push(...pd); world.pitList = pd;
       if (plist.length) { const wg = world.group; GFX.buildProps(plist).then(m => { if (m && world.group === wg) world.group.add(m); }, () => {}); } }
     // polished-concrete reflections (High): live mirror under a semi-transparent floor
     if (S.opt.quality >= 2 && (!world.night || world.prodNight) && !world.dusk && world.env !== 'diamondback' && world.env !== 'tandem' && T.Reflector && world.floor) {   // Diamondback and Tandem tile is satin, not a mirror
@@ -4645,7 +4650,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v74', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v75', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5027,6 +5032,16 @@ const ONLINE = (() => {
     q = spot(-1.4, 1.6, 0.25); if (q) put(pick(P.trees), q, 0.25, 0.07 + rr() * 0.03, true);
     const rig = pick(P.rigs), rl = { limo: 0.46, trash: 0.48, dozer: 0.42, semi: 0.36, box20: 0.31, box40: 0.61, box10: 0.16 }[rig] || 0.4;
     q = spot(1.6, 1.4 + rl * 0.5, rl); if (q) { put(rig, q, rl, 0.1, true); if (rig === 'semi' && rr() < 0.7) { const a = out[out.length - 1].ry, b = [q[0] - Math.cos(a) * 0.95, q[1] - Math.sin(a) * 0.95]; if (free(b[0], b[1], 0.5)) { put('trailer', b, 0.5, 0.1, true); out[out.length - 1].ry = a; } } }
+    // v75 hangout: the wrecked Accord with the homie on the hood and a girl leaning on the side; two girls lounging; the Stranger Kreations plate
+    const grp = (id, cq, ry, lx, lz, lift, rot) => { const c = Math.cos(ry), sn = Math.sin(ry); out.push({ id, x: cq[0] + (lx * c + lz * sn) * 0.1, y: cq[1] + (lx * sn - lz * c) * 0.1, z: lift * 0.1, ry: ry + rot, s: 0.1, seed: 1 + ((rr() * 1e6) | 0) }); };
+    if (P.lounge) {
+      q = spot(-2.8, 1.05, 0.31); if (q) { put('accord', q, 0.31, 0.1, true); const a = out[out.length - 1].ry; grp('h_cigar', q, a, 1.1, 0.87, 0.46, -Math.PI / 2); if (rr() < 0.8) grp('w_lean', q, a, -0.9, 1.2, 0, Math.PI / 2); }
+      q = spot(0.7, 1.3, 0.15); if (q) { const L = P.lounge, a = pick(L); let b = pick(L); if (b === a) b = L[(L.indexOf(a) + 1) % L.length];   // two side by side, both facing the track
+        const ry = face(q[0], q[1]) + (rr() - 0.5) * 0.4, w = (a === 'w_lay' || b === 'w_lay') ? 0.065 : 0.04;
+        for (const [id, sg] of [[a, -1], [b, 1]]) out.push({ id, x: q[0] + Math.sin(ry) * w * sg, y: q[1] - Math.cos(ry) * w * sg, z: 0, ry: ry + (rr() - 0.5) * 0.3, s: 0.1, seed: 1 + ((rr() * 1e6) | 0) });
+        taken.push([q[0], q[1], 0.15]); }
+      q = spot(-1.0, 2.0, 0.19); if (q) { put('sk_plate', q, 0.19, 0.1, false); out[out.length - 1].ry = face(q[0], q[1]); }
+    }
     if (!cols.length) tr.colliders = null;
     return out;
   }
