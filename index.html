@@ -4215,7 +4215,7 @@ const ONLINE = (() => {
     arrive = id === 'crawl' ? 'crawl' : 'v2trailer'; loadTrack(i); applyTune(); save(); drive(false); trailerT = 0;
     if (id === 'crawl') { S.found = Object.assign(S.found || {}, { crawl: 1 }); save(); toast(S.hunt.egg ? 'CRAWLER CANYON · off-road tires fitted · LOW / 4WS / DIG on the right' : 'CRAWLER CANYON · something is hidden up high in here… LOW / 4WS / DIG on the right', 'good'); }
     else toast('Back on Prodigy RC V2', 'good');
-    if (id === 'crawl' && S.hunt.egg === 'done' && ONLINE.profile) joinLobby(CANYON_ROOM).then(e => { if (e) toast(e, 'bad'); else toast('🥚 CANYON ROOM · everyone in here found the egg', 'good'); }); }
+    if (id === 'crawl' && S.hunt.egg === 'done' && ONLINE.profile) joinLobby(CANYON_ROOM).then(e => { if (e) toast(e, 'bad'); else toast('🥚 CANYON ROOM · only egg finders get in here', 'good'); }); }
   { const tg = document.getElementById('trailerGo'); if (tg) tg.addEventListener('click', e => { e.stopPropagation(); if (tg.dataset.to && tg.dataset.to !== 'locked') rideTo(tg.dataset.to); }); }
   // ---- v61 the hunt: three keys in three rooms unlock the V2 trailer; an egg in the canyon; carry it home for the prize ----
   const HUNT = { keys: { warehouse: { id: 'copper', name: 'COPPER KEY', col: '#d0763a', x: -7.4, y: -2.8, hint: 'Copper waits in the Warehouse, as far from the pit gate as the infield goes.' },
@@ -4240,7 +4240,7 @@ const ONLINE = (() => {
     if (!kind) return; g.position.set(at.x, at.z, -at.y); world.group.add(g); huntObj = { kind, at, g, key: K, t: 0 }; }
   function huntWin() { const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard egg'; document.body.appendChild(ov); const card = el('div', 'tcard'); ov.appendChild(card);
     card.appendChild(el('div', 'tstep', 'ACHIEVEMENT UNLOCKED')); card.appendChild(el('h2', '', '🥚 THE EASTER EGG'));
-    const b = el('div', 'tbody'); b.appendChild(el('p', '', 'Three keys, the canyon, the Nest, and the long drive home. You found it.')); b.appendChild(el('p', '', 'The 🥚 now sits next to your name: on your name tag in online rooms and on your driver card.')); b.appendChild(el('p', '', '🎬 Every movie car is now unlocked in the Garage.')); b.appendChild(el('p', 'tmut', 'Keep the secret. Let them hunt.')); card.appendChild(b);
+    const b = el('div', 'tbody'); b.appendChild(el('p', '', 'Three keys, the canyon, the Nest, and the long drive home. You found it.')); b.appendChild(el('p', '', 'The 🥚 now shows on your driver profile. Tap your name anywhere to see it.')); b.appendChild(el('p', '', '🎬 Every movie car is now unlocked in the Garage.')); b.appendChild(el('p', 'tmut', 'Keep the secret. Let them hunt.')); card.appendChild(b);
     const bt = el('div', 'tbtns'); card.appendChild(bt); const x = el('button', '', 'Nice.'); x.onclick = () => ov.remove(); bt.appendChild(x); sfxWin(); }
   function huntTick(dt) {
     // the carried egg rides on the roof
@@ -4420,7 +4420,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v63', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v64', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     { const g = !!(ONLINE.isGuest && ONLINE.isGuest()); if (player && g !== ONLINE._wasGuest) { ONLINE._wasGuest = g; if (g || player.look !== S.look) rebuildPlayer(); } }
@@ -4485,7 +4485,7 @@ const ONLINE = (() => {
       if (p.sameTab || p.kind !== 'viewer') continue; const d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
       if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
       const l = NET.looks.get(p.peer) || {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
-      const sig = JSON.stringify(look), name = String(d.n || 'Driver').slice(0, 16) + (l.egg === 1 ? ' 🥚' : ''); let nc = netCars.get(p.peer);
+      const sig = JSON.stringify(look), name = String(d.n || 'Driver').slice(0, 16); let nc = netCars.get(p.peer);
       if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(isCrawl() ? Object.assign({}, look, { tires: 'crawl' }) : look); scene.add(mesh);
         const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; sp.userData.tag = 1; mesh.add(sp); const mic = new T.Sprite(new T.SpriteMaterial({ map: micTex(), depthTest: false, transparent: true })); mic.scale.set(0.05, 0.05, 1); mic.position.y = 0.215; mic.visible = false; mic.userData.tag = 1; mic.userData.mic = 1; mesh.add(mic);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
