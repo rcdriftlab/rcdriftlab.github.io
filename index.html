@@ -1694,7 +1694,9 @@ const SCN = (function () {
     const pine = (x, z, h) => { const g = new T.Group(), m = std(0x2f5a2c, 0.9), tr = new T.Mesh(new T.CylinderGeometry(h * 0.04, h * 0.05, h * 0.25, 6), std(0x5a3c22, 0.9)); tr.position.y = h * 0.12; g.add(tr); for (let k = 0; k < 3; k++) { const c = new T.Mesh(new T.ConeGeometry(h * (0.32 - k * 0.07), h * 0.45, 9), m); c.position.y = h * (0.35 + k * 0.2); c.castShadow = true; g.add(c); } g.position.set(x, 0, z); add(g); return g; };
     // v81: a 1/10 miniskirt girl hanging out, as a child of a diorama group (lx, lz local; faces local +z = the front of the store)
     const girl = (g, lx, lz, turn = 0) => { const m = person(0, 0, 0, null, false, 1, { id: 'w_skirt' }); g.add(m); m.position.set(lx, 0, lz); m.rotation.y = -Math.PI / 2 + turn + (rnd() - 0.5) * 0.5; m.scale.setScalar(0.1 / (g.scale.x || 1)); return m; };
-    return { add, std, bx, cyl, glowM, person, chair, table, cone, pine, girl };
+    // v85: a full-size girl standing in the room (same kit person, the lady scans: w_skirt / w_stand)
+    const lady = (x, z, ry, id = 'w_skirt') => person(x, z, ry, null, false, 1, { id });
+    return { add, std, bx, cyl, glowM, person, chair, table, cone, pine, girl, lady };
   }
   // points inside the loop, well away from the lane (for infield displays)
   function infieldSpots(tr, minClear, n) {
@@ -1850,7 +1852,7 @@ const SCN = (function () {
     bx(8, 0.05, 0.05, std(0x8e9196, 0.3, 0.8), cx - 2, 1.6, -(sy + 0.75)); for (let k = 0; k <= 4; k++) bx(0.05, 1.0, 0.05, std(0x8e9196, 0.3, 0.8), cx - 6 + k * 2, 1.1, -(sy + 0.75));
     info.stand = { x: cx - 2, y: sy, h: 0.6 + 1.6 + FL };
     const shirts = [0x111111, 0xd4202a, 0x2a4dd4, 0x6b6b6b, 0xc8a050, 0x0f5a3a];
-    for (let k = 0; k < 3; k++) K.person(cx + [-7.4, -6.2, -5.0][k], -(sy + 0.1), Math.PI / 2 + (rnd() - 0.5) * 0.4, shirts[k % shirts.length], false).position.y = 0.6;
+    for (let k = 0; k < 3; k++) (k === 2 ? K.lady(cx - 5.0, -(sy + 0.1), Math.PI / 2 + (rnd() - 0.5) * 0.4, 'w_stand') : K.person(cx + [-7.4, -6.2, -5.0][k], -(sy + 0.1), Math.PI / 2 + (rnd() - 0.5) * 0.4, shirts[k % shirts.length], false)).position.y = 0.6;   // v85: one of them a girl
     // pit tables along the left side + folding chairs
     for (let k = 0; k < 3; k++) { const ty = Y0 + 2.6 + k * 2.6, tx = X0 + 1.0; K.table(tx, -ty, 2.0, 0.75, Math.PI / 2); K.chair(tx + 0.75, -(ty + 0.5), Math.PI); if (k !== 1) K.person(tx + 0.9, -(ty - 0.4), Math.PI, shirts[(k + 3) % 6], true); }
     grp.children.slice(n0).forEach(o => o.position.y += FL);
@@ -2066,7 +2068,7 @@ const SCN = (function () {
       info.stand = { x: rx0 + L * 0.3, y: ry0 - 0.9, h: rsH + 1.62 + FL };
       const shirts = [0x111111, 0xd4202a, 0x2a4dd4, 0x6b6b6b, 0xc8a050, 0x0f5a3a];
       for (let k = 0; k < 4; k++) K.person(rx0 + 1.6 + k * 1.3, -(ry0 - 0.6), Math.PI / 2 + (rnd() - 0.5) * 0.4, shirts[k], false).position.y = rsH + FL;
-      K.person(rx1 - 3, -(ry0 - 0.5), Math.PI / 2, shirts[4], false).position.y = FL; }
+      K.lady(rx1 - 3, -(ry0 - 0.5), Math.PI / 2, 'w_skirt').position.y = FL; }   // v85
 
     // ================= scale town on the platform (1/10) =================
     const headM = new T.MeshStandardMaterial({ color: 0xf2f4f8, emissive: 0xffffff, emissiveIntensity: 0.25, roughness: 0.3 });
@@ -2344,7 +2346,7 @@ const SCN = (function () {
         if (k % 4 === 0) { B(BOX, std(0x2a5fd8, 0.5), X1 - 2.0, 0.2 + FL, -(y - 0.95), 0.3, 0.55, 0.4, 0.36); B(BOX, std(0xf2f2f2, 0.5), X1 - 2.0, 0.42 + FL, -(y - 0.95), 0.3, 0.57, 0.05, 0.38); } }
       // drivers on the rail, transmitters up, facing the track
       for (let k = 0; k < 10; k++) { const y = 7.5 + k * 2.4 + (rnd() - 0.5) * 0.6; if (Math.abs(y - 17.5) < 1.0) continue; K.person(pf.x1 + 0.35 + rnd() * 0.3, -y, Math.PI + (rnd() - 0.5) * 0.5, shirts[k % shirts.length], false); onFloor(); }
-      for (const y of [12.0, 26.3]) { K.person(pf.x1 + 1.3, -y, Math.PI * 0.8, shirts[(y | 0) % shirts.length], false); onFloor(); }
+      for (const y of [12.0, 26.3]) { if (y < 20) K.lady(pf.x1 + 1.3, -y, Math.PI * 0.8, 'w_skirt'); else K.person(pf.x1 + 1.3, -y, Math.PI * 0.8, shirts[(y | 0) % shirts.length], false); onFloor(); }   // v85: one girl
       info.stand = { x: pf.x1 + 0.45, y: 17.5, h: 1.62 + FL }; }
     // ---- office on the north-east diagonal: gray wall, black-framed glass door and sidelight, sign over it, papers on the wall ----
     { const oT = ctex(1024, 800, (g, w, h) => { g.fillStyle = '#77797d'; g.fillRect(0, 0, w, h); speck(g, w, h, 4000, ['#6d6f73', '#808286'], 1.5, 0.1, 0.4); g.fillStyle = '#0d0e10'; g.fillRect(300, 230, 480, h - 250); g.fillStyle = '#2a3038'; g.fillRect(318, 248, 210, h - 290); g.fillRect(552, 248, 210, h - 290);
@@ -2826,7 +2828,7 @@ const SCN = (function () {
           else if (r < 0.55) { Bg(BOX, mc([0xd4202a, 0x2a4dd4, 0xf2f2f2, 0xffc21a, 0x101114, 0xff5ab0][(rnd() * 6) | 0], 0.4), x, Y0 + 0.5, 0.99, rnd(), 0.42, 0.1, 0.19); }
           else if (r < 0.75) { Bg(BOX, mc(0x1a1b1e, 0.4), x, Y0 + 0.45, 0.98, 0, 0.22, 0.12, 0.14); Bg(BOX, new T.MeshBasicMaterial({ color: [0x3cff6a, 0x35e0ff, 0xff3b30][(rnd() * 3) | 0] }), x + 0.06, Y0 + 0.52, 0.99, 0, 0.03, 0.02, 0.02); }
           else { Bg(BOX, mc(0xe6e6e2, 0.5), x, Y0 + 0.28, 1.15, 0, 0.36, 0.42, 0.34); } } }
-      for (const [x, s, ry] of [[-6.6, 0x2a2b2e, Math.PI / 2], [-3.4, 0x111111, Math.PI / 2 + 0.3], [5.2, 0x1f2a4a, Math.PI / 2], [7.0, 0xdedede, Math.PI / 2 - 0.4], [9.4, 0x1c1d21, Math.PI / 2], [11.6, 0x6b6b6b, -Math.PI / 2]]) { K.person(x, -(Y0 + 1.15), ry, s, false); onFloor(); }
+      for (const [x, s, ry] of [[-6.6, 0x2a2b2e, Math.PI / 2], [-3.4, 'w_skirt', Math.PI / 2 + 0.3], [5.2, 0x1f2a4a, Math.PI / 2], [7.0, 'w_stand', Math.PI / 2 - 0.4], [9.4, 0x1c1d21, Math.PI / 2], [11.6, 0x6b6b6b, -Math.PI / 2]]) { if (typeof s === 'string') K.lady(x, -(Y0 + 1.15), ry, s); else K.person(x, -(Y0 + 1.15), ry, s, false); onFloor(); }   // v85: two of them are girls
       // v77: Bret on a stool at the bench, playing RC Drift Lab on the laptop with his purple radio (black cap, black jacket, black pants, black/white sneakers)
       { const bx = 10.4, by = Y0 + 1.05; K.person(bx, -by, -Math.PI / 2, 0x141416, true, 1, { skin: 0xd9a47a, pants: 0x111214, cap: 0x0d0d0f, tx: 0x5a1fc8, shoes: 0x121214, lift: 0.29 }); grp.children[grp.children.length - 1].position.y = FL + 0.29;
         const lx = bx, ly = Y0 + 0.5, lap = mc(0x1c1d22, 0.35, 0.4), th = 0.94;
@@ -2881,7 +2883,7 @@ const SCN = (function () {
       info.stand = { x: 19.5, y: 1.8, h: rh + 1.62 + FL };
       // pit tables in the window corner on the projector side, with the crew around them
       K.table(18.8, -9.6, 2.2, 0.8, Math.PI / 2, 0xe6e6e2); onFloor(); K.table(17.0, -11.4, 2.2, 0.8, 0.1, 0xe6e6e2); onFloor();
-      for (const [x, y, ry, s] of [[17.6, 9.2, -0.4, 0x111111], [18.2, 10.6, Math.PI, 0x1c1d21], [16.2, 10.6, 0.3, 0xdedede], [19.8, 11.2, Math.PI / 2, 0x2a2b2e], [18.0, 7.8, 1.0, 0x6b2a2a]]) { K.person(x, -y, ry, s, false); onFloor(); }
+      for (const [x, y, ry, s] of [[17.6, 9.2, -0.4, 0x111111], [18.2, 10.6, Math.PI, 0x1c1d21], [16.2, 10.6, 0.3, 'w_skirt'], [19.8, 11.2, Math.PI / 2, 0x2a2b2e], [18.0, 7.8, 1.0, 0x6b2a2a]]) { if (typeof s === 'string') K.lady(x, -y, ry, s); else K.person(x, -y, ry, s, false); onFloor(); }
       for (const [x, y] of [[19.6, 8.8], [16.0, 11.9]]) { K.chair(x, -y, Math.PI); onFloor(); } }
 
     // ================= 1/10 world on the floor =================
@@ -3718,6 +3720,12 @@ const GFX = (function () {
     homie: [[0x1c2333, 0x111214, 0x6b6b6b, 0x23324f, 0x8a7a5a], [0xf2f2f2, 0x111214, 0x2a4dd4, 0x7a1f1f, 0x1f6a3a, 0xf2f2f2], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d], [0x111214, 0xf2f2f2, 0xc8102e, 0x2a4dd4]],
     wreck: [[0x16171a], [0x6b3a22, 0x7a7f74, 0x4a4a42, 0x8a5a2a, 0x3a4a3a]],
     plate: [[0x222222], [0xd8d8dc, 0xd4a640, 0xc0c4cc]],
+    // v85 outfit sets for the re-segmented people (rpp 8): shoes, pants, tops, skin, hair
+    crowd8: [[0x161618, 0xe9e9e6, 0x1c1c1f, 0x4a3426, 0xd9d9d4, 0x8a1c1c, 0x23262b, 0xf0f0ec],
+      [0x2c3e5e, 0x34496d, 0x1f2b42, 0x16171a, 0x22242a, 0x7a6a4c, 0x4d4f55, 0x3d4a2c, 0x5a6f8f, 0x262a33, 0xb8ad94],
+      [0x16171a, 0xefeeea, 0xb11d26, 0x24407e, 0x1d5c3d, 0x6e7177, 0xd8691c, 0x4b2f6b, 0xd9b638, 0x7a1f26, 0x1c7f86, 0x2e3138, 0xc9b49a, 0x9a4f8a, 0x3b5a8c, 0xf2f2ef, 0x101012, 0x5c3b28],
+      [0xf1c9a5, 0xe0ac7f, 0xc68a5b, 0xa86b42, 0x8d5524, 0x6b4226, 0x4a2e1c, 0xd9a47a, 0xe8bb92],
+      [0x17110d, 0x2a1b12, 0x3d2616, 0x5a3a20, 0x7a5532, 0xb58a4e, 0xd8b878, 0x8a3a1c, 0x0e0e0f, 0x6e6e70, 0x241812]],
     crowd: [[0x111214, 0xf2f2f2, 0x3a2a1e, 0x6b6b6b, 0xc8141c, 0x15161a],                                                       // shoes
       [0x2b3a55, 0x3b4f72, 0x1c2333, 0x15161a, 0x8a7a5a, 0x4a4c52, 0x4a5030, 0x2b3a55, 0x1c2333],                               // pants (lots of denim)
       [0x111214, 0xf2f2f2, 0xc8202a, 0x2a4dd4, 0x0f5a3a, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0xe8c840, 0x7a1f1f, 0x1f8a8a, 0x3a3a40, 0xd8b89a, 0x111214, 0xf2f2f2],   // shirts
@@ -3730,7 +3738,21 @@ const GFX = (function () {
     const idx = hdr.i32 ? new Uint32Array(buf.slice(o, o + nf * 12)) : new Uint16Array(buf.slice(o, o + nf * 6));
     const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3);
     for (let i = 0; i < nv; i++) for (let k = 0; k < 3; k++) { pos[i * 3 + k] = hdr.lo[k] + q[i * 3 + k] / 65535 * (hdr.hi[k] - hdr.lo[k]); nor[i * 3 + k] = n8[i * 3 + k] / 127; }
+    if (/^(crowd|lady|homie|person)$/.test(hdr.kind)) return crispBands({ hdr, pos, nor, band, idx });
     return { hdr, pos, nor, band, idx };
+  }
+  // v85: people paint used to smear across the triangles where two colours meet (jagged, muddy edges). Split those faces off with the face's
+  // majority band so every colour edge is a clean line.
+  function crispBands(d) {
+    const { pos, nor, band, idx } = d, nf = idx.length / 3; let extra = 0; const mixed = new Uint8Array(nf);
+    for (let f = 0; f < nf; f++) { const a = band[idx[f * 3]], b = band[idx[f * 3 + 1]], c = band[idx[f * 3 + 2]]; if (a !== b || b !== c) { mixed[f] = 1; extra += 3; } }
+    if (!extra) return d;
+    const nv = d.hdr.nv, n2 = nv + extra, P = new Float32Array(n2 * 3), N = new Float32Array(n2 * 3), B = new Uint8Array(n2), I = new Uint32Array(idx.length);
+    P.set(pos); N.set(nor); B.set(band); let v = nv;
+    for (let f = 0; f < nf; f++) { if (!mixed[f]) { I[f * 3] = idx[f * 3]; I[f * 3 + 1] = idx[f * 3 + 1]; I[f * 3 + 2] = idx[f * 3 + 2]; continue; }
+      const a = band[idx[f * 3]], b = band[idx[f * 3 + 1]], c = band[idx[f * 3 + 2]], m = a === b || a === c ? a : b === c ? b : Math.min(a, b, c);
+      for (let k = 0; k < 3; k++) { const o = idx[f * 3 + k]; P[v * 3] = pos[o * 3]; P[v * 3 + 1] = pos[o * 3 + 1]; P[v * 3 + 2] = pos[o * 3 + 2]; N[v * 3] = nor[o * 3]; N[v * 3 + 1] = nor[o * 3 + 1]; N[v * 3 + 2] = nor[o * 3 + 2]; B[v] = m; I[f * 3 + k] = v++; } }
+    d.hdr = Object.assign({}, d.hdr, { nv: n2 }); d.pos = P; d.nor = N; d.band = B; d.idx = I; return d;
   }
   function ensureProp(id) {
     if (PROP[id]) return Promise.resolve(PROP[id]); if (propPend[id]) return propPend[id];
@@ -3738,29 +3760,35 @@ const GFX = (function () {
   }
   // list: [{ id, x, y (game, north +), z (lift), ry (radians, yaw), s (scale, 0.1 = 1/10), seed }] -> one merged mesh (one draw call)
   let propMat = null;
+  // v85: people standing full size (pit spectators, the big girls) use a detailed copy <id>_hi with smooth paint edges
+  const PROP_HI = new Set(['p_tommy', 'p_bad', 'p_reach', 'p_hips', 'p_walk', 'ep_woman', 'w_stand', 'w_skirt', 'w_lean']), pidOf = p => (p.s || 1) >= 0.5 && PROP_HI.has(p.id) ? p.id + '_hi' : p.id;
   function buildProps(list) {
-    const ids = [...new Set(list.map(p => p.id))];
+    const ids = [...new Set(list.map(pidOf))];
     return Promise.all(ids.map(id => ensureProp(id).catch(() => null))).then(() => {
-      const L = list.filter(p => PROP[p.id]); let nv = 0, ni = 0; for (const p of L) { nv += PROP[p.id].hdr.nv; ni += PROP[p.id].idx.length; }
+      const L = list.filter(p => PROP[pidOf(p)]); let nv = 0, ni = 0; for (const p of L) { nv += PROP[pidOf(p)].hdr.nv; ni += PROP[pidOf(p)].idx.length; }
       if (!nv) return null;
       const P = new Float32Array(nv * 3), Nn = new Float32Array(nv * 3), C = new Float32Array(nv * 3), I = new Uint32Array(ni); let vo = 0, io = 0; const col = new T.Color();
       for (const p of L) {
-        const d = PROP[p.id], k = d.hdr.kind, pal = PROP_PAL[k] || PROP_PAL.solid, s = p.s || 1, c = Math.cos(p.ry || 0), sn = Math.sin(p.ry || 0); let seed = (p.seed || 1) * 9301 + 49297;
+        const d = PROP[pidOf(p)], k = d.hdr.kind, pal = PROP_PAL[k] || PROP_PAL.solid, s = p.s || 1, c = Math.cos(p.ry || 0), sn = Math.sin(p.ry || 0); let seed = (p.seed || 1) * 9301 + 49297;
         const pick = arr => { seed = (seed * 9301 + 49297) % 233280; return arr[Math.floor(seed / 233280 * arr.length)]; };
-        let cols; if (k === 'crowd') { cols = []; const np = d.hdr.people || 1, ov = p.cols || [];   // v81: every person in the scan gets their own outfit; p.cols = [pants, shirt, skin] for the first one
+        let cols; if (k === 'crowd' && d.hdr.rpp === 8) { cols = []; const np = d.hdr.people || 1, ov = p.cols || [], P8 = PROP_PAL.crowd8;   // v85: shoes, pants, top, face, hair, lower legs, forearms, hands
+          for (let q = 0; q < np; q++) { const o = q === 0 ? ov : [], sh = pick(P8[0]), pa = o[0] != null ? o[0] : pick(P8[1]), to = o[1] != null ? o[1] : pick(P8[2]), sk = o[2] != null ? o[2] : pick(P8[3]), ha = pick(P8[4]);
+            const shorts = pick([0, 0, 0, 1]), longS = pick([0, 0, 1]), dress = q === 0 && d.hdr.dress, set = [sh, dress ? to : pa, to, sk, ha, dress || shorts ? sk : (dress ? to : pa), longS ? to : sk, sk];
+            for (const hx of set) { col.setHex(hx); cols.push([col.r, col.g, col.b]); } } }
+        else if (k === 'crowd') { cols = []; const np = d.hdr.people || 1, ov = p.cols || [];   // v81: every person in the scan gets their own outfit; p.cols = [pants, shirt, skin] for the first one
           for (let q = 0; q < np; q++) for (let r = 0; r < 5; r++) { const h = pick(pal[r]), o = q === 0 ? (r === 1 ? ov[0] : r === 2 ? ov[1] : r === 3 ? ov[2] : null) : null; col.setHex(o != null ? o : h); cols.push([col.r, col.g, col.b]); } }
         else cols = pal.map((a, bi) => { const h = pick(a), ov = p.cols && p.cols[bi]; col.setHex(ov != null ? ov : h); return [col.r, col.g, col.b]; });
         const shade = (k === 'crowd' || k === 'lady' || k === 'person' || k === 'homie'), y0 = d.hdr.lo[1], yH = (d.hdr.hi[1] - d.hdr.lo[1]) || 1;
         for (let i = 0; i < d.hdr.nv; i++) { const x = d.pos[i * 3] * s, y = d.pos[i * 3 + 1] * s, z = d.pos[i * 3 + 2] * s, j = (vo + i) * 3;
           P[j] = p.x + x * c + z * sn; P[j + 1] = (p.z || 0) + y; P[j + 2] = -p.y - x * sn + z * c;
           const nx = d.nor[i * 3], nz = d.nor[i * 3 + 2]; Nn[j] = nx * c + nz * sn; Nn[j + 1] = d.nor[i * 3 + 1]; Nn[j + 2] = -nx * sn + nz * c;
-          const cc = cols[Math.min(d.band[i], cols.length - 1)], sh = shade ? 0.72 + 0.28 * Math.min(1, (d.pos[i * 3 + 1] - y0) / yH * 1.4) : 1; C[j] = cc[0] * sh; C[j + 1] = cc[1] * sh; C[j + 2] = cc[2] * sh; }
+          const cc = cols[Math.min(d.band[i], cols.length - 1)], sh = shade ? (0.76 + 0.24 * Math.min(1, (d.pos[i * 3 + 1] - y0) / yH * 1.4)) * (0.9 + 0.1 * d.nor[i * 3 + 1]) : 1; C[j] = cc[0] * sh; C[j + 1] = cc[1] * sh; C[j + 2] = cc[2] * sh; }
         for (let i = 0; i < d.idx.length; i++) I[io + i] = d.idx[i] + vo; vo += d.hdr.nv; io += d.idx.length;
       }
       const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(P, 3)); g.setAttribute('normal', new T.BufferAttribute(Nn, 3)); g.setAttribute('color', new T.BufferAttribute(C, 3)); g.setIndex(new T.BufferAttribute(I, 1)); g.computeBoundingSphere();
       if (!propMat) propMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.05, side: T.DoubleSide });
       const m = new T.Mesh(g, propMat); m.castShadow = true; m.receiveShadow = true;
-      { let v0 = 0; m.userData.items = L.map(p => { const d = PROP[p.id], it = { p, v0, n: d.hdr.nv, kind: d.hdr.kind, r: Math.max(0.012, Math.max(d.hdr.hi[0] - d.hdr.lo[0], d.hdr.hi[2] - d.hdr.lo[2]) * (p.s || 1) * 0.42) }; v0 += d.hdr.nv; return it; }); }   // v81: per-prop vertex ranges (pedestrians)
+      { let v0 = 0; m.userData.items = L.map(p => { const d = PROP[pidOf(p)], it = { p, v0, n: d.hdr.nv, kind: d.hdr.kind, r: Math.max(0.012, Math.max(d.hdr.hi[0] - d.hdr.lo[0], d.hdr.hi[2] - d.hdr.lo[2]) * (p.s || 1) * 0.42) }; v0 += d.hdr.nv; return it; }); }   // v81: per-prop vertex ranges (pedestrians)
       return m;
     });
   }
@@ -5005,7 +5033,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v84', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v85', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
