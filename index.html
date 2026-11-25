@@ -69,6 +69,9 @@ html.crawlmode #hTL,html.crawlmode #hB,html.crawlmode #hBL,html.crawlmode #mini,
 #trailerGo{position:fixed;left:50%;bottom:30%;transform:translateX(-50%);z-index:7;display:none;padding:14px 22px;border-radius:12px;border:2px solid #ffb06a;background:rgba(18,12,6,.88);color:#fff;font-weight:800;font-size:15px;letter-spacing:.06em;box-shadow:0 0 30px rgba(255,106,0,.45);animation:tgo 1.2s ease-in-out infinite}
 #trailerGo small{display:block;font-size:11px;font-weight:700;opacity:.75;letter-spacing:.12em;margin-top:3px}
 #trailerGo.on{display:block}
+#micB{position:fixed;left:14px;top:26%;z-index:7;display:none;width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(10,11,15,.65);color:#fff;font-size:20px;line-height:1;touch-action:none;-webkit-user-select:none;user-select:none}#micB small{display:block;font-size:8px;font-weight:800;letter-spacing:.06em;margin-top:2px}#micB.on{border-color:#35e0ff;box-shadow:0 0 14px rgba(53,224,255,.6)}html.inroom body:not(.inmenu) #micB{display:block}
+#rideCard{position:fixed;left:50%;bottom:26%;transform:translateX(-50%);z-index:8;display:none;flex-direction:column;gap:8px;padding:14px 16px;min-width:260px;border-radius:12px;border:2px solid #ffcf3a;background:rgba(14,10,4,.92);box-shadow:0 0 30px rgba(255,190,40,.35)}#rideCard.on{display:flex}#rideCard .rt{color:#ffcf3a;font-weight:900;letter-spacing:.14em;font-size:13px;text-align:center}
+#rideOut{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:8;display:none;padding:10px 22px;width:auto!important;min-width:0!important}#rideOut.on{display:block}
 @keyframes tgo{50%{box-shadow:0 0 50px rgba(255,106,0,.8)}}
 #hWrong{position:fixed;left:50%;top:34%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:6;display:none}
 #hWrong.on{display:block;animation:wwf .55s steps(2,jump-none) infinite}
@@ -262,6 +265,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <div id="touch"><div class="tz" id="tzL"></div><div class="tz" id="tzR"></div>
   <div class="stick" id="tsteer"><div class="lbl">STEER</div><div class="knob"></div></div>
   <div class="stick" id="tthr"><div class="lbl">THROTTLE</div><div class="knob"></div></div>
+  <button id="micB">🔇<small>MIC OFF</small></button>
   <div id="tbtns"><button data-a="menu">II</button><button data-a="cam">CAM</button><button data-a="reset">RESET</button><button data-a="gm">GYRO −</button><button data-a="gp">GYRO +</button><button data-a="chat">CHAT</button><button data-a="flip" class="rotOnly">⟲</button></div><button id="talkB" data-a="talk">TALK</button><div id="qchat"><button data-a="q0">GG!</button><button data-a="q1">Nice angle! 🔥</button><button data-a="q2">Tandem? I&#39;ll lead</button><button data-a="q3">Chase me!</button><button data-a="q4">My bad, sorry</button><button data-a="q5">Lag 😬</button><button data-a="q6">One more lap</button><button data-a="q7">brb</button><button data-a="qtype" class="qk">Type…</button><button data-a="qx" class="qk">✕</button></div></div>
 <div id="chat"><div id="chatLog"></div><input id="chatIn" type="text" maxlength="160" placeholder="Chat to the room · Enter sends · Esc cancels" autocomplete="off"></div>
 <div id="rotate"><div style="font-size:42px">⟲</div>Turn your phone sideways to drive</div>
@@ -3170,7 +3174,7 @@ const SCN = (function () {
       info.stand = { x: 19.5, y: 1.8, h: rh + 1.62 + FL };
       // pit tables in the window corner on the projector side, with the crew around them
       K.table(18.8, -9.6, 2.2, 0.8, Math.PI / 2, 0xe6e6e2); onFloor(); K.table(17.0, -11.4, 2.2, 0.8, 0.1, 0xe6e6e2); onFloor();
-      for (const [x, y, ry, s] of [[17.6, 9.2, -0.4, 0x111111], [18.2, 10.6, Math.PI, 0x1c1d21], [16.2, 10.6, 0.3, 'w_skirt'], [19.8, 11.2, Math.PI / 2, 0x2a2b2e], [18.0, 7.8, 1.0, 0x6b2a2a], [16.9, 8.3, 0.7, 'p_pilot1'], [19.3, 12.3, 3.7, 'p_pilot2'], [15.6, 9.6, -0.6, 'p_pilot3']]) {   /* v92: three of Shaun's race-suit drivers in the pits */ if (typeof s === 'string') K.lady(x, -y, ry, s); else K.person(x, -y, ry, s, false); onFloor(); }
+      for (const [x, y, ry, s] of [[17.6, 9.2, -0.4, 'p_pilot1'], [18.2, 10.6, Math.PI, 0x1c1d21], [16.2, 10.6, 0.3, 'w_skirt'], [19.8, 11.2, Math.PI / 2, 'p_pilot2'], [18.0, 7.8, 1.0, 0x6b2a2a]]) {   /* v93: two race-suit drivers take existing crew spots (v92's extra spots stood on the track) */ if (typeof s === 'string') K.lady(x, -y, ry, s); else K.person(x, -y, ry, s, false); onFloor(); }
       for (const [x, y] of [[19.6, 8.8], [16.0, 11.9]]) { K.chair(x, -y, Math.PI); onFloor(); } }
 
     // ================= 1/10 world on the floor =================
@@ -3281,7 +3285,18 @@ const SCN = (function () {
         const colT = ctex(32, 128, (g, w, h) => { g.fillStyle = '#f4f4f2'; g.fillRect(0, 0, w, h); g.fillStyle = '#d4202a'; for (let y = 0; y < h; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y + 16); g.lineTo(w, y + 28); g.lineTo(0, y + 12); g.fill(); } }), colM = new T.MeshStandardMaterial({ map: colT });
         for (const a of [-0.45, 0.45]) { Bg(BOX, colM, gx + a, gy - 0.12, 0.2, 0, 0.035, 0.4, 0.035); Bg(BOX, mc(0x2a7ad8, 0.5), gx + a - 0.12, gy - 0.12, 0.08, 0, 0.06, 0.16, 0.05); Bg(BOX, mc(0xe8e8e8, 0.4), gx + a + 0.12, gy - 0.12, 0.07, 0, 0.05, 0.14, 0.05); Bg(BOX, mc(0x8f9296, 0.6), gx + a, gy - 0.12, 0.008, 0, 0.38, 0.016, 0.1); }
         fig(gx + 0.1, gy - 0.35, -Math.PI / 2, 0x111111, 'down', 1, 'w_skirt'); fig(gx - 0.3, gy - 0.32, -Math.PI / 2 + 0.4, 0, 'down', 1, 'w_skirt'); fig(gx + 0.42, gy - 0.4, -Math.PI / 2 - 0.5, 0, 'down', 1, 'w_skirt'); const mb = frame(gx - 0.2, gy - 0.4, 0.4); Bg(BOX, blackM, ...mb(0, 0), 0.04, 0.4, 0.13, 0.03, 0.02); for (const a of [-0.06, 0.06]) { const p = mb(a, 0); Bg(WHEEL, tireM, p[0], p[1], 0.03, 0.4, 0.06, 0.06, 0.02); } fig(...mb(-0.01, 0), 0.4 - Math.PI / 2, 0x1c1d22, 'out', 0.85); }
-      (info.props || (info.props = [])).push({ id: 'w_skirt', x: -16.72, y: 11.74, z: 0, ry: -1.05, s: 0.1, seed: 786, noHit: true });   // v86: she marks the secret spot behind the station (and can't be run over)
+      (info.props || (info.props = [])).push({ id: 'w_skirt', x: -16.72, y: 11.74, z: 0, ry: -1.05, s: 0.1, seed: 786, noHit: true });
+      info.props.push({ id: 'limo', x: -16.95, y: 6.9, z: 0, ry: Math.PI / 2, s: 0.1, seed: 4242 }); (info.colliders || (info.colliders = [])).push([-16.95 - 0.07, 6.9 - 0.2, -16.95 + 0.07, 6.9 + 0.2]);   // v94: a limo pulled up by the 7-Eleven (secret ride)
+      { // v93: a little neon sign next to her so whoever finds her gets the hint (1/10 scale, on a post, arrow at the spot)
+        const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const g = cv.getContext('2d');
+        g.fillStyle = '#0c0812'; g.fillRect(0, 0, 256, 128); g.strokeStyle = '#ff3b8a'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 118); g.shadowColor = '#ff5aa8'; g.shadowBlur = 14;
+        g.fillStyle = '#ffcf3a'; g.font = '900 30px Arial'; g.textAlign = 'center'; g.fillText('THIS WAY', 118, 48); g.fillStyle = '#35e0ff'; g.fillText('TO THE LOT', 118, 86);
+        g.fillStyle = '#ff5aa8'; g.beginPath(); g.moveTo(206, 40); g.lineTo(240, 64); g.lineTo(206, 88); g.closePath(); g.fill(); g.font = '700 14px Arial'; g.fillStyle = '#ffffff'; g.fillText('PARK HERE · LOWRIDERS ONLY', 128, 114);
+        const tx = new T.CanvasTexture(cv); tx.encoding = T.sRGBEncoding;
+        const sg = new T.Group(); sg.position.set(-16.95, 0, -11.95); sg.rotation.y = -1.05 + Math.PI; grp.add(sg);
+        const post = new T.Mesh(new T.CylinderGeometry(0.003, 0.003, 0.17, 8), new T.MeshStandardMaterial({ color: 0x2a2b2e, roughness: 0.5, metalness: 0.6 })); post.position.y = 0.085; sg.add(post);
+        const pane = new T.Mesh(new T.PlaneGeometry(0.11, 0.055), new T.MeshStandardMaterial({ map: tx, emissive: 0xffffff, emissiveMap: tx, emissiveIntensity: 0.9, side: T.DoubleSide })); pane.position.set(0, 0.16, 0.004); sg.add(pane);
+        const glowL = new T.PointLight(0xff5aa8, 0.25, 0.6); glowL.position.set(0, 0.16, 0.06); sg.add(glowL); }   // v86: she marks the secret spot behind the station (and can't be run over)
       // garage: two red two-post lifts, a car up on the left one, a white 180SX-style shell on the right, compressor, figures
       { const rd = mc(0xc8141c, 0.45, 0.3), lift = (x, y) => { for (const a of [-0.3, 0.3]) Bg(BOX, rd, x + a, y, 0.22, 0, 0.035, 0.44, 0.05); Bg(BOX, rd, x, y, 0.43, 0, 0.64, 0.025, 0.05); Bg(BOX, rd, x, y - 0.05, 0.005, 0, 0.7, 0.01, 0.06); };
         lift(-13.75, 11.55); lift(-12.75, 11.55); pcar(-13.75, 11.45, 0, '#3fb8b0', 'datsun', 0.16); pcar(-12.75, 11.45, 0.0, '#f2f2f0', 's15');
@@ -4019,6 +4034,8 @@ const GFX = (function () {
       [0x111214, 0xf2f2f2, 0xc8202a, 0x2a4dd4, 0x0f5a3a, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0xe8c840, 0x7a1f1f, 0x1f8a8a, 0x3a3a40, 0xd8b89a, 0x111214, 0xf2f2f2],   // shirts
       [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d, 0xd9a47a],                                                             // skin
       [0x1a1210, 0x2b1d14, 0x3b2314, 0x6b4423, 0xd9b26a, 0x8a3a1c, 0x0f0f10, 0x1a1210]],                                        // hair
+    limo: [[0x101012], [0x0b0b0d, 0xf4f4f2, 0x0b0b0d, 0x1a1a1e], [0xcfd2d6], [0x05070a], [0xdfe3e8]],   // v93 rides: tires/under, body, trim, glass, chrome
+    trash: [[0x141416], [0x2a7a3a, 0x1f6a3a, 0x2a5aa8], [0xf2f2f0], [0x0b0f14], [0xc9cdd2]],
     taco: [[0x141416], [0xc8202a], [0xf2efe4], [0x0b0f14], [0xc9cdd2], [0xffe2a8]],   // v91 taco truck: tires, red, cream, glass, stainless, lit kitchen
     solid: [[0x222222], [0xb3261e, 0x1f4fa8, 0x2a7a3a, 0xd8661c, 0x8a8f98, 0xe8e8e2, 0x6a2a7a]] };
   function decodeProp(buf) {
@@ -4154,20 +4171,34 @@ const GFX = (function () {
   const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"bs": 1.25, "ws": 1.075, "dy": 0.00125, "tk": 0.005, "fx": 0.0291, "rx": -0.0404}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}, "monte": {"fx": 0.0051, "rx": 0.0071}, "elcamino": {"fx": 0.01, "rx": 0.0015}, "malibu": {"fx": -0.0036}, "malwagon": {"fx": -0.0036}, "stepvan": {"fx": 0.0068, "rx": 0.0076}, "k5vert": {"fx": 0.0164, "rx": 0.0056}, "gvan": {"fx": 0.0011, "rx": 0.0021}, "bel55": {"fx": 0.0043, "rx": -0.0016}, "chibidm": {"fx": -0.04, "rx": 0.04, "ws": 1.22, "tk": 0.012, "cm": -9, "dy": 0.009}};
   const wheelFace = style => Math.max(-0.01, wheelHW(style) - 0.002 - (style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : style === 'dayton' ? 0.008 : MESHW[style] ? 0.0095 : 0.0015));   // z of the wheel face (outward), matches buildWheel
   // v60: off-road crawler wheel (knobby tire + beadlock), drawn at the drift wheel's scale (R 0.031) and scaled up by buildCar
-  function buildCrawlWheel(color) {
-    const m = mats(), g = new T.Group(), R = 0.031, rimR = 0.019, Wd = 0.026, rubber = m.tire;
-    const prof = [[rimR, -Wd / 2], [R - 0.004, -Wd / 2], [R - 0.0015, -Wd / 2 + 0.003], [R - 0.0015, Wd / 2 - 0.003], [R - 0.004, Wd / 2], [rimR, Wd / 2]].map(p => new T.Vector2(p[0], p[1]));
-    const tire = new T.Mesh(new T.LatheGeometry(prof, 32), rubber); tire.rotation.x = Math.PI / 2; tire.castShadow = true; g.add(tire);
-    const lug = new T.BoxGeometry(0.0046, 0.0034, 0.0105), n = 18, im = new T.InstancedMesh(lug, rubber, n * 2), o = new T.Object3D();
-    for (let k = 0; k < n * 2; k++) { const row = k % 2, a = (Math.floor(k / 2) + row * 0.5) / n * Math.PI * 2; o.position.set(Math.cos(a) * (R - 0.0005), Math.sin(a) * (R - 0.0005), row ? 0.0068 : -0.0068); o.rotation.set(0, 0, a); o.rotation.y = row ? 0.25 : -0.25; o.updateMatrix(); im.setMatrixAt(k, o.matrix); }
+  function buildCrawlWheel(color) {   // v93: real crawler look: tall rounded carcass, big staggered paddle lugs that wrap the shoulders, sidewall lugs, beadlock wheel
+    const m = mats(), g = new T.Group(), R = 0.031, rimR = 0.0175, Wd = 0.026, rubber = m.tire;
+    const prof = []; for (let i = 0; i <= 16; i++) { const t = i / 16, a = -Math.PI / 2 + t * Math.PI, ex = 2.6, c = Math.cos(a), sn = Math.sin(a);   // superellipse: square-ish shoulders, round sidewalls
+      prof.push(new T.Vector2(rimR + (R - 0.0022 - rimR) * Math.pow(Math.abs(c), 2 / ex), Math.sign(sn) * (Wd / 2) * Math.pow(Math.abs(sn), 2 / ex))); }
+    prof.unshift(new T.Vector2(rimR, -Wd / 2)); prof.push(new T.Vector2(rimR, Wd / 2));
+    const tire = new T.Mesh(new T.LatheGeometry(prof, 40), rubber); tire.rotation.x = Math.PI / 2; tire.castShadow = true; g.add(tire);
+    const o = new T.Object3D(), N = 16, lugs = [];
+    for (let k = 0; k < N; k++) for (const sd of [1, -1]) {   // main paddles: alternate long/short each side, angled like a chevron
+      const a = (k + (sd > 0 ? 0 : 0.5)) / N * Math.PI * 2, long = k % 2 === 0; lugs.push([a, R - 0.0012, sd * (long ? 0.0062 : 0.0072), 0.0058, 0.0032, long ? 0.0118 : 0.0084, sd * 0.32, 0]);
+      lugs.push([a + 0.03 * sd, R - 0.0036, sd * (Wd / 2 - 0.0006), 0.0052, 0.0034, 0.0036, 0, sd * 0.9]); }   // shoulder knobs rolling onto the sidewall
+    for (let k = 0; k < N; k++) lugs.push([(k + 0.25) / N * Math.PI * 2, R - 0.0013, 0, 0.0034, 0.0026, 0.0042, 0, 0]);   // centre stones
+    const lugG = new T.BoxGeometry(1, 1, 1), im = new T.InstancedMesh(lugG, rubber, lugs.length);
+    lugs.forEach(([a, r, z, w, h2, d2, yaw, roll], i) => { o.position.set(Math.cos(a) * r, Math.sin(a) * r, z); o.rotation.set(roll, yaw, a + Math.PI / 2, 'ZYX'); o.scale.set(w, h2, d2); o.rotation.order = 'ZYX'; o.rotation.set(roll, yaw, a + Math.PI / 2); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
     im.castShadow = true; g.add(im);
-    const rim = new T.MeshStandardMaterial({ color: new T.Color(color), roughness: 0.35, metalness: 0.7 }), ring = new T.MeshStandardMaterial({ color: 0x1b1c1f, roughness: 0.45, metalness: 0.6 });
-    const barrel = new T.Mesh(new T.CylinderGeometry(rimR, rimR, Wd - 0.003, 24, 1, true), rim); barrel.rotation.x = Math.PI / 2; barrel.material.side = T.DoubleSide; g.add(barrel);
-    const face = new T.Mesh(new T.CircleGeometry(rimR, 24), rim); face.position.z = Wd / 2 - 0.004; g.add(face);
-    const bl = new T.Mesh(new T.TorusGeometry(rimR - 0.0006, 0.0016, 6, 24), ring); bl.position.z = Wd / 2 - 0.0015; g.add(bl);
-    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, sp = new T.Mesh(new T.BoxGeometry(0.0035, rimR * 1.7, 0.003), ring); sp.rotation.z = a; sp.position.z = Wd / 2 - 0.0035; g.add(sp); }
-    const bolt = new T.CylinderGeometry(0.0006, 0.0006, 0.002, 5); for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, b2 = new T.Mesh(bolt, metal()); b2.rotation.x = Math.PI / 2; b2.position.set(Math.cos(a) * (rimR - 0.0006), Math.sin(a) * (rimR - 0.0006), Wd / 2 - 0.0002); g.add(b2); }
-    const hub = new T.Mesh(new T.CylinderGeometry(0.004, 0.004, 0.003, 8), ring); hub.rotation.x = Math.PI / 2; hub.position.z = Wd / 2 - 0.002; g.add(hub);
+    const swl = new T.InstancedMesh(new T.BoxGeometry(1, 1, 1), rubber, 2 * 24);   // raised sidewall blocks
+    for (let k = 0; k < 24; k++) for (const sd of [1, -1]) { const a = (k + 0.5) / 24 * Math.PI * 2, r = rimR + (R - rimR) * 0.62; o.rotation.set(0, 0, a); o.position.set(Math.cos(a) * r, Math.sin(a) * r, sd * (Wd / 2 - 0.0004)); o.scale.set(0.0042, 0.0018, 0.0012); o.updateMatrix(); swl.setMatrixAt(k * 2 + (sd > 0 ? 0 : 1), o.matrix); }
+    g.add(swl);
+    const rim = new T.MeshStandardMaterial({ color: new T.Color(color), roughness: 0.32, metalness: 0.75 }), gun = new T.MeshStandardMaterial({ color: 0x232428, roughness: 0.4, metalness: 0.7 }), bolt = metal();
+    const barrel = new T.Mesh(new T.CylinderGeometry(rimR, rimR, Wd - 0.003, 28, 1, true), gun); barrel.rotation.x = Math.PI / 2; barrel.material.side = T.DoubleSide; g.add(barrel);
+    const back = new T.Mesh(new T.CircleGeometry(rimR, 24), gun); back.position.z = -Wd / 2 + 0.006; g.add(back);
+    const fz = Wd / 2 - 0.0042, hub = new T.Mesh(new T.CylinderGeometry(0.0048, 0.0056, 0.003, 16), gun); hub.rotation.x = Math.PI / 2; hub.position.z = fz; g.add(hub);
+    const nut = new T.Mesh(new T.CylinderGeometry(0.0022, 0.0022, 0.0022, 6), bolt); nut.rotation.x = Math.PI / 2; nut.position.z = fz + 0.0022; g.add(nut);
+    for (let k = 0; k < 6; k++) for (const off of [-0.0019, 0.0019]) { const a = k / 6 * Math.PI * 2, sp = new T.Mesh(new T.BoxGeometry(0.0016, rimR - 0.0048, 0.0026), gun), c = Math.cos(a), sn = Math.sin(a), rr = (rimR + 0.0048) / 2;   // dual-bar spokes
+      sp.position.set(-sn * rr + c * off, c * rr + sn * off, fz - 0.0004); sp.rotation.z = a; g.add(sp); }
+    const bl = new T.Mesh(new T.TorusGeometry(rimR - 0.0004, 0.0019, 8, 32), rim); bl.position.z = Wd / 2 - 0.0016; g.add(bl);   // beadlock ring in the wheel colour
+    const bg = new T.CylinderGeometry(0.00065, 0.00065, 0.0016, 6), bi = new T.InstancedMesh(bg, bolt, 20);
+    for (let k = 0; k < 20; k++) { const a = k / 20 * Math.PI * 2; o.rotation.set(Math.PI / 2, 0, 0); o.position.set(Math.cos(a) * (rimR - 0.0004), Math.sin(a) * (rimR - 0.0004), Wd / 2 + 0.0002); o.scale.set(1, 1, 1); o.updateMatrix(); bi.setMatrixAt(k, o.matrix); }
+    g.add(bi);
     return g; }
   let _metal = null; const metal = () => _metal || (_metal = new T.MeshStandardMaterial({ color: 0xc8c8c8, roughness: 0.3, metalness: 0.9 }));
   // v90: lowrider wire wheels run the real proportions: 13x7 rim on a 155/80R13 narrow whitewall (578 mm tall, 155 mm wide) vs a drift
@@ -4198,7 +4229,7 @@ const GFX = (function () {
     if (style === 'dayton') {   // v89 lowrider wire wheel: 100-spoke style wire rim + 2-ear knock-off (real STL, loaded once and shared), wide whitewall
       const ww = new T.Mesh(new T.RingGeometry(rimR + 0.0024, rimR + 0.0053, 40), new T.MeshStandardMaterial({ color: 0xf4f2ec, roughness: 0.55 })); ww.position.z = Wd / 2 + 0.0003; g.add(ww); }
     const out = mergeParts(g);
-    if (MESHW[style]) { const wid = MESHW[style] + (lo ? 'L' : ''), put = () => { const geo = wheelGeo(wid); if (geo) { const wm = new T.Mesh(geo, rim); wm.castShadow = true; out.add(wm); } }; if (PROP[wid]) put(); else ensureProp(wid).then(put, () => { }); }
+    if (MESHW[style]) { const wid = MESHW[style] + (lo ? 'L' : ''), put = () => { const geo = wheelGeo(wid); if (geo) { const wm = new T.Mesh(geo, rim); rim.side = T.DoubleSide; wm.castShadow = true; out.add(wm); } }; if (PROP[wid]) put(); else ensureProp(wid).then(put, () => { }); }
     return out;
   }
   // v89: wheel meshes ship as props (kind 'wheel', already in wheel space); one shared geometry per wheel id
@@ -4305,6 +4336,11 @@ const GFX = (function () {
       if (L.coil) { L.o.scale.set(hydro ? 1.35 : 1, len, hydro ? 1.35 : 1); if (L.o.material !== (hydro ? CM.hspring : CM.bspring)) L.o.material = hydro ? CM.hspring : CM.bspring; }
       else if (L.o.userData.shock) { L.o.scale.set(hydro ? 1.5 : 1, len, hydro ? 1.5 : 1); const sm = hydro ? CM.chrome : (L.o.userData.ano || CM.shock); if (L.o.material !== sm) L.o.material = sm; }
       else L.o.scale.set(1, len, 1); } }
+  // v93 secret rides: one prop as its own drivable group. inner holds the mesh (+ spinning wheels from hdr.wheels), turned so the vehicle's nose is +x.
+  function buildRide(p, front) { return buildProps([Object.assign({}, p, { x: 0, y: 0, z: 0, ry: 0 })]).then(m => { if (!m) return null; const g = new T.Group(), inner = new T.Group(); inner.rotation.y = front || 0; g.add(inner); inner.add(m); m.userData.items = null;
+      const d = PROP[pidOf(p)], s = p.s || 1, spin = []; for (const [wx, wy, wz, r] of (d && d.hdr.wheels) || []) for (const sd of [1, -1]) {
+        const w = buildWheel(p.id === 'limo' ? 'five' : 'steelie', p.id === 'limo' ? '#cfd3d8' : '#d8dadc'), k = r * s / 0.031; w.scale.set(k, k, sd * 0.042 / 0.026); w.position.set(wx * s, wy * s, sd * wz * s); w.userData.r = r * s; inner.add(w); spin.push(w); }
+      g.userData = { inner, spin }; return g; }); }
   // v91: RC bodies are hollow lexan shells. Our STL bodies came with a closed floor (a flat 'platform' under every car that hid the chassis).
   // Drop the downward-facing triangles in the bottom 22% of the body so the chassis shows from below and through the arches. Cached per geometry.
   const OPENB = new WeakMap(); function openBottom(geo) { if (OPENB.has(geo)) return OPENB.get(geo); try {
@@ -4419,7 +4455,7 @@ const GFX = (function () {
     // drift kit (drift bodies): front lip splitter + tow straps, the club-car look
     const info = bodyInfo(h.id), fw = Math.max(h.fender[0], h.fender[1]);
     if (info.cls !== 'movie' && look.kit !== 0) {
-      const lipY = (h.noseLo != null ? h.noseLo : 0.02) - 0.0012, lip = box2(0.05, 0.0018, fw * 1.72, m.dark, h.xf - 0.022, lipY, 0); lip.receiveShadow = true;
+      /* v93: the flat front splitter plate is gone (Shaun: plates sticking out the front of every car looked stupid) */
       const strap = new T.MeshStandardMaterial({ color: new T.Color(look.strap || '#ff2a1a'), roughness: 0.7 });
       box2(0.0035, 0.016, 0.009, strap, h.xf + 0.0006, (h.noseLo || 0.02) + 0.01, fw * 0.48);
       box2(0.0035, 0.014, 0.009, strap, h.xr - 0.0006, (h.tailLo || 0.02) + 0.009, -fw * 0.5);
@@ -4466,6 +4502,7 @@ const GFX = (function () {
       for (const [x, z] of [[hw - 0.01, 0.024], [hw - 0.01, -0.024], [-hw + 0.012, 0.03], [-hw + 0.012, -0.03]]) { const top = Math.min(y0 + 0.0775, CAP(x) - 0.002), hh = Math.max(0.01, top - (y0 + 0.0025)), bp = cyl(0.0022, 0.0022, hh, CM.arm, 8); bp.position.set(x, y0 + 0.0025 + hh / 2, z); cg.add(bp); }   // body posts
       { const fb = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 0.012, 24, 1, false, -Math.PI / 2.6, Math.PI / 1.3), CM.foam); fb.scale.set(0.42, 1, 1); fb.position.set(Math.min(hw + 0.02, XF - 0.022), y0 + 0.012, 0); if (CAP(fb.position.x + 0.021) < y0 + 0.02 || CAP(fb.position.x) < y0 + 0.02) fb.visible = false; fb.castShadow = true; cg.add(fb); }   // foam front bumper
       if (CAP(-hw) > 0.058) { const sg = cyl(0.021, 0.021, 0.004, CM.spur, 32); sg.rotation.x = Math.PI / 2; sg.position.set(-hw + 0.004, 0.034, 0.028); cg.add(sg); const pin = cyl(0.005, 0.005, 0.005, CM.alu, 10); pin.rotation.x = Math.PI / 2; pin.position.set(-hw + 0.03, 0.03, 0.028); cg.add(pin); }   // spur + pinion on the rear gearbox
+      { body.remove(cg); const merged = mergeParts(cg); if (merged !== cg) { cg.clear(); merged.scale.set(1, 1, 1); body.add(merged); } body.add(cg); }   // v93: ~40 static chassis parts -> one mesh per material (20-car rooms on phones)
       // linked parts: unit cylinders along +Y, stretched between two points every frame
       const link = (r, mat, a, b, seg) => { const g = new T.CylinderGeometry(r, r, 1, seg || 8); g.translate(0, 0.5, 0); const o = new T.Mesh(g, mat); o.castShadow = true; car.add(o); links.push({ o, a, b }); return o; };
       const coilG = (() => { const pts = []; for (let i = 0; i <= 160; i++) { const t = i / 160, an = t * Math.PI * 2 * 9; pts.push(new T.Vector3(Math.cos(an) * 0.0062, t, Math.sin(an) * 0.0062)); } return new T.TubeGeometry(new T.CatmullRomCurve3(pts), 220, 0.0011, 5, false); })();
@@ -4485,8 +4522,8 @@ const GFX = (function () {
     const wheels = [];
     for (const [ax, front, fh] of [[SIM.WB / 2, 1, h.fender[0]], [-SIM.WB / 2, 0, h.fender[1]]]) for (const sd of [1, -1]) {
       const crawlT = look.tires === 'crawl', k = new T.Group(), cam = new T.Group(), sp = crawlT ? buildCrawlWheel(look.wheelColor || '#2a2b2e') : buildWheel(look.wheel, look.wheelColor); k.add(cam); cam.add(sp);
-      const cal = new T.Mesh(new T.BoxGeometry(0.014, 0.01, 0.005), m.caliper); cal.position.set(-0.0095, 0.0075, wheelFace(look.wheel) - 0.007); cam.add(cal); cal.visible = look.wheel !== 'dayton';   /* v90: lowriders run drums; no caliper poking through a 13 in. rim */   // v58: rides on the disc, always behind the spokes
-      const F = crawlT ? {} : (FIT[h.id] || {}), ws = crawlT ? 1.77 : (F.ws || 1), bz = crawlT ? 0.125 : fh * BS - 0.0005 - (F.tk || 0) - wheelHW(look.wheel) * ws; k.position.set(ax + ((front ? F.fx : F.rx) || 0), (crawlT ? 0.031 : wheelR(look.wheel)) * ws, sd * bz); k.scale.set(ws, ws, sd * ws); car.add(k); wheels.push({ k, cam, sp, front, sd, baseZ: bz, ws, xcam: (F.cm || 0) * Math.PI / 180 });
+      const cal = new T.Mesh(new T.BoxGeometry(0.014, 0.01, 0.005), m.caliper); cal.position.set(-0.0095, 0.0075, wheelFace(look.wheel) - 0.007); cam.add(cal); cal.visible = look.wheel !== 'dayton' && !crawlT;   /* v90: lowriders run drums; no caliper poking through a 13 in. rim */   // v58: rides on the disc, always behind the spokes
+      const F = crawlT ? { fx: (FIT[h.id] || {}).fx, rx: (FIT[h.id] || {}).rx } : (FIT[h.id] || {}), ws = crawlT ? 1.77 : (F.ws || 1), bz = crawlT ? 0.125 : fh * BS - 0.0005 - (F.tk || 0) - wheelHW(look.wheel) * ws; k.position.set(ax + ((front ? F.fx : F.rx) || 0), (crawlT ? 0.031 : wheelR(look.wheel)) * ws, sd * bz); k.scale.set(ws, ws, sd * ws); car.add(k); wheels.push({ k, cam, sp, front, sd, baseZ: bz, ws, xcam: (F.cm || 0) * Math.PI / 180 });
     }
     // light glows
     const fx = { hl: head, hlF: amber, tl: tail };
@@ -4876,7 +4913,7 @@ const GFX = (function () {
     cols.forEach((col, i) => { const k = huntKey(col); k.scale.setScalar(0.8); const a = i / cols.length * Math.PI * 2; k.position.set(Math.cos(a) * 0.17, 0.2, Math.sin(a) * 0.17); k.rotation.y = -a; g.add(k); });
     return g; }
   let _glowT = null; function glowTex() { if (_glowT) return _glowT; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return (_glowT = new T.CanvasTexture(c)); }
-  return { DRIVERS, huntKey, huntEgg, huntAltar, huntBeacon, PROP_SETS, PROP, ensureProp, buildProps, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, FIT, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
+  return { DRIVERS, huntKey, huntEgg, huntAltar, huntBeacon, PROP_SETS, PROP, ensureProp, buildProps, buildRide, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, FIT, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
 })();
 
 </script>
@@ -5209,6 +5246,8 @@ const ONLINE = (() => {
     if (c === 'dig') { CR.dig = !CR.dig; toast(CR.dig ? 'DIG ON · rear wheels locked, pivot on the fronts' : 'DIG OFF'); } crawlUI(); }
   document.querySelectorAll('#crawlB button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); crawlCmd(b.dataset.c); }));
   const LOT_ROOM = { code: 'LOWLOW', name: 'The Lot', track: 'lowrider', max_players: 20, is_official: false, host: null, voice: true, is_public: false };   // v91: everyone in The Lot drives together; never listed, the door is the way in
+  // v93: the hidden rooms spill over like the official ones: LOWLOW full (20) -> LOWLOW2 -> LOWLOW3 ... first one with space wins
+  async function joinSpill(base) { let e = null; for (let n = 1; n <= 6; n++) { e = await joinLobby(n === 1 ? base : Object.assign({}, base, { code: base.code + n, name: base.name + ' ' + n }), true); if (!e || !/full/i.test(String(e))) return e; } return e; }
   const CANYON_ROOM = { code: 'NEST', name: 'Crawler Canyon', track: 'crawl', max_players: 20, is_official: false, host: null, voice: true, is_public: false };   // v62: never listed, no DB row: the only door is the trailer
   // v89 18+ checkpoint (not wired up since v90: no nude figures in The Lot, so no gate). ageGate(go) still works if adult content ever comes back.
   const adultOK = () => { try { return localStorage.getItem('rcdl_18') === '1'; } catch (e) { return false; } };
@@ -5219,7 +5258,7 @@ const ONLINE = (() => {
     body.appendChild(el('p', 'zsmall', 'By tapping "I\'m 18 or older" you confirm that\'s true. We remember it on this device.'));
     const yes = el('button', 'big', 'I\'m 18 or older · let me in'); yes.onclick = () => { try { localStorage.setItem('rcdl_18', '1'); } catch (e) { } close(); go(); }; card.appendChild(yes);
     const no = el('button', 'ghost', 'I\'m under 18 · take me back'); no.onclick = () => { close(); toast('No worries. Back to the track'); }; card.appendChild(no); }
-  function rideTo(id) { if (id === 'crawl' && huntKeys() < 3) return; if (id === 'lowrider' && !lotOK()) return; const fromLot = isLot(); if (ONLINE.room) { const wasCanyon = ONLINE.room.code === CANYON_ROOM.code, wasLot = ONLINE.room.code === LOT_ROOM.code; leaveLobby(); toast(wasCanyon ? 'Left the canyon room' : wasLot ? 'Left The Lot' : id === 'lowrider' ? 'Left the room · heading to The Lot' : 'Left the room for the hidden trail'); } const i = SIM.TRACK_DEFS.findIndex(d => d.id === id); if (i < 0) return;
+  function rideTo(id) { if (id === 'crawl' && huntKeys() < 3) return; if (id === 'lowrider' && !lotOK()) return; const fromLot = isLot(); if (ONLINE.room) { const wasCanyon = ONLINE.room.code.startsWith(CANYON_ROOM.code), wasLot = ONLINE.room.code.startsWith(LOT_ROOM.code); leaveLobby(); toast(wasCanyon ? 'Left the canyon room' : wasLot ? 'Left The Lot' : id === 'lowrider' ? 'Left the room · heading to The Lot' : 'Left the room for the hidden trail'); } const i = SIM.TRACK_DEFS.findIndex(d => d.id === id); if (i < 0) return;
     if (id === 'lowrider') { S.found = Object.assign(S.found || {}, { lot: 1 }); }
     arrive = id === 'crawl' ? 'crawl' : id === 'lowrider' ? 'lot' : fromLot ? 'v2lot' : 'v2trailer'; loadTrack(i); applyTune(); save(); drive(false); trailerT = 0;
     if (id === 'crawl') { S.found = Object.assign(S.found || {}, { crawl: 1 }); save(); toast(S.hunt.egg ? 'CRAWLER CANYON · off-road tires fitted · LOW / 4WS / DIG on the right' : 'CRAWLER CANYON · something is hidden up high in here… LOW / 4WS / DIG on the right', 'good'); }
@@ -5373,7 +5412,8 @@ const ONLINE = (() => {
       if (p[4] && !GFX.BODY[p[4]] && GFX.BODIES.some(b => b.id === p[4])) { const wg = world.group; GFX.ensureBody(p[4]).then(() => { if (world.group === wg) put(p[4]); }, () => { if (world.group === wg) put(fb()); }); }
       else put(p[4] && GFX.BODY[p[4]] ? p[4] : fb()); });
     // v49 props: scanned people / scenes / trees / big rigs, merged into one mesh. Venue figures (world.props) + pit dressing inside the infield gate.
-    { const plist = (world.props || []).slice(), pd = pitDress(track); plist.push(...pd); world.pitList = pd;
+    { const all = (world.props || []).slice(), pd = pitDress(track); all.push(...pd); world.pitList = pd;
+      const plist = all.filter(p => !RIDES[p.id]); rideSetup(all.filter(p => RIDES[p.id]));   // v93: the limo / garbage truck / taco truck are their own (drivable) objects
       if (plist.length) { const wg = world.group; GFX.buildProps(plist).then(m => { if (m && world.group === wg) { world.group.add(m); pedSetup(m); } }, () => {}); } }
     // polished-concrete reflections (High): live mirror under a semi-transparent floor
     if (S.opt.quality >= 2 && (!world.night || world.prodNight) && !world.dusk && world.env !== 'diamondback' && world.env !== 'tandem' && T.Reflector && world.floor) {   // Diamondback and Tandem tile is satin, not a mirror
@@ -5418,7 +5458,7 @@ const ONLINE = (() => {
     const gd = track.def.grid; if (gd && track.gate) { let slot = 0; if (ONLINE.room && cars.length === 1) { let h = 0; for (const ch of String(ONLINE.myId ? ONLINE.myId() : Math.random())) h = (h * 31 + ch.charCodeAt(0)) >>> 0; slot = h % 5; }
       const s = player.sim; s.x = gd[0]; s.y = gd[1] + slot * 0.75; s.yaw = gd[2]; s.vx = s.vy = s.r = 0; s.inf = true; s.ti = track.gate.ic; s.lap = 0; s.prog = track.gate.ic / track.N; player.skid = [null, null]; }
   }
-  function resetPlayer() { if (isCrawl()) { CRAWL.reset(player.sim); toast('Back on its wheels'); return; } const s = player.sim, L = s.lap; s.lvl = 0; s.lift = null; if (HY.tl) Object.assign(HY.tl, { th: 0, w: 0, flip: 0, air: 0, stand: 0 }); Object.assign(BN, { ph: 0, y: 0, v: 0, q: 0 }); SIM.placeCar(s, track, s.inf && track.gate ? track.gate.ic : s.ti < 0 ? 0 : s.ti, 0); s.lap = L; s.prog = L + s.ti / track.N; /* same spot, same lap */ player.skid = [null, null]; bank(true); toast('Reset to track'); }
+  function resetPlayer() { if (RD) rideExit(); if (isCrawl()) { CRAWL.reset(player.sim); toast('Back on its wheels'); return; } const s = player.sim, L = s.lap; s.lvl = 0; s.lift = null; if (HY.tl) Object.assign(HY.tl, { th: 0, w: 0, flip: 0, air: 0, stand: 0 }); Object.assign(BN, { ph: 0, y: 0, v: 0, q: 0 }); SIM.placeCar(s, track, s.inf && track.gate ? track.gate.ic : s.ti < 0 ? 0 : s.ti, 0); s.lap = L; s.prog = L + s.ti / track.N; /* same spot, same lap */ player.skid = [null, null]; bank(true); toast('Reset to track'); }
 
   // ---------------- input ----------------
   const keys = {}, inp = { steer: 0, throttle: 0, brake: 0, kbS: 0, kbT: 0, src: 'kb' };
@@ -5430,11 +5470,13 @@ const ONLINE = (() => {
     if (keys[k]) return; keys[k] = true; audioStart();
     if (CT.on) { if (k === 'escape') ctClose(); if (k === ' ' && CT.on === 'photo') snapPhoto(); return; }
     if (ONLINE.room && mode === 'drive' && /^[1-8]$/.test(k)) { qSend('q' + (+k - 1)); return; }
+    if (k === 'v' && keys['shift']) { micQuick(); return; }   // v94: Shift+V flips open mic on / off
     if (k === 'v' && ONLINE.room) { talk(true); return; }
     if (k === 'escape' || k === 'p') { mode === 'drive' ? openMenu('pause') : mode === 'pause' ? drive(false) : 0; }
     if (mode !== 'drive') return;
     if (isLot()) { if (HYK[k] && HY.on) { HY.held.set(HYK[k], keys['shift'] && HY.lock ? -1 : 1); return; } if (k === 'y') return bunnyHop(); if (k === 'f') return hydroHop(false); if (k === 'g') return hydroHop(true); if (k === 'z') return hydroLock(); if (k === 'q') return hydroDump(); if (k === 'x') return hydroSet(!HY.on); }
     if (isCrawl()) { if (k === 'l') crawlCmd('low'); if (k === 'x') crawlCmd('steer'); if (k === 'g') crawlCmd('dig'); }
+    if (k === 'e' && RD) { rideExit(); return; }
     if (k === 'e') { const tg = document.getElementById('trailerGo'); if (tg && tg.classList.contains('on') && tg.dataset.to) rideTo(tg.dataset.to); }
     if (k === 'c') nextCam(); if (k === 'b') camReset(); if (k === 'r') resetPlayer(); if (k === '[') gyroAdj(-5); if (k === ']') gyroAdj(5);
     if (k === 'm') { S.opt.sound = !S.opt.sound; toast('Sound ' + (S.opt.sound ? 'on' : 'off')); save(); }
@@ -5563,7 +5605,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v92', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v94', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5623,6 +5665,8 @@ const ONLINE = (() => {
     NET.looks.clear(); NET.firstSeen.clear(); NET.room = r.room; NET.status = 'online'; if (r.spill) setTimeout(() => toast(r.spill), 400); voiceSync(); if (S.opt.voice !== 'off' && !VO.track) micOn().then(ok => { if (!ok) { S.opt.voice = 'off'; save(); } }); r.room.onChat(chatShow); r.room.onPeers(() => { }, () => { if (NET.room === r.room) { NET.room = null; NET.status = 'solo'; } if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } });
     const P0 = player.sim, keep = keepPos && isCrawl() && P0.q ? { x: P0.x, y: P0.y, yaw: P0.yaw } : null; newSession(); if (keep) CRAWL.makeState(player.sim, keep.x, keep.y, keep.yaw); save(); return '';
   }
+  // v93: leaving the Canyon / Lot room on purpose sticks until you go to another track (it used to auto-rejoin you right away)
+  let optOut = null; const roomOptOut = () => { if (ONLINE.room) optOut = { code: ONLINE.room.code, trk: track && track.def.id }; };
   function leaveLobby() { ONLINE.leave(); if (VO.track) { const keep = S.opt.voice; micOff(); S.opt.voice = keep; } newSession(); }
   // ---------------- room chat while driving (Enter to talk) ----------------
   const chatBox = $('#chat'), chatLog = $('#chatLog'), chatIn = $('#chatIn');
@@ -5656,7 +5700,7 @@ const ONLINE = (() => {
   function netSend(dt) {
     if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.05; NET.seq = (NET.seq || 0) + 1; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
     const lk = JSON.stringify(S.look); NET.lkN = (NET.lkN || 0) + 1; const sendLook = lk !== NET.lkSent || NET.lkN % 30 === 0 || NET.lkN < 15 || (NET.room.oldPeers && NET.room.oldPeers()); if (sendLook) NET.lkSent = lk;
-    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, hy: isLot() && c.hydro ? { z: r3(c.hydro.z), p: r3(c.hydro.p), r: r3(c.hydro.r), th: r3(c.hydro.th || 0), pv: c.hydro.piv || 0, f: c.hydro.flip ? 1 : 0, d: c.hydro.d.map(r3), hg: (c.hydro.hang || [0, 0, 0, 0]).map(r3), sq: (c.hydro.sq || [0, 0, 0, 0]).map(r3) } : undefined, lf: c.lift ? { z: r3(c.lift.z), r: r3(c.lift.r), p: r3(c.lift.p) } : undefined, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
+    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, rd: rideSend(), rp: rideParked(), pk: pedSend(), hy: isLot() && c.hydro ? { z: r3(c.hydro.z), p: r3(c.hydro.p), r: r3(c.hydro.r), th: r3(c.hydro.th || 0), pv: c.hydro.piv || 0, f: c.hydro.flip ? 1 : 0, d: c.hydro.d.map(r3), hg: (c.hydro.hang || [0, 0, 0, 0]).map(r3), sq: (c.hydro.sq || [0, 0, 0, 0]).map(r3) } : undefined, lf: c.lift ? { z: r3(c.lift.z), r: r3(c.lift.r), p: r3(c.lift.p) } : undefined, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
   }
   // v82 snapshot playback: estimate the sender's clock (min one-way gap), play back D ms behind it (D adapts to packet spacing + jitter),
   // cubic Hermite between the two samples around that time using their velocities; short extrapolation if the next packet is late
@@ -5674,7 +5718,7 @@ const ONLINE = (() => {
     return { x, y, vx: A[2] + (B[2] - A[2]) * t, vy: A[3] + (B[3] - A[3]) * t, yaw: A[4] + wrap(B[4] - A[4]) * t, r: A[5] + (B[5] - A[5]) * t, d: t < 0.5 ? buf[i - 1].d : buf[i].d }; }
   function netRecv(dt) {
     if (!NET.room) return; let peers = []; try { peers = NET.room.peers(); } catch (e) { return; }
-    const seen = new Set(), now = Date.now(); let n = 0;
+    const seen = new Set(), now = Date.now(); let n = 0; rideNet(peers); pedNet(peers);
     for (const p of peers) {
       if (p.sameTab || p.kind !== 'viewer') continue; let d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
       if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
@@ -5683,6 +5727,8 @@ const ONLINE = (() => {
       if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(isCrawl() ? Object.assign({}, look, { tires: 'crawl' }) : lotWheels(look)); scene.add(mesh);
         const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; sp.userData.tag = 1; mesh.add(sp); const mic = new T.Sprite(new T.SpriteMaterial({ map: micTex(), depthTest: false, transparent: true })); mic.scale.set(0.05, 0.05, 1); mic.position.y = 0.215; mic.visible = false; mic.userData.tag = 1; mic.userData.mic = 1; mesh.add(mic);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
+      { const ri = d.rd && RIDES[d.rd.i] ? d.rd.i : null; if (ri !== (nc.rideId || null)) { if (nc.rideG) { scene.remove(nc.rideG); GFX.disposeTree(nc.rideG); nc.rideG = null; } nc.rideId = ri; nc.mesh.visible = !ri;   // v93: they're driving a secret ride
+          if (ri) { const ncr = nc, rp = rides.find(q => q.key === d.rd.k); GFX.buildRide(rp ? rp.p : { id: ri, s: ri === 'taco_truck' ? 1 : 0.1, seed: 7 }, RIDES[ri].front).then(g => { if (g && ncr.rideId === ri && netCars.get(ncr.peer) === ncr) { ncr.rideG = g; scene.add(g); } else if (g) GFX.disposeTree(g); }, () => { }); } } }
       seen.add(p.peer); nc.seenAt = now; const s = nc.sim, k = 1 - Math.exp(-dt * 14); let tx, ty, tyaw;
       const pb = playback(nc, p.buf);   // v82: smooth playback a little behind real time, curved through the real samples (new senders stamp q + ts)
       if (pb) { s.vx = pb.vx; s.vy = pb.vy; s.r = pb.r; tx = pb.x; ty = pb.y; tyaw = pb.yaw; if (pb.d) d = pb.d; s.x = tx; s.y = ty; s.yaw = tyaw; }
@@ -5706,7 +5752,7 @@ const ONLINE = (() => {
   // ---------------- simulation ----------------
   const H = 1 / 400;
   function simulate(dt) {
-    dt *= clamp((S.opt.simSpeed || 100) / 100, 0.5, 1); simTime += dt; const P = player.sim, all = cars.concat(Array.from(netCars.values())), N = track.N;
+    dt *= 0.85; /* v93 (Shaun): sim speed locked at 85%, where it feels best; no setting any more */ simTime += dt; const P = player.sim, all = cars.concat(Array.from(netCars.values())), N = track.N;
     if (mode === 'drive') { P.inp.steer = inp.steer; P.inp.angle = inp.angle; P.inp.angleMix = inp.angleMix; P.inp.throttle = inp.throttle; P.inp.brake = inp.brake; } else { P.inp.angle = null; P.inp.steer = 0; P.inp.throttle = 0; P.inp.brake = P.speed > 0.05 ? 0.6 : 0; if (P.speed < 0.05) { P.vx = P.vy = P.r = P.w = 0; } }
     for (const c of cars) if (c.ai) {
       let lead = null, ld = 1e9, fol = null, fd = 1e9; const s = c.sim;
@@ -5893,22 +5939,73 @@ const ONLINE = (() => {
     for (let k = 0; k < 14; k++) { const a = R(0, 6.283), d = R(40, 60), r = R(2, 7); g.beginPath(); g.arc(64 + Math.cos(a) * d, 64 + Math.sin(a) * d, r, 0, 6.3); g.fill(); g.lineWidth = r * 0.8; g.strokeStyle = '#7a0808'; g.beginPath(); g.moveTo(64 + Math.cos(a) * 30, 64 + Math.sin(a) * 30); g.lineTo(64 + Math.cos(a) * d, 64 + Math.sin(a) * d); g.stroke(); }
     g.fillStyle = 'rgba(200,30,30,0.5)'; g.beginPath(); g.arc(58, 58, 14, 0, 6.3); g.fill();
     splatTex = new T.CanvasTexture(c); splatTex.encoding = T.sRGBEncoding; return splatTex; }
-  function pedHit(pd, c) { pd.dead = true; pd.back = performance.now() / 1000 + 300;   // v82: back on their feet after 5 minutes (and every time the room is loaded fresh)
+  function pedHit(pd, c, remote) { pd.dead = true; pd.mine = !remote; pd.back = performance.now() / 1000 + (remote ? remote : 300);   // v82: back on their feet after 5 minutes (and every time the room is loaded fresh)
     if (pedMesh) { const a = pedMesh.geometry.attributes.position, A = a.array; if (!pedOrig) pedOrig = A.slice(); const dx = Math.cos(c.yaw), dz = -Math.sin(c.yaw);   // squash flat, smeared a little along the car's path
       for (let i = pd.v0; i < pd.v0 + pd.n; i++) { const j = i * 3, h = A[j + 1] - pd.z; A[j + 1] = pd.z + 0.001 + h * 0.05; A[j] += dx * h * 0.35; A[j + 2] += dz * h * 0.35; } a.needsUpdate = true; pedMesh.geometry.computeBoundingSphere(); }
     if (S.opt.blood !== false) { const sz = 0.07 + Math.random() * 0.05, sp = new T.Mesh(new T.PlaneGeometry(sz * 1.6, sz), new T.MeshBasicMaterial({ map: splatTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, color: 0xffffff }));
       sp.rotation.x = -Math.PI / 2; sp.rotation.z = c.yaw + (Math.random() - 0.5) * 0.6; sp.position.set(pd.x + Math.cos(c.yaw) * 0.03, pd.z + 0.0015, -(pd.y + Math.sin(c.yaw) * 0.03)); sp.renderOrder = 4; world.group.add(sp); pd.splat = sp; }
+    if (remote) return;   // v93: somebody else in the room hit them: same splat, no score, no sound
     sfxHit(1.1); shake = Math.min(0.012, shake + 0.006);
     S.stats = S.stats || {}; const before = S.stats.peds || 0; S.stats.peds = before + 1; save(); pedPend++;
     const t0 = pedTitle(before), t1 = pedTitle(S.stats.peds); if (t1 !== t0) toast('🏆 ' + t1 + ' · ' + S.stats.peds + ' pedestrians flattened', 'good'); else toast('SPLAT! · ' + S.stats.peds + ' pedestrians', 'bad'); }
-  function pedRespawn(pd) { pd.dead = false; if (pedMesh && pedOrig) { const a = pedMesh.geometry.attributes.position; a.array.set(pedOrig.subarray(pd.v0 * 3, (pd.v0 + pd.n) * 3), pd.v0 * 3); a.needsUpdate = true; pedMesh.geometry.computeBoundingSphere(); }
+  function pedRespawn(pd) { pd.dead = false; pd.mine = false; if (pedMesh && pedOrig) { const a = pedMesh.geometry.attributes.position; a.array.set(pedOrig.subarray(pd.v0 * 3, (pd.v0 + pd.n) * 3), pd.v0 * 3); a.needsUpdate = true; pedMesh.geometry.computeBoundingSphere(); }
     if (pd.splat) { pd.splat.parent && pd.splat.parent.remove(pd.splat); pd.splat.geometry.dispose(); pd.splat.material.dispose(); pd.splat = null; } }
+  // v93: everyone in a room sees the same flattened people + splats until the 5-minute respawn (presence pk = [index, seconds left] for the ones I hit)
+  const pedSend = () => { if (!peds.length) return undefined; const now = performance.now() / 1000, o = []; peds.forEach((pd, i) => { if (pd.dead && pd.mine && o.length < 40) o.push([i, Math.max(1, Math.round(pd.back - now))]); }); return o.length ? o : undefined; };
+  function pedNet(peers) { if (!peds.length) return; for (const p of peers) { const d = p.presence && p.presence.drift; if (!d || p.sameTab || d.t !== S.opt.track || !Array.isArray(d.pk)) continue;
+      for (const e of d.pk.slice(0, 40)) { if (!Array.isArray(e)) continue; const pd = peds[e[0] | 0]; if (pd && !pd.dead) pedHit(pd, { yaw: 0 }, num(e[1], 1, 300)); } } }
   function pedTick(dt) { if (!peds.length || !player) return; for (const pd of peds) if (pd.dead && performance.now() / 1000 > pd.back) { const c = player.sim; if (Math.hypot(pd.x - c.x, pd.y - c.y) > 0.4) pedRespawn(pd); }
     if (mode !== 'drive') return; const c = player.sim; if (c.speed > 0.45) { const gz = c.crawl ? c.cz - 0.091 : 0;
       for (const pd of peds) { if (pd.dead) continue; const dx = pd.x - c.x, dy = pd.y - c.y; if (dx * dx + dy * dy > 0.04) continue; if (Math.abs(pd.z - gz) > 0.06) continue; if (Math.hypot(dx, dy) < 0.1 + pd.r) pedHit(pd, c); } }
     if (pedPend && (pedT += dt) > 3) { const n = pedPend; pedPend = 0; pedT = 0; if (ONLINE.profile) ONLINE.addPeds(n, track && track.def.id).then(t => { if (t != null && S.stats) { S.stats.pedsAcct = t; } }); } }
+  // ===================== v93 secret rides: park right next to the limo, the garbage truck or the taco truck for 10 s =====================
+  // Two choices pop up: the polite one gets you a joke, the other one gets you the keys. E / the HOP OUT button parks it wherever you are.
+  // Online: one of each per room (presence rd = what you're driving, rp = where you parked the ones you moved).
+  const RIDES = {
+    limo: { nm: 'LIMO', front: 0, len: 0.46, wid: 0.15, tune: { weight: 2600, topSpeed: 62, motor: 0, punch: 40, steerLock: 48, gyroGain: 84, weightRear: 50 }, ask: 'Ask for a ride', take: 'Beat up the driver and take it',
+      jokes: ['"Sir, this is a private event." The window rolls back up.', 'The driver hands you a mint and keeps staring straight ahead.', '"Do you have a reservation?" You do not.', 'He offers you a ride… to the curb. You are already at the curb.'] },
+    trash: { nm: 'GARBAGE TRUCK', front: 0, len: 0.48, wid: 0.15, tune: { weight: 3300, topSpeed: 45, motor: 0, punch: 30, steerLock: 42, gyroGain: 90, weightRear: 48 }, ask: 'Thank the garbage man', take: 'Beat him up and take the truck',
+      jokes: ['He nods. Respect. He goes back to his sandwich.', '"Thanks man." He honks twice. You feel seen.', 'He thanks you back, then tells you about his bad knee for ten minutes.', 'He says nobody ever thanks him. He tears up a little.'] },
+    taco_truck: { nm: 'TACO TRUCK', front: Math.PI, len: 0.72, wid: 0.26, tune: { weight: 3000, topSpeed: 50, motor: 0, punch: 32, steerLock: 42, gyroGain: 88, weightRear: 52 }, ask: 'Buy a taco', take: 'Beat him up and take the taco truck',
+      jokes: ['Asada taco, $1. Best dollar you ever spent.', '"No onions? ¿Qué?" He gives you onions anyway.', 'You get a taco and a free horchata. He likes your car.', 'Al pastor, extra pineapple. 10/10, would park here again.'] } };
+  let rides = [], RD = null, rideNear = null, rideT = 0; const RIDE_TOK = Math.random();
+  function rideSetup(list) { rides = []; RD = null; rideNear = null; rideT = 0; rideUI(false); const wg = world.group;
+    list.forEach((p, i) => { const R0 = RIDES[p.id], r = { key: track.def.id + ':' + i, id: p.id, p, x: p.x, y: p.y, yaw: (p.ry || 0) + R0.front, g: null, cols: [], net: null };
+      r.cols = (track.colliders || []).filter(b => p.x > b[0] && p.x < b[2] && p.y > b[1] && p.y < b[3]); rides.push(r);
+      GFX.buildRide(p, R0.front).then(g => { if (!g || world.group !== wg) return; r.g = g; ridePose(r); if (r.net) g.visible = false; wg.add(g); }, () => { }); }); }
+  function ridePose(r) { if (!r.g) return; r.g.position.set(r.x, 0, -r.y); r.g.rotation.y = r.yaw - RIDES[r.id].front; }
+  function rideCols(r, on) { const C = track.colliders || (track.colliders = []); for (const b of r.cols) { const i = C.indexOf(b); if (i >= 0) C.splice(i, 1); } r.cols = [];
+    if (on) { const R0 = RIDES[r.id], c = Math.abs(Math.cos(r.yaw)), sn = Math.abs(Math.sin(r.yaw)), hx = (R0.len * c + R0.wid * sn) / 2 * 0.8, hy = (R0.len * sn + R0.wid * c) / 2 * 0.8, b = [r.x - hx, r.y - hy, r.x + hx, r.y + hy]; C.push(b); r.cols = [b]; } }
+  function rideUI(card, r) { let el2 = document.getElementById('rideCard'); if (!el2) { el2 = el('div'); el2.id = 'rideCard'; document.body.appendChild(el2); }
+    el2.classList.toggle('on', !!card); if (card && r) { const R0 = RIDES[r.id]; el2.innerHTML = ''; el2.appendChild(el('div', 'rt', R0.nm)); const a = el('button', 'ghost', R0.ask), b = el('button', 'big', '👊 ' + R0.take);
+      a.onclick = e => { e.stopPropagation(); toast(R0.jokes[(Math.random() * R0.jokes.length) | 0], 'good'); rideT = -12; rideUI(false); }; b.onclick = e => { e.stopPropagation(); rideStart(r); }; el2.append(a, b); }
+    let out = document.getElementById('rideOut'); if (!out) { out = el('button', 'big', 'HOP OUT'); out.id = 'rideOut'; out.onclick = e => { e.stopPropagation(); rideExit(); }; document.body.appendChild(out); } out.classList.toggle('on', !!RD); }
+  function rideStart(r) { if (RD || r.net) return; const P = player.sim; RD = r; rideCols(r, false); P.x = r.x; P.y = r.y; P.yaw = r.yaw; P.vx = P.vy = P.r = 0; player.skid = [null, null];
+    P.p = SIM.derive(Object.assign({}, S.tune, RIDES[r.id].tune), track.surface, physK()); player.mesh.visible = false; rideUI(false); toast('👊 You took the ' + RIDES[r.id].nm.toLowerCase() + '! · E or HOP OUT to park it', 'good'); }
+  function rideExit(why) { const r = RD; if (!r) return; RD = null; const P = player.sim, R0 = RIDES[r.id]; r.x = P.x; r.y = P.y; r.yaw = P.yaw; r.moved = true; ridePose(r); rideCols(r, true);
+    const off = R0.wid / 2 + 0.16; P.x += -Math.sin(P.yaw) * off; P.y += Math.cos(P.yaw) * off; P.vx = P.vy = P.r = 0; player.skid = [null, null]; applyTune(); player.mesh.visible = true; rideT = -6; rideUI(false); if (why) toast(why, 'bad'); }
+  function rideTick(dt) { document.documentElement.classList.toggle('inroom', !!ONLINE.room); if (ONLINE.room && !rideTick.mu) { rideTick.mu = 1; micUI(); } if (!ONLINE.room) rideTick.mu = 0; for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; nc.rideG.position.set(nc.sim.x, 0, -nc.sim.y); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; }
+    if (!rides.length || !player) return; const P = player.sim;
+    if (RD) { if (!RD.g) return; RD.x = P.x; RD.y = P.y; RD.yaw = P.yaw; ridePose(RD); player.mesh.visible = false; const fwd = P.vx * Math.cos(P.yaw) + P.vy * Math.sin(P.yaw);
+      for (const w of RD.g.userData.spin || []) w.rotation.z -= fwd * dt / (w.userData.r || 0.05); return; }
+    if (mode !== 'drive') return; let best = null, bd = 1e9;
+    for (const r of rides) { if (r.net || !r.g) continue; const R0 = RIDES[r.id], dx = P.x - r.x, dy = P.y - r.y, c = Math.cos(-r.yaw), sn = Math.sin(-r.yaw), lx = dx * c - dy * sn, ly = dx * sn + dy * c, d = Math.hypot(Math.max(0, Math.abs(lx) - R0.len / 2), Math.max(0, Math.abs(ly) - R0.wid / 2)); if (d < bd) { bd = d; best = r; } }
+    const close = best && bd < 0.17 && P.speed < 0.25;   // d is from the car's centre: ~0.12-0.15 = parked against it
+    if (close && best === rideNear) rideT += dt; else { if (rideNear) rideUI(false); rideNear = close ? best : null; rideT = Math.min(rideT, 0) + (close ? dt : 0); }
+    if (rideNear && rideT > 10 && !document.querySelector('#rideCard.on')) rideUI(true, rideNear); }
+  function rideNet(peers) {   // who drives what, where moved rides were parked; conflicts: the lower token keeps it
+    if (!rides.length) return; const claim = new Map(), park = new Map();
+    for (const p of peers) { const d = p.presence && p.presence.drift; if (!d || p.sameTab || d.t !== S.opt.track) continue; if (d.rd && typeof d.rd.k === 'string') claim.set(d.rd.k, { peer: p.peer, tk: +d.rd.tk || 0 });
+      if (d.rp && typeof d.rp === 'object') for (const k in d.rp) { const v = d.rp[k]; if (Array.isArray(v) && v.length === 3) park.set(k, v.map(q => num(q, -1e4, 1e4))); } }
+    for (const r of rides) { const c = claim.get(r.key);
+      if (r === RD) { if (c && c.tk < RIDE_TOK) rideExit('Somebody grabbed the ' + RIDES[r.id].nm.toLowerCase() + ' first'); continue; }
+      if (c && !r.net) { r.net = c.peer; if (r.g) r.g.visible = false; rideCols(r, false); if (rideNear === r) { rideNear = null; rideUI(false); } }
+      else if (!c && r.net) { r.net = null; const pk = park.get(r.key); if (pk) { r.x = pk[0]; r.y = pk[1]; r.yaw = pk[2]; } if (r.g) { r.g.visible = true; ridePose(r); } rideCols(r, true); }
+      else if (!c && !r.moved) { const pk = park.get(r.key); if (pk && Math.hypot(pk[0] - r.x, pk[1] - r.y) > 0.05) { r.x = pk[0]; r.y = pk[1]; r.yaw = pk[2]; ridePose(r); rideCols(r, true); } } } }
+  const rideSend = () => RD ? { k: RD.key, i: RD.id, tk: RIDE_TOK } : undefined;
+  const rideParked = () => { const o = {}; let n = 0; for (const r of rides) if (r.moved && r !== RD && !r.net && n++ < 4) o[r.key] = [Math.round(r.x * 1000) / 1000, Math.round(r.y * 1000) / 1000, Math.round(r.yaw * 1000) / 1000]; return n ? o : undefined; };
   function updateCam(dt) {
-    if (CT.on) ctTick(dt); pedTick(dt); const c = player.sim, px = c.x, pz = -c.y, cam = CT.on === 'stand' ? 4 : mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
+    if (CT.on) ctTick(dt); pedTick(dt); rideTick(dt); const c = player.sim, px = c.x, pz = -c.y, cam = CT.on === 'stand' ? 4 : mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
     const vdir = c.speed > 0.8 ? Math.atan2(c.vy, c.vx) : c.yaw, want = c.yaw + wrap(vdir - c.yaw) * 0.6; camYaw += wrap(want - camYaw) * (1 - Math.exp(-dt * 5));
     const fx = Math.cos(camYaw), fz = -Math.sin(camYaw), cx = Math.cos(c.yaw), cz = -Math.sin(c.yaw);
     if (cam === -1) {
@@ -6163,7 +6260,7 @@ const ONLINE = (() => {
       ['Steering modes', '<p>Two ways to steer, set separately for each thing you play with (<b>Tuning → Steering feel</b>):</p><ul><li><b>Direct</b>: the stick turns the front wheels, like a real radio, and the gyro catches the countersteer. <b>Default on phones</b>: tilt and thumb steering feel the most real this way.</li><li><b>Angle assist</b>: the stick asks for a drift angle (about 55° at full stick, more with throttle) and the car holds it. <b>Default on controllers</b> (closest to a gyro drift car on a thumbstick) <b>and keyboards</b> (on/off keys can\'t feather the wheels).</li></ul><p class="tmut">Not feeling it? Flip it. The game switches modes automatically when you change from phone to controller to keyboard.</p>'],
       ['Physics by device', '<p>The car physics also follow your device (<b>Tuning → Car physics</b>):</p><ul><li><b>Phone</b>: <b>Classic</b> physics + Direct steering. Softer and more forgiving under a thumb.</li><li><b>Controller or RC radio</b>: <b>New</b> physics + Angle assist. Clicky and precise, the closest thing to a real gyro drift car.</li><li><b>Keyboard</b>: New physics + Angle assist.</li></ul><p class="tmut">Same scoring either way. Try both and tell us what you like in the forum.</p>'],
       ['Tracks', '<ul>' + tracks + '</ul><p>Pick one on the <b>Drive</b> tab.</p><p><b>Yellow hatched zones score.</b> Outer zones (OZ): get your <b>rear bumper</b> into the band by the outside wall while sliding. Clip points (CP): get your <b>nose</b> into the box on the inside. Each zone pays for how much of it you fill, <b>how deep</b> you get (closer to the wall = more) and <b>how much angle</b> you carry (50°+ = full). The yellow IN ZONE tag shows how you\'re doing live.</p>'],
-      ['Garage + Tuning', '<p><b>Garage</b>: drift cars and movie cars, paint, wheels, wings, liveries.</p><p><b>Tuning</b>: gyro gain, steering lock, power, gearing. Too twitchy? Turn the gyro up or lower <b>Sim speed</b> (Settings tab).</p>'],
+      ['Garage + Tuning', '<p><b>Garage</b>: drift cars and movie cars, paint, wheels, wings, liveries.</p><p><b>Tuning</b>: gyro gain, steering lock, power, gearing. Too twitchy? Turn the gyro up</p>'],
       ['Go drive', '<p>That\'s it. Replay this any time: <b>Drive tab → How to play</b>.</p><p>RC Drift Lab is in <b>beta</b>: physics, tracks and scoring are still being tuned. Tell us what you think in <b>Social → Forum → Game feedback</b> (or the <b>Leave feedback</b> button on the Drive tab).</p>'],
     ];
     let i = start || 0; const ov = el('div'); ov.id = 'tour'; document.body.appendChild(ov);
@@ -6418,7 +6515,7 @@ const ONLINE = (() => {
           for (const lb of live.slice(0, 3)) { const i = SIM.TRACK_DEFS.findIndex(x => x.id === lb.track), b = el('button', 'chip trk'); const im = el('img'); im.alt = ''; im.src = i >= 0 ? trackThumb(i) : ''; b.appendChild(im);
             const tx = el('div'); tx.appendChild(el('div', '', lb.name)); tx.appendChild(el('small', '', (i >= 0 ? SIM.TRACK_DEFS[i].name : lb.track) + ' · ' + lb.players + ' driver' + (lb.players > 1 ? 's' : '') + ' in now · tap to join')); b.appendChild(tx);
             b.onclick = async () => { b.disabled = true; const e = await joinLobby(lb); b.disabled = false; if (e) toast(e, 'bad'); else drive(false); }; add(b); } } }
-      if (inRoom) { h('Online room', O.room.code); msg('You are in ' + O.lobby.name + ' on ' + track.def.name + ' with ' + O.room.count + ' driver' + (O.room.count > 1 ? 's' : '') + '. AI cars are off in rooms.'); const br = el('div', 'btnrow'), rb = el('button', 'ghost', 'Room + chat'), lv = el('button', 'ghost', 'Leave room'); rb.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; lv.onclick = () => { leaveLobby(); renderPanel(); }; br.append(rb, lv); add(br); }
+      if (inRoom) { h('Online room', O.room.code); msg('You are in ' + O.lobby.name + ' on ' + track.def.name + ' with ' + O.room.count + ' driver' + (O.room.count > 1 ? 's' : '') + '. AI cars are off in rooms.'); const br = el('div', 'btnrow'), rb = el('button', 'ghost', 'Room + chat'), lv = el('button', 'ghost', 'Leave room'); rb.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; lv.onclick = () => { roomOptOut(); leaveLobby(); renderPanel(); }; br.append(rb, lv); add(br); }
       h('Track', TRK().length + ' tracks'); if (inRoom) msg('Leave the room to switch tracks.');
       add(trackChips(S.opt.track, i => { if (i !== S.opt.track) { loadTrack(i); applyTune(); save(); if (mode === 'pause') openMenu('main', 'drive'); else renderPanel(); } }, { disabled: inRoom }));
       { const mine = [['crawl', '⛰️ Crawler Canyon', 'off-road room · the egg hunt', huntKeys() >= 3], ['lowrider', '🎰 The Lot', 'lowrider hangout · hydraulics', !!(S.found && S.found.lot) || !!ONLINE.isAdmin]].filter(r => r[3]);   // v87: rooms you've unlocked, one tap away (the secret doors still work)
@@ -6591,7 +6688,7 @@ const ONLINE = (() => {
         if (O.room.canChat()) { const ci = el('input'); ci.type = 'text'; ci.maxLength = 160; ci.placeholder = 'Chat to the room…'; ci.onkeydown = e => { if (e.key === 'Enter') { const er = O.room.chat(ci.value); if (er) toast(er, 'bad'); ci.value = ''; renderPanel(); } }; add(ci); } else msg('Sign in to chat. You can still read along.');
         const br = el('div', 'btnrow'), cp = el('button', 'ghost', 'Copy invite link'), lv = el('button', 'ghost', 'Leave room'), link = location.origin + location.pathname + '?room=' + O.room.code;
         cp.onclick = () => { try { navigator.clipboard.writeText(link).then(() => { cp.textContent = 'Link copied'; setTimeout(() => cp.textContent = 'Copy invite link', 2000); }, () => toast(link)); } catch (e) { toast(link); } };
-        lv.onclick = () => { leaveLobby(); renderPanel(); }; br.append(cp, lv); add(br); msg('Anyone who opens the invite link drops straight into this room.');
+        lv.onclick = () => { roomOptOut(); leaveLobby(); renderPanel(); }; br.append(cp, lv); add(br); msg('Anyone who opens the invite link drops straight into this room.');
       } else {
         // ---- join ----
         h('Join a room', (O.lobbies || []).length + ' open');
@@ -6771,7 +6868,6 @@ const ONLINE = (() => {
       add(row('Sound mode', chips(Object.keys(SND_MODES).map(k => ({ id: k, name: SND_MODES[k].name, sub: SND_MODES[k].sub })), S.opt.sndMode === 'real' ? 'real' : 'smooth', v => { S.opt.sndMode = v; save(); renderPanel(); }), 'Authentic = the real brushless scream. Smooth = same motor and the same rise and fall (you still hear boost and turbo), with the shrill top end taken off.'));
       add(row('Motor sound', slider(0, 100, 5, S.opt.motorVol ?? 100, v => v + '%', v => { S.opt.motorVol = v; save(); }), 'Motor whine + gear noise only. Tire scrub and hits stay at full volume.'));
       h('Voice chat'); voiceRows();
-      h('Gameplay'); add(row('Sim speed', slider(60, 100, 5, S.opt.simSpeed || 100, v => v + '%', v => { S.opt.simSpeed = v; save(); }), 'Slows the whole world down (cars, AI, physics). 85% is the default and reads more like a real 1/10 car on a small screen. 100% is real time. Online rooms run at your own setting.'));
       h('Help'); const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), sv = el('button', installEv ? 'big' : 'ghost', isApp() ? 'Installed as an app' : installEv ? 'Install app' : 'Add to home screen'); tb.onclick = () => tour(1); sv.disabled = isApp(); sv.onclick = async () => { if (!(await doInstall())) tour(1); renderPanel(); }; br.append(tb, sv); add(br); if (web) { const fb = el('button', 'ghost', 'Leave feedback · it\'s a beta'); fb.onclick = openFeedback; add(fb); }
       if (web) { const pv = el('a', 'ghost', 'Privacy policy'); pv.href = 'privacy.html'; pv.target = '_blank'; pv.rel = 'noopener'; pv.style.textDecoration = 'none'; pv.style.color = 'inherit'; pv.style.textAlign = 'center'; add(pv); }
       msg('RC Drift Lab ' + VERSION + ' · made in Las Vegas by Stranger Kreations.');
@@ -6789,10 +6885,10 @@ const ONLINE = (() => {
   if (!GFX.BODIES.some(b => b.id === S.look.body)) S.look.body = GFX.BODIES[0].id; if (!GFX.WINGS.some(w => w.id === S.look.wing)) S.look.wing = 'none';
   resize(); const ld = document.getElementById('loading'), lb = document.getElementById('loadbar');
   let last = performance.now(), booted = false;
-  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isCrawl() || huntKeys() < 3 || !ONLINE.profile || joining || Date.now() < nextTry) return; if (ONLINE.room && ONLINE.room.code === CANYON_ROOM.code) return;
-      if (ONLINE.room) leaveLobby(); joining = true; joinLobby(CANYON_ROOM, true).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Canyon room: ' + e, 'bad'); } } else { told = false; toast('🗝️ CANYON ROOM · only key holders get in here. Everyone hunts their own egg', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
-  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isLot() || !ONLINE.profile || joining || Date.now() < nextTry) return; if (ONLINE.room && ONLINE.room.code === LOT_ROOM.code) return;   // v91: The Lot is one shared room
-      if (ONLINE.room) leaveLobby(); joining = true; joinLobby(LOT_ROOM, true).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Lot room: ' + e, 'bad'); } } else { told = false; toast('🎰 THE LOT · everyone in here is in your room', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
+  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isCrawl() || huntKeys() < 3 || !ONLINE.profile || joining || Date.now() < nextTry) return; if (optOut && optOut.code.startsWith(CANYON_ROOM.code) && optOut.trk === track.def.id) return; if (ONLINE.room && ONLINE.room.code.startsWith(CANYON_ROOM.code)) return;
+      if (ONLINE.room) leaveLobby(); joining = true; joinSpill(CANYON_ROOM).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Canyon room: ' + e, 'bad'); } } else { told = false; toast('🗝️ CANYON ROOM · only key holders get in here. Everyone hunts their own egg', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
+  { let joining = false, nextTry = 0, told = false; setInterval(() => { if (!booted || inClaude || !track || !isLot() || !ONLINE.profile || joining || Date.now() < nextTry) return; if (optOut && optOut.code.startsWith(LOT_ROOM.code) && optOut.trk === track.def.id) return; if (ONLINE.room && ONLINE.room.code.startsWith(LOT_ROOM.code)) return;   // v91: The Lot is one shared room
+      if (ONLINE.room) leaveLobby(); joining = true; joinSpill(LOT_ROOM).then(e => { joining = false; if (e) { nextTry = Date.now() + 12000; if (!told) { told = true; toast('Lot room: ' + e, 'bad'); } } else { told = false; toast('🎰 THE LOT · everyone in here is in your room', 'good'); } }, () => { joining = false; nextTry = Date.now() + 12000; }); }, 1500); }
   ASSETS.setRenderer(renderer); const texP = ASSETS.preloadAll(14000);
   const CORE = ['s15', 'ae86', 'r33', 'supra', 'm4']; if (!CORE.includes(S.look.body)) CORE.push(S.look.body);
   // v64.1: one failed car download no longer blocks the game: boot with whatever arrived, swap to a loaded body if yours didn't, retry button if nothing did
@@ -6830,7 +6926,7 @@ const ONLINE = (() => {
   // ---------------- voice chat in rooms: off by default; push-to-talk (hold TALK / V) or open mic. Talking needs sign-in; anyone can listen ----------------
   const VO = { stream: null, track: null, talk: false, level: 0, an: null, buf: null };
   function voiceSync() { const v = ONLINE.voice; if (!v) return; v.hear = S.opt.hear !== false; v.vol = (S.opt.vvol ?? 100) / 100; v.track = VO.track; if (ONLINE.room) { ONLINE.room.setMic(VO.track); ONLINE.room.hearAll(); }
-    document.documentElement.classList.toggle('vptt', S.opt.voice === 'ptt' && !!VO.track); }
+    document.documentElement.classList.toggle('vptt', S.opt.voice === 'ptt' && !!VO.track); micUI(); }
   function canTalk() { return ONLINE.signedIn && ONLINE.signedIn() && !!ONLINE.profile && !ONLINE.banned; }
   async function micOn() { if (VO.track) { voiceSync(); return true; }
     if (!canTalk()) { toast('Sign in on the Online tab to talk. You can still hear the room.'); return false; }
@@ -6842,6 +6938,10 @@ const ONLINE = (() => {
     voiceSync(); return true; }
   function micOff() { if (VO.stream) VO.stream.getTracks().forEach(t => t.stop()); VO.stream = VO.track = VO.an = null; VO.talk = false; voiceSync(); }
   async function setVoiceMode(v) { S.opt.voice = v; save(); if (v === 'off') { micOff(); return; } const ok = await micOn(); if (!ok) { S.opt.voice = 'off'; save(); micOff(); } else { VO.track.enabled = v === 'open'; voiceSync(); toast(v === 'ptt' ? 'Push-to-talk: hold TALK (or V on a keyboard)' : 'Open mic: the room hears you when you speak'); } if (mode !== 'drive') renderPanel(); }
+  // v94: one-tap open mic toggle (the MIC button in rooms, Shift+V): off -> open mic, open mic -> off. Push-to-talk users get switched to open mic.
+  async function micQuick() { if (S.opt.voice === 'open') { await setVoiceMode('off'); toast('🔇 Mic off'); } else { await setVoiceMode('open'); } micUI(); }
+  function micUI() { const b = document.getElementById('micB'); if (b) { const on = S.opt.voice === 'open' && !!VO.track; b.classList.toggle('on', on); b.innerHTML = on ? '🎙<small>MIC ON</small>' : '🔇<small>MIC OFF</small>'; } }
+  { const b = document.getElementById('micB'); if (b) { b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); micQuick(); }); b.addEventListener('click', e => e.stopPropagation()); } }
   function talk(on) { if (!VO.track || S.opt.voice !== 'ptt') return; VO.track.enabled = !!on; VO.talk = !!on; const b = document.querySelector('#talkB'); if (b) b.classList.toggle('on', !!on); }
   // talking flag for the 🎙 over your car on other screens: PTT = button held; open mic = voice level over a threshold
   function voiceTalking() { if (!VO.track || !ONLINE.room || !ONLINE.room.voiceOn()) return false; if (S.opt.voice === 'ptt') return VO.talk;
@@ -6858,7 +6958,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { GFX, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
+  window.__game = { GFX, rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
