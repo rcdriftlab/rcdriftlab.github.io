@@ -4152,7 +4152,7 @@ const GFX = (function () {
   // v58 per-body wheel fit (measured from each shell: tools/fit/solve.py). fx/rx: wheel x shift to centre it in the arch (m),
   // dy: body raise so the arch clears the tire, tk: tuck the wheels inward, ws: wheel scale for small-arch shells. Visual only (physics WB unchanged).
   const FIT = {"a85": {"bs": 0.78, "fx": -0.0446, "rx": 0.0439, "ah": 0.054}, "ae86": {"dy": 0.0025}, "ateam": {"dy": 0.006}, "beetle": {"dy": 0.0055, "tk": 0.006, "ws": 0.9, "fx": 0.016}, "body1": {"fx": 0.008, "dy": 0.006}, "body2": {"fx": 0.006, "dy": 0.006}, "body3": {"fx": -0.004, "rx": -0.005, "dy": 0.0055, "ws": 0.86}, "body4": {"fx": -0.004, "dy": 0.005}, "camaro": {"dy": 0.0015}, "christine": {"dy": 0.012, "ws": 0.9, "fx": 0.02, "rx": 0.02}, "datsun": {"dy": 0.011, "ah": 0.048, "ws": 1.12, "bs": 0.92, "fx": -0.008, "rx": 0.0128}, "ecto": {"dy": 0.006, "tk": 0.006, "ws": 0.86}, "evo": {"bs": 0.76, "fx": -0.0468, "rx": 0.0468, "ah": 0.051}, "golf": {"dy": 0.0045}, "hilux": {"fx": -0.009, "dy": 0.0035}, "interceptor": {"dy": 0.0005}, "jaban": {"bs": 1.25, "ws": 1.075, "dy": 0.00125, "tk": 0.005, "fx": 0.0291, "rx": -0.0404}, "m4": {"dy": 0.004}, "r33": {"fx": -0.005}, "rwb": {"rx": 0.004, "dy": 0.0045, "ws": 0.86}, "s15": {"fx": -0.004, "tk": 0.0015}, "sr5": {"fx": 0.016, "rx": -0.031, "ah": 0.047}, "supra": {"dy": 0.0025}, "k5": {"ah": 0.045, "rx": -0.01}, "cyber": {"fx": 0.009}, "rx7": {"sg": 0}, "monte": {"fx": 0.0051, "rx": 0.0071}, "elcamino": {"fx": 0.01, "rx": 0.0015}, "malibu": {"fx": -0.0036}, "malwagon": {"fx": -0.0036}, "stepvan": {"fx": 0.0068, "rx": 0.0076}, "k5vert": {"fx": 0.0164, "rx": 0.0056}, "gvan": {"fx": 0.0011, "rx": 0.0021}, "bel55": {"fx": 0.0043, "rx": -0.0016}, "chibidm": {"fx": -0.04, "rx": 0.04, "ws": 1.22, "tk": 0.012, "cm": -9, "dy": 0.009}};
-  const wheelFace = style => Math.max(0, 0.013 - 0.002 - (style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : style === 'dayton' ? 0.0125 : 0.0015));   // z of the wheel face (outward), matches buildWheel
+  const wheelFace = style => Math.max(-0.01, wheelHW(style) - 0.002 - (style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : style === 'dayton' ? 0.008 : 0.0015));   // z of the wheel face (outward), matches buildWheel
   // v60: off-road crawler wheel (knobby tire + beadlock), drawn at the drift wheel's scale (R 0.031) and scaled up by buildCar
   function buildCrawlWheel(color) {
     const m = mats(), g = new T.Group(), R = 0.031, rimR = 0.019, Wd = 0.026, rubber = m.tire;
@@ -4170,15 +4170,18 @@ const GFX = (function () {
     const hub = new T.Mesh(new T.CylinderGeometry(0.004, 0.004, 0.003, 8), ring); hub.rotation.x = Math.PI / 2; hub.position.z = Wd / 2 - 0.002; g.add(hub);
     return g; }
   let _metal = null; const metal = () => _metal || (_metal = new T.MeshStandardMaterial({ color: 0xc8c8c8, roughness: 0.3, metalness: 0.9 }));
+  // v90: lowrider wire wheels run the real proportions: 13x7 rim on a 155/80R13 narrow whitewall (578 mm tall, 155 mm wide) vs a drift
+  // fitment around 18 in. on a 225-265 tire. At 1/10: tire radius 28.9 mm (vs 31), rim radius 16.5 mm (vs 23.5), tire 16.5 mm wide (vs 26).
+  const WDIM = { dayton: { R: 0.0289, rimR: 0.0165, Wd: 0.0165 } }, wheelR = st => (WDIM[st] || {}).R || 0.031, wheelHW = st => ((WDIM[st] || {}).Wd || 0.026) / 2;
   function buildWheel(style, color, lo) {
-    const m = mats(), g = new T.Group(), R = 0.031, rimR = 0.0235, Wd = 0.026;
+    const DM = WDIM[style] || {}, m = mats(), g = new T.Group(), R = DM.R || 0.031, rimR = DM.rimR || 0.0235, Wd = DM.Wd || 0.026;
     const rim = new T.MeshStandardMaterial({ color: new T.Color(color), roughness: 0.28, metalness: 0.85 });
     const prof = [[rimR, -Wd / 2], [R - 0.003, -Wd / 2], [R, -Wd / 2 + 0.004], [R, Wd / 2 - 0.004], [R - 0.003, Wd / 2], [rimR, Wd / 2]].map(p => new T.Vector2(p[0], p[1]));
     const tire = new T.Mesh(new T.LatheGeometry(prof, 28), m.tire); tire.rotation.x = Math.PI / 2; tire.castShadow = true; g.add(tire);
     const barrel = new T.Mesh(new T.CylinderGeometry(rimR, rimR, Wd - 0.002, 28, 1, true), rim); barrel.rotation.x = Math.PI / 2; barrel.material.side = T.DoubleSide; g.add(barrel);
     const lip = new T.Mesh(new T.TorusGeometry(rimR - 0.0008, 0.0014, 6, 28), rim); lip.position.z = Wd / 2 - 0.001; g.add(lip);
-    const deep = style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : style === 'dayton' ? 0.0125 : 0.0015, fz = Wd / 2 - 0.002 - deep;
-    const disc = new T.Mesh(new T.CylinderGeometry(0.017, 0.017, 0.002, 20), m.disc); disc.rotation.x = Math.PI / 2; disc.position.z = fz - 0.007; g.add(disc);
+    const deep = style === 'dish' ? 0.008 : style === 'steelie' ? 0.004 : style === 'dayton' ? 0.008 : 0.0015, fz = Wd / 2 - 0.002 - deep;
+    const disc = new T.Mesh(new T.CylinderGeometry(Math.min(0.017, rimR - 0.002), Math.min(0.017, rimR - 0.002), 0.002, 20), m.disc); disc.rotation.x = Math.PI / 2; disc.position.z = fz - 0.007; g.add(disc);
     const back = new T.Mesh(new T.CircleGeometry(rimR, 20), m.dark); back.position.z = -Wd / 2 + 0.004; g.add(back);
     const hub = new T.Mesh(new T.CylinderGeometry(0.0055, 0.0065, 0.005, 12), rim); hub.rotation.x = Math.PI / 2; hub.position.z = fz + 0.001; g.add(hub);
     const spoke = (n, w, tw, y0) => { for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + (tw || 0), s = new T.Mesh(new T.BoxGeometry(w, rimR - (y0 || 0.003), 0.003), rim); s.position.set(Math.sin(a) * (rimR + (y0 || 0.003)) / 2, Math.cos(a) * (rimR + (y0 || 0.003)) / 2, fz); s.rotation.z = -a; g.add(s); } };
@@ -4193,7 +4196,7 @@ const GFX = (function () {
     else if (style === 'fan') { const f = new T.Mesh(new T.CylinderGeometry(rimR - 0.001, rimR - 0.001, 0.0025, 28), rim); f.rotation.x = Math.PI / 2; f.position.z = fz; g.add(f); for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, s = new T.Mesh(new T.BoxGeometry(0.0016, 0.008, 0.0012), m.dark); s.position.set(Math.sin(a) * 0.017, Math.cos(a) * 0.017, fz + 0.0016); s.rotation.z = -a + 0.4; g.add(s); } }
     else { const f = new T.Mesh(new T.CylinderGeometry(rimR - 0.001, rimR - 0.001, 0.0025, 28), rim); f.rotation.x = Math.PI / 2; f.position.z = fz; g.add(f); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, s = new T.Mesh(new T.CircleGeometry(0.0032, 10), m.dark); s.position.set(Math.sin(a) * 0.015, Math.cos(a) * 0.015, fz + 0.0015); g.add(s); } }
     if (style === 'dayton') {   // v89 lowrider wire wheel: 100-spoke style wire rim + 2-ear knock-off (real STL, loaded once and shared), wide whitewall
-      const ww = new T.Mesh(new T.RingGeometry(rimR + 0.0009, rimR + 0.0042, 40), new T.MeshStandardMaterial({ color: 0xf4f2ec, roughness: 0.55 })); ww.position.z = Wd / 2 + 0.0003; g.add(ww); }
+      const ww = new T.Mesh(new T.RingGeometry(rimR + 0.0024, rimR + 0.0053, 40), new T.MeshStandardMaterial({ color: 0xf4f2ec, roughness: 0.55 })); ww.position.z = Wd / 2 + 0.0003; g.add(ww); }
     const out = mergeParts(g);
     if (style === 'dayton') { const wid = lo ? 'w_daytonL' : 'w_dayton', put = () => { const geo = wheelGeo(wid); if (geo) { const wm = new T.Mesh(geo, rim); wm.castShadow = true; out.add(wm); } }; if (PROP[wid]) put(); else ensureProp(wid).then(put, () => { }); }
     return out;
@@ -4296,7 +4299,7 @@ const GFX = (function () {
     if (!STATIC_M[key].__gl) { triplanarLivery(STATIC_M[key][0], h, true); STATIC_M[key].__gl = 1; if (bodyInfo(h.id).ds) STATIC_M[key][0].side = T.DoubleSide; }
     const car = new T.Group(), sh = new T.Mesh(bd.geo, STATIC_M[key]); sh.castShadow = true; sh.receiveShadow = true; car.add(sh);
     const F = FIT[h.id] || {}, ws = F.ws || 1, BS = F.bs || 1; sh.position.y = F.dy || 0; sh.scale.setScalar(BS);
-    for (const [ax, fh, fr] of [[SIM.WB / 2, h.fender[0], 1], [-SIM.WB / 2, h.fender[1], 0]]) for (const sd of [1, -1]) { const w = buildWheel(opt.wheel || 'five', opt.wcol || '#9aa0a8', true); w.position.set(ax + ((fr ? F.fx : F.rx) || 0), 0.031 * ws, sd * (fh * BS - 0.0005 - (F.tk || 0) - 0.013 * ws)); w.scale.set(ws, ws, sd * ws); car.add(w); }
+    for (const [ax, fh, fr] of [[SIM.WB / 2, h.fender[0], 1], [-SIM.WB / 2, h.fender[1], 0]]) for (const sd of [1, -1]) { const w = buildWheel(opt.wheel || 'five', opt.wcol || '#9aa0a8', true); w.position.set(ax + ((fr ? F.fx : F.rx) || 0), wheelR(opt.wheel) * ws, sd * (fh * BS - 0.0005 - (F.tk || 0) - wheelHW(opt.wheel) * ws)); w.scale.set(ws, ws, sd * ws); car.add(w); }
     const cs = new T.Mesh(new T.PlaneGeometry(h.xf - h.xr + 0.05, 0.24), new T.MeshBasicMaterial({ color: 0, alphaMap: m.shadowTex, transparent: true, opacity: 0.7, depthWrite: false })); cs.rotation.x = -Math.PI / 2; cs.position.y = 0.0012; car.add(cs);
     if (opt.drop) sh.position.y += opt.drop; if (opt.tilt) { sh.rotation.x = opt.tilt[0]; sh.rotation.z = opt.tilt[1]; sh.position.y += opt.lift || 0; }   // v87 lowriders: laid out / three-wheel show pose
     car.scale.setScalar(scale || 1); return car;
@@ -4451,8 +4454,8 @@ const GFX = (function () {
     const wheels = [];
     for (const [ax, front, fh] of [[SIM.WB / 2, 1, h.fender[0]], [-SIM.WB / 2, 0, h.fender[1]]]) for (const sd of [1, -1]) {
       const crawlT = look.tires === 'crawl', k = new T.Group(), cam = new T.Group(), sp = crawlT ? buildCrawlWheel(look.wheelColor || '#2a2b2e') : buildWheel(look.wheel, look.wheelColor); k.add(cam); cam.add(sp);
-      const cal = new T.Mesh(new T.BoxGeometry(0.014, 0.01, 0.005), m.caliper); cal.position.set(-0.0095, 0.0075, wheelFace(look.wheel) - 0.007); cam.add(cal);   // v58: rides on the disc, always behind the spokes
-      const F = crawlT ? {} : (FIT[h.id] || {}), ws = crawlT ? 1.77 : (F.ws || 1), bz = crawlT ? 0.125 : fh * BS - 0.0005 - (F.tk || 0) - 0.013 * ws; k.position.set(ax + ((front ? F.fx : F.rx) || 0), 0.031 * ws, sd * bz); k.scale.set(ws, ws, sd * ws); car.add(k); wheels.push({ k, cam, sp, front, sd, baseZ: bz, ws, xcam: (F.cm || 0) * Math.PI / 180 });
+      const cal = new T.Mesh(new T.BoxGeometry(0.014, 0.01, 0.005), m.caliper); cal.position.set(-0.0095, 0.0075, wheelFace(look.wheel) - 0.007); cam.add(cal); cal.visible = look.wheel !== 'dayton';   /* v90: lowriders run drums; no caliper poking through a 13 in. rim */   // v58: rides on the disc, always behind the spokes
+      const F = crawlT ? {} : (FIT[h.id] || {}), ws = crawlT ? 1.77 : (F.ws || 1), bz = crawlT ? 0.125 : fh * BS - 0.0005 - (F.tk || 0) - wheelHW(look.wheel) * ws; k.position.set(ax + ((front ? F.fx : F.rx) || 0), (crawlT ? 0.031 : wheelR(look.wheel)) * ws, sd * bz); k.scale.set(ws, ws, sd * ws); car.add(k); wheels.push({ k, cam, sp, front, sd, baseZ: bz, ws, xcam: (F.cm || 0) * Math.PI / 180 });
     }
     // light glows
     const fx = { hl: head, hlF: amber, tl: tail };
