@@ -168,6 +168,7 @@ html.rot #mini{width:150px;height:100px}html.rot #hTR{top:8px;right:8px}html.rot
 .roster{display:grid;gap:3px;margin:6px 0 8px}.roster div{display:flex;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,.04);border-radius:4px;font-size:13px}.roster .me{background:rgba(255,90,31,.18)}.roster small{color:var(--mut)}
 .code{font-size:30px;font-weight:700;letter-spacing:.3em;color:var(--ac2);text-align:center;padding:6px 0 2px}
 .status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.1em;background:rgba(93,255,156,.14);color:#5dff9c}.status.off{background:rgba(255,255,255,.08);color:var(--mut)}
+.status.peds{background:rgba(200,20,30,.16);color:#ff6a6a;margin-left:4px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 4px}.stats .st{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:6px;padding:7px 6px;text-align:center}
 .stats b{display:block;font-size:19px;font-variant-numeric:tabular-nums}.stats span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}.stats .live b{color:#5dff9c}.stats .live b:before{content:'● ';font-size:11px;vertical-align:2px}
 .grp{margin:12px 0 4px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:700}
@@ -1445,7 +1446,7 @@ const CRAWL = (() => {
     for (let k = 0, n = 0; k < 400 && n < 46; k++) { const x = X0 + 0.8 + r2() * (W - 1.6), y = Y0 + 0.8 + r2() * (D - 1.6); if (!ok(x, y, 0.35) || (x < -5.7 && y > -4.4)) continue; if (Tz.mat[cell(Tz, x, y)] === MAT.sand && r2() < 0.8) continue;
       props.push({ id: ['tree1', 'tree2', 'tree3'][n % 3], x, y, z: gH(x, y), ry: r2() * 6.3, s: 0.05 + r2() * 0.035, seed: 1 + n }); n++; }
     for (const [x, y, ry] of [[-6.2, 5.6, 2], [-12.2, 4.6, 0.5], [-12.2, -3.9, 1.2], [-6.2, -0.2, 3.5]]) props.push({ id: 'tree' + (1 + ((x * 7) & 1)), x, y, z: 0.012, ry, s: 0.07, seed: 9 });
-    const ppl = ['p_tommy', 'p_reach', 'p_hips', 'p_walk', 'ep0', 'ep1', 'ep2', 'ep3', 'ep4', 'ep5', 'ep_pair', 'p_family'];
+    const ppl = ['p_tommy', 'w_skirt', 'p_reach', 'p_hips', 'w_stand', 'p_walk', 'ep0', 'ep1', 'w_skirt', 'ep2', 'ep_pair', 'p_family'];
     for (let k = 0, n = 0; k < 400 && n < 30; k++) { const side = k % 2, x = X0 + 1.5 + r2() * (W - 3), y = side ? Y0 + D - 0.62 : Y0 + 0.62; if (!ok(x, y, 0.05)) continue; props.push({ id: ppl[n % ppl.length], x, y, z: gH(x, y), ry: side ? -Math.PI / 2 : Math.PI / 2, s: 0.1, seed: 50 + n }); n++; }
     props.push({ id: 'p_street', x: -8.3, y: 2.0, z: 0.012, ry: 0.4, s: 0.1, seed: 99 }, { id: 'ep_duo', x: MTN.x + 0.35, y: MTN.y + 0.3, z: gH(MTN.x + 0.35, MTN.y + 0.3), ry: 2, s: 0.1, seed: 98 }, { id: 'p_kneel', x: -10.9, y: -6.6, z: 0, ry: -0.6, s: 0.1, seed: 97 });
     for (let k = 0, n = 0; k < 1400 && n < 95; k++) { const x = X0 + 0.7 + r2() * (W - 1.4), y = 9.3 + r2() * 2.9; if (!ok(x, y, 0.3) || Math.abs(x - Tz.ravX(y)) < 0.95 || (x > Tz.CAMP.x0 - 0.3 && x < Tz.CAMP.x1 + 0.3 && y > Tz.CAMP.y0 - 0.3)) continue; props.push({ id: ['tree1', 'tree2', 'tree3'][n % 3], x, y, z: gH(x, y), ry: r2() * 6.3, s: 0.055 + r2() * 0.04, seed: 300 + n }); n++; }   // FOREST
@@ -1454,7 +1455,7 @@ const CRAWL = (() => {
     props.push({ id: 'dozer', x: -14.25, y: 7.95, z: gH(-14.25, 7.95) * 0, ry: 0.8, s: 0.1, seed: 700 });
     for (const [x, y, rot, z0] of Tz.CONT) props.push({ id: 'box20', x, y, z: z0, ry: rot, s: 0.1, seed: 710 + Math.round(x * 7 + y * 3 + z0 * 50) });
     info.props = props;
-    info.propCars = [[-10.15, 2.2, Math.PI / 2, '#c8141c', 'k5', 0, 1], [-7.0, 2.25, 0, '#e8e8ea', 'hilux', 0.012, 1], [-8.1, 2.25, 0, '#1f5fff', 'sr5', 0.012, 1], [-7.0, -0.35, Math.PI, '#141416', 'jaban', 0.012, 1], [-10.4, -0.2, 0.0, '#f4e9d0', 'beetle', 0.012, 1]].concat(Tz.BONEYARD.map(([x, y, a], k) => [x, y, a, ['#6a5a4a', '#8a3a2a', '#3a4a5a', '#7a7a6a', '#5a6a3a'][k], null, gH(x, y), 1]), [[-4.38, -2.02, -0.15, '#a05a2a', null, 0.125, 1], [9.95, 7.25, 2.2, '#4a5a6a', null, gH(9.95, 7.25), 1], [3.9, -7.6, 0.4, '#7a2a2a', null, gH(3.9, -7.6), 1]]);
+    info.propCars = [[-10.15, 2.2, Math.PI / 2, '#c8141c', 'k5', 0, 1], [-7.0, 2.25, 0, '#e8e8ea', 'hilux', 0.012, 1], [-8.1, 2.25, 0, '#1f5fff', 'sr5', 0.012, 1], [-7.0, -0.35, Math.PI, '#141416', 'jaban', 0.012, 1], [-10.4, -0.2, 0.0, '#f4e9d0', 'beetle', 0.012, 1]].concat(Tz.BONEYARD.map(([x, y, a], k) => [x, y, a, ['#b3121a', '#8a3a2a', '#3a4a5a', '#7a7a6a', '#5a6a3a'][k], k === 0 ? 'christine' : null, gH(x, y), 1]), [[-4.38, -2.02, -0.15, '#a05a2a', null, 0.125, 1], [9.95, 7.25, 2.2, '#c9ccd1', 'delorean', gH(9.95, 7.25), 1], [3.9, -7.6, 0.4, '#141416', 'kitt', gH(3.9, -7.6), 1], [12.6, 9.55, 0.25, '#f2f2f0', 'ecto', gH(12.6, 9.55), 1]]);   // v81: movie cars hidden around the canyon to discover
     info.exposure = 0.86; info.crawl = true;
   }
   function stampObject(obj, T3) { const T = build(); obj.updateMatrixWorld(true); const bb = new T3.Box3().setFromObject(obj); if (bb.isEmpty()) return; const rc = new T3.Raycaster(), dn = new T3.Vector3(0, -1, 0), o = new T3.Vector3();
@@ -1529,9 +1530,11 @@ const SCN = (function () {
     // v80: pit / lounge people are real scanned figures now (props/*.bin at full size) instead of block figures; seated ones use the seated scans.
     // Colours follow the spot: o.pants / shirt / o.skin override the prop palette bands [clothes, shirt, skin]; o.lift raises the seat (bar stools).
     const PSTAND = [['p_tommy', 0], ['p_bad', 0], ['p_hips', 0], ['p_walk', -Math.PI / 2]];   // scans checked to face +x (p_walk is scanned side-on)
-    const person = (x, z, ry, shirt, sit, s = 1, o = {}) => { if (info && typeof GFX !== 'undefined' && GFX.PROP_SETS && !o.block) { const ps = PSTAND[(rnd() * PSTAND.length) | 0], id = sit ? (o.cap ? 'drv_homie2' : rnd() < 0.5 ? 'drv_homie1' : 'drv_homie2') : ps[0];
-        (info.props || (info.props = [])).push({ id, x, y: -z, z: sit ? 0.46 * s + (o.lift || 0) : (o.lift || 0), ry: ry + (sit ? 0 : ps[1]), s: sit ? 0.96 * s : s * (0.95 + rnd() * 0.08), seed: 1 + ((rnd() * 1e6) | 0), cols: [o.pants, shirt, o.skin] });
-        return add(new T.Group()); }
+    const person = (x, z, ry, shirt, sit, s = 1, o = {}) => { if (info && typeof GFX !== 'undefined' && GFX.PROP_SETS && !o.block) { const ps = PSTAND[(rnd() * PSTAND.length) | 0], id = o.id || (sit ? (o.cap ? 'drv_homie2' : rnd() < 0.5 ? 'drv_homie1' : 'drv_homie2') : ps[0]);
+        // a marker group stands in for the figure; callers may move / lift / re-parent it, the prop takes its final world spot in resolvePeople()
+        const mk = new T.Group(); mk.position.set(x, 0, z); mk.rotation.y = ry; mk.scale.setScalar(s);
+        const pr = { id, x, y: -z, z: 0, ry, s: 1, seed: 1 + ((rnd() * 1e6) | 0), cols: [o.pants, shirt, o.skin] }; (info.props || (info.props = [])).push(pr);
+        (info._pmk || (info._pmk = [])).push([mk, pr, sit && !o.id ? 0.46 : 0, o.id ? 0.97 + rnd() * 0.06 : (sit ? 0.96 : 0.95 + rnd() * 0.08), sit || o.id ? 0 : ps[1]]); return add(mk); }
       const g = new T.Group(), skin = std(o.skin || [0x8d5524, 0xc68642, 0xe0ac69, 0x5c3a1e][(rnd() * 4) | 0], 0.7), cloth = std(shirt, 0.9), pants = std(o.pants || [0x2a2c34, 0x3b4a5c, 0x6b6f5a][(rnd() * 3) | 0], 0.9);
       const leg = sit ? 0.45 : 0.85, hip = sit ? 0.48 : 0.88;
       for (const sd of [-1, 1]) { const l = new T.Mesh(new T.CylinderGeometry(0.075, 0.065, leg, 8), pants); if (sit) { l.rotation.z = Math.PI / 2; l.position.set(0.22, hip - 0.02, sd * 0.1); } else l.position.set(0, leg / 2, sd * 0.1); g.add(l); if (sit) { const sh = new T.Mesh(new T.CylinderGeometry(0.06, 0.06, 0.45, 8), pants); sh.position.set(0.44, 0.23, sd * 0.1); g.add(sh); } }
@@ -1550,7 +1553,9 @@ const SCN = (function () {
       g.position.set(x, 0, z); g.rotation.y = ry; add(g); };
     const cone = (x, z, s = 1) => { const m = std(0xff6a00, 0.6); const c = new T.Mesh(new T.ConeGeometry(0.11 * s, 0.32 * s, 14), m); c.position.set(x, 0.16 * s, z); c.castShadow = true; add(c); const b = new T.Mesh(new T.BoxGeometry(0.26 * s, 0.02 * s, 0.26 * s), m); b.position.set(x, 0.01 * s, z); add(b); const st = new T.Mesh(new T.CylinderGeometry(0.075 * s, 0.09 * s, 0.05 * s, 14), std(0xf2f2f2, 0.5)); st.position.set(x, 0.17 * s, z); add(st); };
     const pine = (x, z, h) => { const g = new T.Group(), m = std(0x2f5a2c, 0.9), tr = new T.Mesh(new T.CylinderGeometry(h * 0.04, h * 0.05, h * 0.25, 6), std(0x5a3c22, 0.9)); tr.position.y = h * 0.12; g.add(tr); for (let k = 0; k < 3; k++) { const c = new T.Mesh(new T.ConeGeometry(h * (0.32 - k * 0.07), h * 0.45, 9), m); c.position.y = h * (0.35 + k * 0.2); c.castShadow = true; g.add(c); } g.position.set(x, 0, z); add(g); return g; };
-    return { add, std, bx, cyl, glowM, person, chair, table, cone, pine };
+    // v81: a 1/10 miniskirt girl hanging out, as a child of a diorama group (lx, lz local; faces local +z = the front of the store)
+    const girl = (g, lx, lz, turn = 0) => { const m = person(0, 0, 0, null, false, 1, { id: 'w_skirt' }); g.add(m); m.position.set(lx, 0, lz); m.rotation.y = -Math.PI / 2 + turn + (rnd() - 0.5) * 0.5; m.scale.setScalar(0.1 / (g.scale.x || 1)); return m; };
+    return { add, std, bx, cyl, glowM, person, chair, table, cone, pine, girl };
   }
   // points inside the loop, well away from the lane (for infield displays)
   function infieldSpots(tr, minClear, n) {
@@ -1672,7 +1677,7 @@ const SCN = (function () {
       const gl = new T.Mesh(new T.PlaneGeometry(bw * 0.86, bh * 0.52), night ? new T.MeshBasicMaterial({ map: shelfT }) : new T.MeshStandardMaterial({ map: shelfT, roughness: 0.15, metalness: 0.2 })); gl.position.set(0, bh * 0.36, bd / 2 + 0.002); gq.add(gl);
       const fa = new T.Mesh(new T.BoxGeometry(bw + 0.02, 0.07, 0.05), [std(0xf7f7f3), std(0xf7f7f3), std(0xf7f7f3), std(0xf7f7f3), new T.MeshStandardMaterial({ map: fasciaT, emissive: night ? 0x444444 : 0, emissiveMap: night ? fasciaT : null }), std(0xf7f7f3)]); fa.position.set(0, bh * 0.8, bd / 2 + 0.02); gq.add(fa);
       for (let k = 0; k < 3; k++) { const p = new T.Mesh(new T.BoxGeometry(0.06, 0.03, 0.02), std(0xffc21a, 0.6)); p.position.set(-0.25 + k * 0.25, 0.015, bd / 2 + 0.15); gq.add(p); }
-      gq.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); gq.position.set(x, 0, -y); gq.rotation.y = ry; add(gq);
+      gq.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); gq.position.set(x, 0, -y); gq.rotation.y = ry; add(gq); K.girl(gq, -0.3, bd / 2 + 0.1, 0.4); K.girl(gq, 0.32, bd / 2 + 0.14, -0.3);
       if (night) { const pl = new T.Mesh(new T.PlaneGeometry(1.2, 0.8), poolM); pl.rotation.x = -Math.PI / 2; pl.position.set(x + Math.sin(ry) * 0.35, 0.003, -y + Math.cos(ry) * 0.35); add(pl); info.lamps.push([x + Math.sin(ry) * 0.3, y - Math.cos(ry) * 0.3, 0.3, 0xfff2d8]); } };
     { // outside the barrier near the far-left corner, facing the track
       let bi = 0, bv = 1e9; for (let i = 0; i < N; i++) { const v = tr.X[i] - tr.Y[i] * 0.9; if (v < bv) { bv = v; bi = i; } }
@@ -1687,6 +1692,7 @@ const SCN = (function () {
       can.position.set(cc[0], ch + 0.02, -cc[1]); can.rotation.y = ang; can.castShadow = true; add(can);
       for (const a of [-0.48, 0.0]) { const p = Pp(a, pk.hw + 0.65); B(BOX, std(0x8f9296, 0.6), p[0], 0.008, -p[1], ang, 0.32, 0.016, 0.1); for (const s2 of [-0.08, 0.08]) { const q = Pp(a + s2, pk.hw + 0.65); B(BOX, std(0xf2f2f2, 0.4), q[0], 0.06, -q[1], ang, 0.05, 0.1, 0.035); B(BOX, std(0x1550c8, 0.4), q[0], 0.1, -q[1], ang, 0.052, 0.022, 0.037); } }
       if (night) for (const a of [-0.45, 0.0]) { const p = Pp(a, pk.hw + 0.65); B(FLAT, poolM, p[0], 0.003, -p[1], 0, 0.8, 1, 0.8); info.lamps.push([p[0], p[1], 0.33, 0xffffff]); }
+      { const fd = Math.atan2(-pk.ny, -pk.nx); for (const [a, b] of [[0.45, pk.hw + 0.95], [0.6, pk.hw + 0.8], [-0.95, pk.hw + 1.1]]) { const p = Pp(a, b); K.person(p[0], -p[1], fd + (rnd() - 0.5) * 0.6, null, false, 0.1, { id: 'w_skirt' }); } }   // v81 girls at the pumps
       // kiosk: stucco with clay-tile roof, along the back wall
       const kc = Pp(0.85, ob - 0.3), km = std(0xe9dfcc, 0.9), roofM = std(0xb0573a, 0.7); if (ASSETS.has && ASSETS.has('roof_clay_d')) ASSETS.pbr(roofM, 'roof_clay', 0.5, 0.25, { tint: 0xd07050 });
       const kb = new T.Mesh(new T.BoxGeometry(0.62, 0.22, 0.34), km); kb.position.set(kc[0], 0.11, -kc[1]); kb.rotation.y = ang; kb.castShadow = kb.receiveShadow = true; add(kb);
@@ -1944,7 +1950,7 @@ const SCN = (function () {
       for (const a of [-0.13, 0.13]) { const p = new T.Mesh(new T.BoxGeometry(0.06, 0.12, 0.04), std(0xf2f2f2, 0.4)); p.position.set(a, 0.08, bd / 2 + 0.42); gq.add(p); const p2 = new T.Mesh(new T.BoxGeometry(0.062, 0.025, 0.042), std(0x16a06a, 0.4)); p2.position.set(a, 0.13, bd / 2 + 0.42); gq.add(p2); }
       // sign pylon
       const py = new T.Mesh(new T.BoxGeometry(0.05, 0.32, 0.12), [wm, wm, wm, wm, new T.MeshStandardMaterial({ map: stripeT }), new T.MeshStandardMaterial({ map: stripeT })]); py.position.set(bw / 2 + 0.12, 0.16, bd / 2 + 0.2); py.rotation.y = Math.PI / 2; gq.add(py);
-      gq.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); gq.position.set(x, 0, -y); gq.rotation.y = ry; add(gq); return gq; };
+      gq.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); gq.position.set(x, 0, -y); gq.rotation.y = ry; add(gq); K.girl(gq, -0.38, bd / 2 + 0.12, 0.3); K.girl(gq, 0.36, bd / 2 + 0.16, -0.4); K.girl(gq, 0.5, bd / 2 + 0.34, -0.9); return gq; };
     // -- garage with two-post lifts and a car up in the air --
     const garage = (x, y, ry) => { const gq = new T.Group(), gm = std(0x8a8d92, 0.7), roof = std(0x3a3c40, 0.6);
       const body = new T.Mesh(new T.BoxGeometry(0.75, 0.32, 0.4), gm); body.position.set(-0.25, 0.16, -0.12); gq.add(body); const rf = new T.Mesh(new T.BoxGeometry(0.8, 0.03, 0.45), roof); rf.position.set(-0.25, 0.335, -0.12); gq.add(rf);
@@ -2278,6 +2284,7 @@ const SCN = (function () {
       for (const a of [-0.09, 0.09]) for (const b of [-0.03, 0.03]) { const w2 = new T.Mesh(new T.CylinderGeometry(0.025, 0.025, 0.02, 12), dk); w2.rotation.z = Math.PI / 2; w2.position.set(a, 0.025, b); tl.add(w2); } box(tl, 0.01, 0.01, 0.12, dk, 0, 0.04, 0.22); }
     // --- the mart island inside the big U at the shop end ---
     { const sx = 8.9, sy = 7.1, g = G(sx, sy, -Math.PI / 2);   // front faces the shop (south)
+      K.girl(g, -0.42, 0.45, 0.4); K.girl(g, 0.3, 0.5, -0.3); K.girl(g, 0.62, 0.38, -0.8);   // v81
       const tan = std(0xd9c49a, 0.85), stoneM = new T.MeshStandardMaterial({ map: ctex(64, 128, (gg, w, h) => { gg.fillStyle = '#b7b4ae'; gg.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 10) for (let x = (y / 10) % 2 * 8; x < w; x += 16) { gg.fillStyle = ['#8f8c86', '#c9c6c0', '#a7a49e', '#7c7a75'][(rnd() * 4) | 0]; gg.fillRect(x, y, 14, 8); } }), roughness: 0.9 });
       const bw = 1.15, bd = 0.6, bh = 0.32;
       box(g, bw, bh, bd, tan, 0, bh / 2, 0); box(g, bw + 0.04, 0.025, bd + 0.04, std(0xc9b48a, 0.8), 0, bh + 0.012, 0); box(g, bw, 0.03, bd, std(0x9a9890, 0.8), 0, bh + 0.02, 0);
@@ -2746,7 +2753,7 @@ const SCN = (function () {
     // action figure (1/10): pose 'up' = cheering, 'down' = standing, 'out' = arms forward; dir = facing (game radians)
     // v49: 1/10 crowd figures + the old stick figures are now real scanned people (props/*.bin, merged into one mesh after the build)
     const PPL = GFX.PROP_SETS ? GFX.PROP_SETS.people : null;
-    const fig = (x, y, dir, col, pose = 'down', s = 1) => { if (!PPL) return; (info.props || (info.props = [])).push({ id: PPL[(rnd() * PPL.length) | 0], x, y, z: 0, ry: dir + (rnd() - 0.5) * 0.6, s: 0.1 * s * (0.93 + rnd() * 0.12), seed: 1 + ((rnd() * 1e6) | 0) }); };
+    const fig = (x, y, dir, col, pose = 'down', s = 1, id) => { if (!PPL) return; (info.props || (info.props = [])).push({ id: id || PPL[(rnd() * PPL.length) | 0], x, y, z: 0, ry: dir + (rnd() - 0.5) * 0.6, s: 0.1 * s * (0.93 + rnd() * 0.12), seed: 1 + ((rnd() * 1e6) | 0) }); };
     const stick = (x, y, dir, col) => fig(x, y, dir, col);
     const canopy = (x, y, dir, roof, val, s = 1, ledCol) => { const F = frame(x, y, dir), hh = 0.26 * s, ww = 0.36 * s; for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const p = F(a * ww / 2, b * ww / 2); Bg(CYL, fenceM, p[0], p[1], hh / 2, 0, 0.007, hh, 0.007); }
       Bg(PYR, roof, x, y, hh + 0.04 * s, dir, ww * 1.02, 0.08 * s, ww * 1.02); Bg(BOX, val, x, y, hh - 0.01 * s, dir, ww * 1.03, 0.035 * s, ww * 1.03);
@@ -2835,7 +2842,8 @@ const SCN = (function () {
       const fp = F(0.215, 0), fasc = new T.Mesh(new T.PlaneGeometry(0.97, 0.17), new T.MeshStandardMaterial({ map: PH('seven', fasT), roughness: 0.5 })); fasc.position.set(fp[0], 0.385, -fp[1]); fasc.rotation.y = sd + Math.PI / 2; add(fasc); Bg(BOX, whiteM, F(0.1, 0)[0], F(0.1, 0)[1], 0.36, sd + Math.PI / 2, 0.98, 0.09, 0.22);
       const gp = F(0.212, 0), gl = new T.Mesh(new T.PlaneGeometry(0.8, 0.17), new T.MeshStandardMaterial({ map: shelfT, roughness: 0.12, metalness: 0.2 })); gl.position.set(gp[0], 0.12, -gp[1]); gl.rotation.y = sd + Math.PI / 2; add(gl);
       for (const b of [-0.6, 0.62]) { const q = F(0.36, b); flag(q[0], q[1], sd + Math.PI / 2, PH('hooligan', flagT('#111214', '#5fc8ff', 'HOOLIGAN')), 0.5); }
-      const dp = F(0.3, -0.1); Bg(BOX, mc(0x2f9a3a, 0.6), dp[0], dp[1], 0.05, sd, 0.11, 0.09, 0.16); Bg(BOX, mc(0x2a2b2e, 0.5), dp[0], dp[1], 0.1, sd, 0.12, 0.01, 0.17); fig(dp[0], dp[1], sd, 0x111111, 'up', 0.8);
+      const dp = F(0.3, -0.1); Bg(BOX, mc(0x2f9a3a, 0.6), dp[0], dp[1], 0.05, sd, 0.11, 0.09, 0.16); Bg(BOX, mc(0x2a2b2e, 0.5), dp[0], dp[1], 0.1, sd, 0.12, 0.01, 0.17); fig(dp[0], dp[1], sd, 0x111111, 'up', 0.8, 'p_tommy');   // the guy in the dumpster (like the wrestler in the photo)
+      for (const [a, b] of [[0.34, 0.28], [0.4, 0.1], [0.36, -0.42]]) { const q = F(a, b); fig(q[0], q[1], sd, 0, 'down', 1, 'w_skirt'); }   // v81: girls out front of the 7-Eleven
       const tp = F(0.29, 0.37); Bg(BOX, mc(0x2f9a3a, 0.6), tp[0], tp[1], 0.045, sd, 0.06, 0.09, 0.06); const sp2 = F(0.33, -0.33); Bg(CYL, fenceM, sp2[0], sp2[1], 0.08, 0, 0.004, 0.16, 0.004); Bg(BOX, whiteM, sp2[0], sp2[1], 0.15, sd + Math.PI / 2, 0.05, 0.065, 0.004); drum(...F(0.3, 0.2), 0x2f4a2a, sd);
       Bg(BOX, mc(0x6a4a2a, 0.9), p0[0], p0[1], 0.003, sd + Math.PI / 2, 1.15, 0.006, 0.75);
       for (const [x, y] of [[-17.95, 9.7], [-17.75, 9.4], [-16.1, 10.35]]) { Bg(CYL, mc(0xf2c418, 0.6), x, y, 0.035, 0, 0.07, 0.07, 0.07); Bg(CYL, blackM, x, y, 0.072, 0, 0.072, 0.006, 0.072); }
@@ -2844,7 +2852,7 @@ const SCN = (function () {
         const can = new T.Mesh(new T.BoxGeometry(1.35, 0.05, 0.62), [cm, cm, cm, cm, new T.MeshStandardMaterial({ map: bandT }), new T.MeshStandardMaterial({ map: bandT })]); can.position.set(gx, 0.4, -gy); can.castShadow = true; add(can);
         const colT = ctex(32, 128, (g, w, h) => { g.fillStyle = '#f4f4f2'; g.fillRect(0, 0, w, h); g.fillStyle = '#d4202a'; for (let y = 0; y < h; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y + 16); g.lineTo(w, y + 28); g.lineTo(0, y + 12); g.fill(); } }), colM = new T.MeshStandardMaterial({ map: colT });
         for (const a of [-0.45, 0.45]) { Bg(BOX, colM, gx + a, gy - 0.12, 0.2, 0, 0.035, 0.4, 0.035); Bg(BOX, mc(0x2a7ad8, 0.5), gx + a - 0.12, gy - 0.12, 0.08, 0, 0.06, 0.16, 0.05); Bg(BOX, mc(0xe8e8e8, 0.4), gx + a + 0.12, gy - 0.12, 0.07, 0, 0.05, 0.14, 0.05); Bg(BOX, mc(0x8f9296, 0.6), gx + a, gy - 0.12, 0.008, 0, 0.38, 0.016, 0.1); }
-        fig(gx + 0.1, gy - 0.35, -Math.PI / 2, 0x111111, 'down', 0.9); const mb = frame(gx - 0.2, gy - 0.4, 0.4); Bg(BOX, blackM, ...mb(0, 0), 0.04, 0.4, 0.13, 0.03, 0.02); for (const a of [-0.06, 0.06]) { const p = mb(a, 0); Bg(WHEEL, tireM, p[0], p[1], 0.03, 0.4, 0.06, 0.06, 0.02); } fig(...mb(-0.01, 0), 0.4 - Math.PI / 2, 0x1c1d22, 'out', 0.85); }
+        fig(gx + 0.1, gy - 0.35, -Math.PI / 2, 0x111111, 'down', 1, 'w_skirt'); fig(gx - 0.3, gy - 0.32, -Math.PI / 2 + 0.4, 0, 'down', 1, 'w_skirt'); fig(gx + 0.42, gy - 0.4, -Math.PI / 2 - 0.5, 0, 'down', 1, 'w_skirt'); const mb = frame(gx - 0.2, gy - 0.4, 0.4); Bg(BOX, blackM, ...mb(0, 0), 0.04, 0.4, 0.13, 0.03, 0.02); for (const a of [-0.06, 0.06]) { const p = mb(a, 0); Bg(WHEEL, tireM, p[0], p[1], 0.03, 0.4, 0.06, 0.06, 0.02); } fig(...mb(-0.01, 0), 0.4 - Math.PI / 2, 0x1c1d22, 'out', 0.85); }
       // garage: two red two-post lifts, a car up on the left one, a white 180SX-style shell on the right, compressor, figures
       { const rd = mc(0xc8141c, 0.45, 0.3), lift = (x, y) => { for (const a of [-0.3, 0.3]) Bg(BOX, rd, x + a, y, 0.22, 0, 0.035, 0.44, 0.05); Bg(BOX, rd, x, y, 0.43, 0, 0.64, 0.025, 0.05); Bg(BOX, rd, x, y - 0.05, 0.005, 0, 0.7, 0.01, 0.06); };
         lift(-13.75, 11.55); lift(-12.75, 11.55); pcar(-13.75, 11.45, 0, '#3fb8b0', 'datsun', 0.16); pcar(-12.75, 11.45, 0.0, '#f2f2f0', 's15');
@@ -2995,7 +3003,7 @@ const SCN = (function () {
     info.propCars.push([gx(-2.0), gy(5.05), -Math.PI / 2, '#f1efe6', 'golf', 0, 10 * S]);          // the white Golf cabrio in the left bay, nose to the camera wall
     info.propCars.push([gx(1.4), gy(10.2), Math.PI * 0.94, '#2f5a3c', 'k5', 0, 10 * S]);            // green SUV on the drive
     info.propCars.push([gx(-0.6), gy(14.2), Math.PI * 1.02, '#b9bdc2', 'chaser', 0, 10 * S]);        // silver sedan
-    info.propCars.push([gx(3.4), gy(13.4), Math.PI * 0.9, '#f2f2f0', 'evo', 0, 10 * S]);             // white car by the grass
+    info.propCars.push([gx(3.4), gy(13.4), Math.PI * 0.9, '#f2f2f0', 'ae86', 0, 10 * S]);   // v81: no chibis in the scenery             // white car by the grass
     { const tw = std(0x8a6038, 0.98); for (const [dx, dz, w, d, h, r] of [[0, 0, 0.5, 0.42, 0.025, 0.3], [0.05, -0.04, 0.36, 0.3, 0.05, 0.6], [-0.06, 0.05, 0.3, 0.22, 0.075, 0.1], [0.02, 0.0, 0.18, 0.16, 0.1, 0.9]]) RB(tw, -1.99 + dx, 3.85 + dz, 0.95, w, d, h, r); }   // the brown towel bunched on the Golf's hood
     // ---------------- right wall: GLI bumper, camp chair, crates, RC truck, tire stacks ----------------
     const tireRub = std(0x141416, 0.85), rimM = std(0x9ea2a6, 0.35, 0.7), whiteP = std(0xf2f2f0, 0.35, 0.1), blackP = std(0x16171a, 0.5), redP = std(0xd0161e, 0.4);
@@ -3042,7 +3050,10 @@ const SCN = (function () {
     if (best === 'w') { g.position.set(R.X0 + off, y0, -Math.max(R.Y0 + 2, Math.min(R.Y1 - 2, st.y))); g.rotation.y = Math.PI / 2; }
     if (best === 'e') { g.position.set(R.X1 - off, y0, -Math.max(R.Y0 + 2, Math.min(R.Y1 - 2, st.y))); g.rotation.y = -Math.PI / 2; }
     void cx; void cy; grp.add(g); }
-  return { feedTV, TX, prodigy, prodigy2, lot, shop, diamondback, tandem, britt, pits, setMats, infieldSpots };
+  function resolvePeople(info, grp) { if (!info._pmk) return; grp.updateMatrixWorld(true); const v = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), e = new THREE.Euler();
+    for (const [mk, pr, seatH, k, rOff] of info._pmk) { if (!mk.parent) { pr.s = 0; continue; } mk.matrixWorld.decompose(v, q, sc); e.setFromQuaternion(q, 'YXZ'); pr.x = v.x; pr.y = -v.z; pr.s = k * sc.x; pr.z = v.y + seatH * sc.x; pr.ry = e.y + rOff; }
+    info.props = info.props.filter(p => p.s !== 0); delete info._pmk; }
+  return { resolvePeople, feedTV, TX, prodigy, prodigy2, lot, shop, diamondback, tandem, britt, pits, setMats, infieldSpots };
 })();
 
 </script>
@@ -3551,7 +3562,8 @@ const GFX = (function () {
   // each vertex carries a palette band, so every placed copy gets its own colours (shirt / pants / skin, trunk / leaves, body / running gear)
   const PROP = {}, propPend = {};
   const PROP_SETS = {
-    people: ['p_tommy', 'p_bad', 'p_reach', 'p_hips', 'p_walk', 'ep_woman', 'w_stand', 'w_skirt', 'ep0', 'ep1', 'ep2', 'ep3', 'ep4', 'ep5', 'ep6', 'ep7'],
+    people: ['p_tommy', 'p_bad', 'p_reach', 'p_hips', 'p_walk', 'ep_woman', 'ep0', 'ep1', 'ep2', 'ep6', 'ep7', 'w_stand', 'w_skirt', 'w_stand', 'w_skirt', 'w_skirt', 'w_stand'],   // v81: ep3/ep4/ep5 were half-scans (split in half), gone; about a third girls
+    girls: ['w_skirt', 'w_stand', 'w_skirt'],
     groups: ['ep_pair', 'ep_duo', 'p_family', 'p_hug', 'ep8'],
     scenes: ['p_brawl', 'p_street', 'p_trash', 'p_kneel'],
     trees: ['tree1', 'tree2', 'tree3'],
@@ -3567,6 +3579,11 @@ const GFX = (function () {
     homie: [[0x1c2333, 0x111214, 0x6b6b6b, 0x23324f, 0x8a7a5a], [0xf2f2f2, 0x111214, 0x2a4dd4, 0x7a1f1f, 0x1f6a3a, 0xf2f2f2], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d], [0x111214, 0xf2f2f2, 0xc8102e, 0x2a4dd4]],
     wreck: [[0x16171a], [0x6b3a22, 0x7a7f74, 0x4a4a42, 0x8a5a2a, 0x3a4a3a]],
     plate: [[0x222222], [0xd8d8dc, 0xd4a640, 0xc0c4cc]],
+    crowd: [[0x111214, 0xf2f2f2, 0x3a2a1e, 0x6b6b6b, 0xc8141c, 0x15161a],                                                       // shoes
+      [0x2b3a55, 0x3b4f72, 0x1c2333, 0x15161a, 0x8a7a5a, 0x4a4c52, 0x4a5030, 0x2b3a55, 0x1c2333],                               // pants (lots of denim)
+      [0x111214, 0xf2f2f2, 0xc8202a, 0x2a4dd4, 0x0f5a3a, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0xe8c840, 0x7a1f1f, 0x1f8a8a, 0x3a3a40, 0xd8b89a, 0x111214, 0xf2f2f2],   // shirts
+      [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d, 0xd9a47a],                                                             // skin
+      [0x1a1210, 0x2b1d14, 0x3b2314, 0x6b4423, 0xd9b26a, 0x8a3a1c, 0x0f0f10, 0x1a1210]],                                        // hair
     solid: [[0x222222], [0xb3261e, 0x1f4fa8, 0x2a7a3a, 0xd8661c, 0x8a8f98, 0xe8e8e2, 0x6a2a7a]] };
   function decodeProp(buf) {
     const dv = new DataView(buf), hl = dv.getUint32(0, true), hdr = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))); let o = 4 + hl; const nv = hdr.nv, nf = hdr.nf;
@@ -3591,16 +3608,21 @@ const GFX = (function () {
       for (const p of L) {
         const d = PROP[p.id], k = d.hdr.kind, pal = PROP_PAL[k] || PROP_PAL.solid, s = p.s || 1, c = Math.cos(p.ry || 0), sn = Math.sin(p.ry || 0); let seed = (p.seed || 1) * 9301 + 49297;
         const pick = arr => { seed = (seed * 9301 + 49297) % 233280; return arr[Math.floor(seed / 233280 * arr.length)]; };
-        const cols = pal.map((a, bi) => { const h = pick(a), ov = p.cols && p.cols[bi]; col.setHex(ov != null ? ov : h); return [col.r, col.g, col.b]; });
+        let cols; if (k === 'crowd') { cols = []; const np = d.hdr.people || 1, ov = p.cols || [];   // v81: every person in the scan gets their own outfit; p.cols = [pants, shirt, skin] for the first one
+          for (let q = 0; q < np; q++) for (let r = 0; r < 5; r++) { const h = pick(pal[r]), o = q === 0 ? (r === 1 ? ov[0] : r === 2 ? ov[1] : r === 3 ? ov[2] : null) : null; col.setHex(o != null ? o : h); cols.push([col.r, col.g, col.b]); } }
+        else cols = pal.map((a, bi) => { const h = pick(a), ov = p.cols && p.cols[bi]; col.setHex(ov != null ? ov : h); return [col.r, col.g, col.b]; });
+        const shade = (k === 'crowd' || k === 'lady' || k === 'person' || k === 'homie'), y0 = d.hdr.lo[1], yH = (d.hdr.hi[1] - d.hdr.lo[1]) || 1;
         for (let i = 0; i < d.hdr.nv; i++) { const x = d.pos[i * 3] * s, y = d.pos[i * 3 + 1] * s, z = d.pos[i * 3 + 2] * s, j = (vo + i) * 3;
           P[j] = p.x + x * c + z * sn; P[j + 1] = (p.z || 0) + y; P[j + 2] = -p.y - x * sn + z * c;
           const nx = d.nor[i * 3], nz = d.nor[i * 3 + 2]; Nn[j] = nx * c + nz * sn; Nn[j + 1] = d.nor[i * 3 + 1]; Nn[j + 2] = -nx * sn + nz * c;
-          const cc = cols[Math.min(d.band[i], cols.length - 1)]; C[j] = cc[0]; C[j + 1] = cc[1]; C[j + 2] = cc[2]; }
+          const cc = cols[Math.min(d.band[i], cols.length - 1)], sh = shade ? 0.72 + 0.28 * Math.min(1, (d.pos[i * 3 + 1] - y0) / yH * 1.4) : 1; C[j] = cc[0] * sh; C[j + 1] = cc[1] * sh; C[j + 2] = cc[2] * sh; }
         for (let i = 0; i < d.idx.length; i++) I[io + i] = d.idx[i] + vo; vo += d.hdr.nv; io += d.idx.length;
       }
       const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(P, 3)); g.setAttribute('normal', new T.BufferAttribute(Nn, 3)); g.setAttribute('color', new T.BufferAttribute(C, 3)); g.setIndex(new T.BufferAttribute(I, 1)); g.computeBoundingSphere();
       if (!propMat) propMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.05, side: T.DoubleSide });
-      const m = new T.Mesh(g, propMat); m.castShadow = true; m.receiveShadow = true; return m;
+      const m = new T.Mesh(g, propMat); m.castShadow = true; m.receiveShadow = true;
+      { let v0 = 0; m.userData.items = L.map(p => { const d = PROP[p.id], it = { p, v0, n: d.hdr.nv, kind: d.hdr.kind, r: Math.max(0.012, Math.max(d.hdr.hi[0] - d.hdr.lo[0], d.hdr.hi[2] - d.hdr.lo[2]) * (p.s || 1) * 0.42) }; v0 += d.hdr.nv; return it; }); }   // v81: per-prop vertex ranges (pedestrians)
+      return m;
     });
   }
   // ---------------- v73 drivers (egg reward): seated figure, arm on the window, see-through glass when one is on board ----------------
@@ -4158,6 +4180,7 @@ const GFX = (function () {
         [['DRIFT', '#ff2a6a'], ['HOTEL', '#35e0ff'], ['RAMEN', '#ffb020'], ['24H', '#a46bff']].forEach(([t2, c5], k) => { const a = (k + 0.3) / 4 * Math.PI * 2, r = 30, px = cx + Math.cos(a) * r, pz = -cy + Math.sin(a) * r; const m = new T.Mesh(new T.PlaneGeometry(8, 2), new T.MeshBasicMaterial({ map: neon(t2, c5), fog: false })); m.position.set(px, 8 + k * 3, pz); m.lookAt(cx, 8 + k * 3, -cy); add(m); }); }
       SCN.pits({ grp, tr, info, b: { x0, x1, y0: -z1, y1: -z0 }, kind: 'roof', avoid: [[cx, minY - 2.1, 2.8]], max: 8, flag: 0xffd23a });
     }
+    SCN.resolvePeople(info, grp);
     if (info.room && !info.liveFeed && !info.night && env !== 'touge') SCN.feedTV({ grp, info });
     scene.add(grp); info.group = grp;
     return info;
@@ -4376,6 +4399,7 @@ const ONLINE = (() => {
   O.unblock = async id => { const ok = await rpc('unblock_user', { p_id: id }); O.blocked.delete(id); await O.loadBlocks(); fire(); return ok; };
   O.report = async (id, reason, context) => { const r = await rpc('report_user', { p_id: id, p_reason: String(reason || '').slice(0, 300), p_context: context ? String(context).slice(0, 600) : null }); return r ? (r.ok ? '' : r.why) : 'Could not send the report.'; };
   O.playerCard = async (id, name) => rpc('player_card', id ? { p_id: id } : { p_name: name });
+  O.addPeds = async (n, track) => { if (!O.profile || !(n > 0)) return null; try { const { data } = await O.sb.rpc('add_peds', { p_n: Math.min(12, n), p_track: track || null }); return data; } catch (e) { return null; } };
   // ---- who's online + community forum (v45) ----
   O.setEmailUpdates = async on => { const r = await rpc('set_email_updates', { p_on: !!on }); if (r !== null && O.profile) O.profile.email_updates = !!r; fire(); return r; };
   O.adminEmailList = async () => (await rpc('admin_email_list')) || [];
@@ -4514,7 +4538,7 @@ const ONLINE = (() => {
   // ---------------- saved state ----------------
   const KEY = 'rcdrift_v1';
   function isTouchDev() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || false; }
-  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, v20: 1, v21: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE),
+  const S = { v4: 1, v7: 1, v8: 1, v9: 1, v11: 1, v12: 1, v13: 1, v18: 1, v19: 1, v20: 1, v21: 1, look: Object.assign({}, GFX.DEF_LOOK), tune: Object.assign({}, SIM.DEF_TUNE), stats: { peds: 0 },
     opt: { track: 0, ai: 3, skill: 50, start: 'mid', cam: 0, sound: true, quality: 2, angleAssist: false, angleAssistPad: true, angleAssistKb: true, physTouch: 'classic', physPad: 'new', physKb: 'new', voice: 'off', hear: true, vvol: 100, name: 'Driver', kbThrottle: 75, kbAssist: true, kbThrAssist: false, simSpeed: 85, angleMix: 100, vol: 100, units: 'mph', hud: true },
     pad: { mode: 'auto', steerAxis: 0, thrAxis: 1, steerInv: false, thrInv: true, cS: 0, cT: 0, dead: 4 }, best: {}, bestPts: {}, pb: {}, slots: {}, hunt: { keys: {}, egg: 0 } };
   try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) for (const k of Object.keys(S)) if (j[k] && typeof S[k] === 'object') Object.assign(S[k], j[k]); if (!j && isTouchDev()) { S.opt.ai = 3; } if (j && !j.v19 && isTouchDev() && S.opt.quality === 1) S.opt.quality = 2; if (j && !j.v21) { S.opt.physTouch = 'classic'; S.opt.physPad = 'new'; S.opt.physKb = 'new'; S.opt.angleAssist = false; S.opt.angleAssistPad = true; }   /* v49: physics + steering follow the device */ if (j && !j.v20) { S.opt.angleAssistPad = true; S.opt.angleAssistKb = true; } /* v46: assist default for controllers + keyboard, phones stay Direct */ if (j && !j.v18 && (S.opt.simSpeed || 100) === 100) S.opt.simSpeed = 85; if (j && !j.v13 && S.tune.steerExpo === 15) S.tune.steerExpo = 30; if (j && !j.v12 && S.tune.servoSpeed === 0.06) S.tune.servoSpeed = 0.05; if (j && !j.v11 && !S.tune.throttleExpo) S.tune.throttleExpo = 25; if (j && !j.v9) { S.tune = Object.assign({}, SIM.DEF_TUNE); } if (j && !j.v8 && S.tune.servoSpeed === 0.07) S.tune.servoSpeed = 0.06; if (j && !j.v7) { S.tune = Object.assign({}, SIM.DEF_TUNE); S.opt.simSpeed = 100; } if (!j || !j.v4) { S.opt.kbThrAssist = false; S.opt.kbThrottle = 75; Object.assign(S.tune, SIM.DEF_TUNE); } S.v4 = 1; } catch (e) { }
@@ -4648,17 +4672,17 @@ const ONLINE = (() => {
     camera.far = world.night ? 140 : world.env === 'lot' ? 700 : world.env === 'touge' ? 160 : world.env === 'britt' ? 130 : world.env === 'crawl' ? 60 : 70; camera.updateProjectionMatrix(); tuneSSAO(); crawlUI(); huntSpawn();
     // parked full-size cars (the RC shells at 1:1) in the lot, RC-scale display cars in the Prodigy infield
     const pal = ['#c8102e', '#e8e8ea', '#101114', '#1f5fff', '#8a8f98', '#f4e9d0', '#0b3d2e', '#ff5a1f', '#5b2be0'];
-    (world.parkSpots || []).forEach((p, k) => { const c = GFX.buildStaticCar(GFX.loadedBodies()[k % GFX.loadedBodies().length].id, pal[(k * 3) % pal.length], p[3] || 10); c.position.set(p[0], 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); });
+    (world.parkSpots || []).forEach((p, k) => { const c = GFX.buildStaticCar(sceneBodies()[k % sceneBodies().length].id, pal[(k * 3) % pal.length], p[3] || 10); c.position.set(p[0], 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); });
     // removed: parked RC display cars in the infield looked like idle online drivers
     if (false) (world.displaySpots || []).forEach((p, k) => { for (let j = 0; j < 2; j++) { const c = GFX.buildStaticCar(GFX.loadedBodies()[(k * 2 + j + 1) % GFX.loadedBodies().length].id, ['#7a3cff', '#ff8a00', '#e8e8ea', '#1f5fff'][(k * 2 + j) % 4], 1); c.position.set(p[0] - 0.4 + j * 0.55, 0, -(p[1] + 0.15 * j)); c.rotation.y = 0.6 + j * 0.9; world.group.add(c); } });
     // scale props that use real body shells (e.g. the car up on the lift in the Diamondback garage)
     // parked cars: a named body (the van, the Blazer...) waits for its own shell instead of borrowing whatever is loaded (v49)
-    (world.propCars || []).forEach((p, k) => { const put = id => { const c = GFX.buildStaticCar(id, p[3], p[6] || 1); bakeStatic(c); c.position.set(p[0], p[5] || 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); if (world.crawl) CRAWL.stampObject(c, T); }, L = GFX.loadedBodies(), fb = () => L[(k + 3) % L.length].id;
+    (world.propCars || []).forEach((p, k) => { const put = id => { const c = GFX.buildStaticCar(id, p[3], p[6] || 1); bakeStatic(c); c.position.set(p[0], p[5] || 0, -p[1]); c.rotation.y = p[2]; world.group.add(c); if (world.crawl) CRAWL.stampObject(c, T); }, L = sceneBodies(), fb = () => L[(k + 3) % L.length].id;
       if (p[4] && !GFX.BODY[p[4]] && GFX.BODIES.some(b => b.id === p[4])) { const wg = world.group; GFX.ensureBody(p[4]).then(() => { if (world.group === wg) put(p[4]); }, () => { if (world.group === wg) put(fb()); }); }
       else put(p[4] && GFX.BODY[p[4]] ? p[4] : fb()); });
     // v49 props: scanned people / scenes / trees / big rigs, merged into one mesh. Venue figures (world.props) + pit dressing inside the infield gate.
     { const plist = (world.props || []).slice(), pd = pitDress(track); plist.push(...pd); world.pitList = pd;
-      if (plist.length) { const wg = world.group; GFX.buildProps(plist).then(m => { if (m && world.group === wg) world.group.add(m); }, () => {}); } }
+      if (plist.length) { const wg = world.group; GFX.buildProps(plist).then(m => { if (m && world.group === wg) { world.group.add(m); pedSetup(m); } }, () => {}); } }
     // polished-concrete reflections (High): live mirror under a semi-transparent floor
     if (S.opt.quality >= 2 && (!world.night || world.prodNight) && !world.dusk && world.env !== 'diamondback' && world.env !== 'tandem' && T.Reflector && world.floor) {   // Diamondback and Tandem tile is satin, not a mirror
       const f = world.floor, pr = renderer.getPixelRatio(), refl = new T.Reflector(f.geometry.clone(), { textureWidth: LW() * pr * 0.45, textureHeight: LH() * pr * 0.45, color: world.env === 'prodigy' || world.env === 'prodigy2' ? (world.prodNight ? 0x8a8a8a : 0x5c5c5c) : world.env === 'diamondback' || world.env === 'tandem' ? 0x6a6a6a : 0x8a8a8a, clipBias: 0.0005 });
@@ -4681,7 +4705,7 @@ const ONLINE = (() => {
     cars.forEach(c => GFX.disposeTree(c.mesh)); cars = []; prng = 11 + S.opt.track * 7;
     player = makeCarObj('player', myLook(), S.tune, S.opt.name); cars.push(player);
     for (let k = 0; k < (isCrawl() ? 0 : S.opt.ai); k++) {
-      const LB = GFX.loadedBodies().filter(x => x.cls !== 'movie'), b = LB[(k * 2 + 1 + S.opt.track) % LB.length], sk = clamp(S.opt.skill / 100 + (rnd() - 0.5) * 0.2, 0.1, 1);
+      const LB = sceneBodies(), b = LB[(k * 2 + 1 + S.opt.track) % LB.length], sk = clamp(S.opt.skill / 100 + (rnd() - 0.5) * 0.2, 0.1, 1);
       const look = { body: b.id, color: GFX.PAINTS[(k * 3 + 2) % GFX.PAINTS.length], color2: GFX.PAINTS[(k * 5 + 1) % GFX.PAINTS.length], finish: GFX.FINISHES[k % 4].id, livery: GFX.LIVERIES[(k + 1) % GFX.LIVERIES.length].id, num: 10 + k * 7, plate: 'DRF ' + (21 + k * 13), wheel: GFX.WHEELS[(k + 1) % GFX.WHEELS.length].id, wheelColor: ['#e8e8ea', '#101114', '#c9a227', '#c8102e'][k % 4], wing: k % 4 === 2 ? 'gt' : 'none', glow: world.night && k % 2 ? GFX.PAINTS[(k * 2 + 6) % GFX.PAINTS.length] : '' };
       const c = makeCarObj('ai', look, {}, AI_NAMES[k % AI_NAMES.length]); c.ai = SIM.makeAI(sk); c.ai.laneBias = (rnd() - 0.5) * 0.2; cars.push(c);
     }
@@ -4816,7 +4840,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v80', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v81', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5104,8 +5128,31 @@ const ONLINE = (() => {
   // v79: the live screens only copy a frame when at least one of them is actually on screen (no cost while you're looking elsewhere)
   const _fr = new T.Frustum(), _fm = new T.Matrix4();
   function feedSeen(F) { if (!F.meshes || !F.meshes.length) return true; _fm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _fr.setFromProjectionMatrix(_fm); return F.meshes.some(m => m.visible && _fr.intersectsObject(m)); }
+  // v81: bodies the world may use on its own (parked / AI): never the chibis or the movie cars (those only appear where a venue names one, e.g. hidden in the canyon)
+  const sceneBodies = () => { const L = GFX.loadedBodies(), f = L.filter(b => b.cls !== 'chibi' && b.cls !== 'movie'); return f.length ? f : L; };
+  // ===================== v81 pedestrians: 1/10 people on the floor can be run over (squash + blood splat), counted on your profile =====================
+  const PED_KINDS = { crowd: 1, lady: 1, person: 1 }, PED_TITLES = [[1, 'First Blood'], [10, 'Menace'], [50, 'Road Rage'], [100, 'Public Enemy'], [250, 'Grim Reaper'], [500, 'Sidewalk Legend']];
+  let peds = [], pedMesh = null, pedPend = 0, pedT = 0, splatTex = null;
+  function pedSetup(m) { pedMesh = m; peds = (m.userData.items || []).filter(it => PED_KINDS[it.kind] && (it.p.s || 1) < 0.2 && !it.p.noHit).map(it => ({ x: it.p.x, y: it.p.y, z: it.p.z || 0, r: Math.min(it.r, 0.08), v0: it.v0, n: it.n, dead: false })); }
+  const pedTitle = n => { let t = ''; for (const [k, nm] of PED_TITLES) if (n >= k) t = nm; return t; };
+  function splatTexture() { if (splatTex) return splatTex; const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), R = (a, b) => a + Math.random() * (b - a);
+    g.fillStyle = '#8a0a0a'; g.beginPath(); for (let k = 0; k <= 24; k++) { const a = k / 24 * 6.283, r = R(26, 40); g.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); } g.fill();
+    for (let k = 0; k < 14; k++) { const a = R(0, 6.283), d = R(40, 60), r = R(2, 7); g.beginPath(); g.arc(64 + Math.cos(a) * d, 64 + Math.sin(a) * d, r, 0, 6.3); g.fill(); g.lineWidth = r * 0.8; g.strokeStyle = '#7a0808'; g.beginPath(); g.moveTo(64 + Math.cos(a) * 30, 64 + Math.sin(a) * 30); g.lineTo(64 + Math.cos(a) * d, 64 + Math.sin(a) * d); g.stroke(); }
+    g.fillStyle = 'rgba(200,30,30,0.5)'; g.beginPath(); g.arc(58, 58, 14, 0, 6.3); g.fill();
+    splatTex = new T.CanvasTexture(c); splatTex.encoding = T.sRGBEncoding; return splatTex; }
+  function pedHit(pd, c) { pd.dead = true;
+    if (pedMesh) { const a = pedMesh.geometry.attributes.position, A = a.array, dx = Math.cos(c.yaw), dz = -Math.sin(c.yaw);   // squash flat, smeared a little along the car's path
+      for (let i = pd.v0; i < pd.v0 + pd.n; i++) { const j = i * 3, h = A[j + 1] - pd.z; A[j + 1] = pd.z + 0.001 + h * 0.05; A[j] += dx * h * 0.35; A[j + 2] += dz * h * 0.35; } a.needsUpdate = true; pedMesh.geometry.computeBoundingSphere(); }
+    if (S.opt.blood !== false) { const sz = 0.07 + Math.random() * 0.05, sp = new T.Mesh(new T.PlaneGeometry(sz * 1.6, sz), new T.MeshBasicMaterial({ map: splatTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, color: 0xffffff }));
+      sp.rotation.x = -Math.PI / 2; sp.rotation.z = c.yaw + (Math.random() - 0.5) * 0.6; sp.position.set(pd.x + Math.cos(c.yaw) * 0.03, pd.z + 0.0015, -(pd.y + Math.sin(c.yaw) * 0.03)); sp.renderOrder = 4; world.group.add(sp); }
+    sfxHit(1.1); shake = Math.min(0.012, shake + 0.006);
+    S.stats = S.stats || {}; const before = S.stats.peds || 0; S.stats.peds = before + 1; save(); pedPend++;
+    const t0 = pedTitle(before), t1 = pedTitle(S.stats.peds); if (t1 !== t0) toast('🏆 ' + t1 + ' · ' + S.stats.peds + ' pedestrians flattened', 'good'); else toast('SPLAT! · ' + S.stats.peds + ' pedestrians', 'bad'); }
+  function pedTick(dt) { if (!peds.length || mode !== 'drive' || !player) return; const c = player.sim; if (c.speed > 0.45) { const gz = c.crawl ? c.cz - 0.091 : 0;
+      for (const pd of peds) { if (pd.dead) continue; const dx = pd.x - c.x, dy = pd.y - c.y; if (dx * dx + dy * dy > 0.04) continue; if (Math.abs(pd.z - gz) > 0.06) continue; if (Math.hypot(dx, dy) < 0.1 + pd.r) pedHit(pd, c); } }
+    if (pedPend && (pedT += dt) > 3) { const n = pedPend; pedPend = 0; pedT = 0; if (ONLINE.profile) ONLINE.addPeds(n, track && track.def.id).then(t => { if (t != null && S.stats) { S.stats.pedsAcct = t; } }); } }
   function updateCam(dt) {
-    if (CT.on) ctTick(dt); const c = player.sim, px = c.x, pz = -c.y, cam = CT.on === 'stand' ? 4 : mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
+    if (CT.on) ctTick(dt); pedTick(dt); const c = player.sim, px = c.x, pz = -c.y, cam = CT.on === 'stand' ? 4 : mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
     const vdir = c.speed > 0.8 ? Math.atan2(c.vy, c.vx) : c.yaw, want = c.yaw + wrap(vdir - c.yaw) * 0.6; camYaw += wrap(want - camYaw) * (1 - Math.exp(-dt * 5));
     const fx = Math.cos(camYaw), fz = -Math.sin(camYaw), cx = Math.cos(c.yaw), cz = -Math.sin(c.yaw);
     if (cam === -1) {
@@ -5266,6 +5313,11 @@ const ONLINE = (() => {
         taken.push([q[0], q[1], 0.15]); }
       q = spot(-1.0, 2.0, 0.19); if (q) { put('sk_plate', q, 0.19, 0.1, false); out[out.length - 1].ry = face(q[0], q[1]); }
     }
+    // v81 hangout circles: 3-5 people chilling facing each other (girls mixed in), sometimes round a cooler or the girls on chairs
+    const circle = (q, n) => { const ppl = P.people, girls = P.girls || ['w_skirt']; for (let k = 0; k < n; k++) { const a = k / n * 6.283 + rr() * 0.5, rad = 0.06 + rr() * 0.02, x = q[0] + Math.cos(a) * rad, y = q[1] + Math.sin(a) * rad;
+        out.push({ id: k % 2 ? pick(girls) : pick(ppl), x, y, z: 0, ry: Math.atan2(q[1] - y, q[0] - x) + (rr() - 0.5) * 0.5, s: 0.1, seed: 1 + ((rr() * 1e6) | 0) }); }
+      if (rr() < 0.6 && P.lounge) out.push({ id: 'w_sit', x: q[0], y: q[1], z: 0, ry: rr() * 6.28, s: 0.1, seed: 1 + ((rr() * 1e6) | 0) }); taken.push([q[0], q[1], 0.12]); };
+    for (const [al, dp] of [[2.6, 0.8], [-3.6, 1.4], [3.4, 2.1], [-0.6, 2.6]]) { q = spot(al + (rr() - 0.5) * 0.6, dp, 0.12); if (q) circle(q, 3 + ((rr() * 3) | 0)); }
     if (!cols.length) tr.colliders = null;
     return out;
   }
@@ -5417,6 +5469,7 @@ const ONLINE = (() => {
       body.textContent = ''; if (!p) { body.textContent = 'That driver could not be found.'; return; }
       h2.textContent = p.name; const meta = el('p', 'tmut'); meta.textContent = (p.online ? '● Online now' + (p.track_now ? ' · ' + tName(p.track_now) : '') : 'Offline') + ' · driving since ' + new Date(p.since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) + ' · ' + fmt(p.laps) + ' laps posted'; body.appendChild(meta);
       if (p.supporter) body.appendChild(el('span', 'status', '★ SUPPORTER'));
+      if (p.peds > 0) body.appendChild(el('span', 'status peds', '🩸 ' + p.peds.toLocaleString() + ' pedestrians flattened' + (pedTitle(p.peds) ? ' · ' + pedTitle(p.peds).toUpperCase() : '')));
       if (p.team) body.appendChild(el('p', 'tmut', 'Team: ' + p.team.name + ' [' + p.team.tag + ']' + (p.team.owner ? ' · captain' : '')));
       if (p.look && p.look.egg === 1) { h2.textContent = p.name + ' 🥚'; body.appendChild(el('span', 'status egg', '🥚 FOUND THE EASTER EGG')); }
       if (p.look && p.look.body) body.appendChild(el('p', 'tmut', 'Drives the ' + GFX.bodyInfo(p.look.body).name));
@@ -5903,6 +5956,7 @@ const ONLINE = (() => {
       add(row('Stand cam zoom', slider(60, 200, 10, Math.round((S.opt.standZoom || 1) * 100), v => v + '%', v => { S.opt.standZoom = v / 100; save(); }), 'How tight the driver-stand camera follows your car.'));
       h('Display');
       add(row('Graphics', chips([{ id: 0, name: 'Low', sub: 'very old phones' }, { id: 1, name: 'Medium', sub: 'older phones' }, { id: 2, name: 'High', sub: 'phones + computers' }], S.opt.quality, v => { S.opt.quality = v; save(); resize(); loadTrack(S.opt.track); applyTune(); })));
+      add(row('Blood splats', onOff(S.opt.blood !== false, v => { S.opt.blood = v; save(); }), 'Run over the little 1/10 people and they leave a splat. Off = they just get flattened.'));
       add(row('Live screens', onOff(S.opt.liveScr !== false, v => { S.opt.liveScr = v; save(); }), 'Prodigy V2 shows your driving live on the projector, the lounge TV and Bret\'s laptop. Only runs while a screen is in view; turn off if your device struggles.'));
       add(row('HUD', onOff(S.opt.hud !== false, v => { S.opt.hud = v; save(); }), 'H toggles it while driving. Handy for clean screenshots and videos.'));
       add(row('Speed', chips([{ id: 'mph', name: 'Scale mph' }, { id: 'kmh', name: 'Scale km/h' }], S.opt.units || 'mph', v => { S.opt.units = v; save(); }), 'Scale speed: what the car would be doing at full size.'));
