@@ -29,6 +29,7 @@ button,input{font:inherit;color:inherit}
 #hLap{margin-top:8px;font-size:13px;color:#cfd4dc;font-variant-numeric:tabular-nums}
 #hTR{position:absolute;right:18px;top:16px;text-align:right}
 #mini{display:block;margin-left:auto;background:rgba(8,9,12,.45);border:1px solid var(--ln);border-radius:6px}
+#hRoster{margin-top:6px;margin-left:auto;width:max-content;max-width:220px;padding:5px 9px;border-radius:4px;background:rgba(8,9,12,.55);font-size:12px;line-height:1.45;color:#eef1f6;text-align:left}#hRoster .me{color:var(--ac2)}#hRoster .away{opacity:.45}
 #hNet,#hCam{display:inline-block;margin-top:6px;padding:3px 8px;border-radius:4px;background:rgba(8,9,12,.55);font-size:11px;letter-spacing:.14em;color:#c5cbd6}#hNet.on{color:var(--ac2)}
 #hCam{margin-left:4px}
 #hB{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(420px,60vw);text-align:center}
@@ -4439,11 +4440,16 @@ const ONLINE = (() => {
     if (O.room) O.leave(); const id = O.myId(), peers = new Map(), states = new Map(); let ch = null, closed = false, bcT = 0, hbT = null, onPeersFn = null, onCloseFn = null, onChatFn = null, chatT = [];
     const auds = new Map(), V = O.voice, room = { lobby, code: lobby.code, count: 1, names: {}, full: false, log: [] }, C = { sigS: 0, sigR: 0, stS: 0, stR: 0, sendErr: '' };
     C.t0 = Date.now(); O.lastC = C; const sig = (to, payload) => { if (!ch) return; C.sigS++; ch.send({ type: 'broadcast', event: 'sig', payload: Object.assign({ to, from: id }, payload) }).then(r => { if (r !== 'ok') C.sendErr = String(r); }); };
+    // v82: one state per peer + a short history of samples for smooth playback; the car channel is unordered, so a late (older) packet is dropped instead of yanking the car backwards
+    function took(pid, d) { if (!d || typeof d !== 'object') return; const now = Date.now(), st = states.get(pid);
+      if (st && typeof d.q === 'number' && typeof st.q === 'number' && d.q <= st.q && st.q - d.q < 1e6) return;
+      const buf = (st && st.buf) || []; if (typeof d.ts === 'number') { buf.push({ d, ts: d.ts, at: performance.now() }); while (buf.length > 40) buf.shift(); }
+      states.set(pid, { drift: d, at: now, q: typeof d.q === 'number' ? d.q : null, buf }); }
     function mkPeer(pid) {
       if (peers.has(pid)) return peers.get(pid); const pc = new RTCPeerConnection({ iceServers: ICE }), P = { pc, dc: null, pid, ok: false };
       pc.onicecandidate = e => { if (e.candidate) sig(pid, { cand: e.candidate.toJSON() }); };
       pc.onconnectionstatechange = () => { if (['failed', 'closed'].includes(pc.connectionState)) P.ok = false; };
-      const wire = dc => { P.dc = dc; dc.onopen = () => { P.ok = true; }; dc.onclose = () => { P.ok = false; }; dc.onmessage = m => { try { const d = JSON.parse(m.data); states.set(pid, { drift: d, at: Date.now() }); } catch (e) { } }; };
+      const wire = dc => { P.dc = dc; dc.onopen = () => { P.ok = true; }; dc.onclose = () => { P.ok = false; }; dc.onmessage = m => { try { took(pid, JSON.parse(m.data)); } catch (e) { } }; };
       pc.ondatachannel = e => wire(e.channel);
       pc.ontrack = e => { if (e.track && e.track.kind === 'audio') hearTrack(pid, e.track); };
       if (id < pid) { P.born = Date.now(); P.kicks = 0; wire(pc.createDataChannel('car', { ordered: false, maxRetransmits: 0 })); try { P.atx = pc.addTransceiver('audio', { direction: 'sendrecv' }); if (V.track && room.voiceOn()) P.atx.sender.replaceTrack(V.track).catch(() => { }); } catch (e) { } pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => sig(pid, { sdp: pc.localDescription.toJSON() })).catch(() => { }); }
@@ -4464,7 +4470,7 @@ const ONLINE = (() => {
     });
     ch.on('broadcast', { event: 'chat' }, ({ payload: m }) => { if (!m || m.from === id || O.blocked.has(m.from) || typeof m.t !== 'string') return; const msg = { from: m.from, n: String(m.n || 'Driver').slice(0, 16), t: Number.isInteger(m.q) && O.QUICK[m.q] ? O.QUICK[m.q] : O.mask(m.t.slice(0, 160)), at: Date.now() }; room.log.push(msg); if (room.log.length > 60) room.log.shift(); if (onChatFn) try { onChatFn(msg); } catch (e) { } });
     ch.on('broadcast', { event: 'cfg' }, ({ payload: m }) => { if (!m || !lobby.host || m.from !== lobby.host) return; if (typeof m.voice === 'boolean') { lobby.voice = m.voice; room.setMic(V.track); room.hearAll(); if (onChatFn) try { onChatFn({ from: '', n: 'Room', t: m.voice ? 'Voice chat is on' : 'The host turned voice chat off', at: Date.now(), sys: true }); } catch (e) { } } });
-    ch.on('broadcast', { event: 'st' }, ({ payload: m }) => { C.stR++; if (m && m.from && m.from !== id && !(peers.get(m.from) || {}).ok) states.set(m.from, { drift: m.d, at: Date.now() }); });
+    ch.on('broadcast', { event: 'st' }, ({ payload: m }) => { C.stR++; if (m && m.from && m.from !== id && !(peers.get(m.from) || {}).ok && m.d) took(m.from, m.d); });
     ch.on('presence', { event: 'sync' }, () => {
       room._sync = true; if (!room.tracked) return; // still deciding whether there's room for us: no peers yet
       const ps = ch.presenceState(), ids = Object.keys(ps).filter(k => k !== id).sort(); room.names = {}; room.vers = {}; for (const k of ids) { const p = ps[k] && ps[k][0]; room.names[k] = p && p.n ? String(p.n).slice(0, 16) : 'Driver'; room.vers[k] = (p && +p.v) || 0; }
@@ -4498,7 +4504,7 @@ const ONLINE = (() => {
     room.presence = obj => { const d = obj && obj.drift; if (!d || closed) return Promise.resolve(); const msg = JSON.stringify(d); let need = false;
       for (const P of peers.values()) { if (P.ok && P.dc && P.dc.readyState === 'open') { try { P.dc.send(msg); } catch (e) { need = true; } } else need = true; }
       const now = performance.now(); if (need && now - bcT > 160) { bcT = now; C.stS++; ch.send({ type: 'broadcast', event: 'st', payload: { from: id, d } }).then(r => { if (r !== 'ok') C.sendErr = String(r); }); } return Promise.resolve(); };
-    room.peers = () => { const out = [], now = Date.now(); for (const [pid, s] of states) { if (now - s.at > 4000) continue; out.push({ peer: pid, presence: { drift: s.drift }, updatedAt: s.at, sameTab: false, kind: 'viewer', name: room.names[pid] }); } return out; };
+    room.peers = () => { const out = [], now = Date.now(); for (const [pid, s] of states) { if (now - s.at > 4000) continue; out.push({ peer: pid, presence: { drift: s.drift }, buf: s.buf, updatedAt: s.at, sameTab: false, kind: 'viewer', name: room.names[pid] }); } return out; };
     room.onPeers = (fn, onClose) => { onPeersFn = fn; onCloseFn = onClose; };
     room.debug = () => ({ ps: Object.keys(ch.presenceState()), peers: Array.from(peers.keys()), ok: Array.from(peers.values()).map(P => P.pc.connectionState + '/' + (P.dc ? P.dc.readyState : '-')), states: states.size, id, C });
     room.onChat = fn => { onChatFn = fn; };
@@ -4840,7 +4846,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v81', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v82', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -4931,24 +4937,40 @@ const ONLINE = (() => {
     try { const r = await window.claude.use('room'); if (!r) { NET.status = 'solo'; return; } NET.room = r; NET.status = 'online'; r.onPeers(() => { }, () => { NET.room = null; NET.status = 'solo'; }); } catch (e) { NET.status = 'solo'; }
   }
   function netSend(dt) {
-    if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.066; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
+    if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.05; NET.seq = (NET.seq || 0) + 1; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
     const lk = JSON.stringify(S.look); NET.lkN = (NET.lkN || 0) + 1; const sendLook = lk !== NET.lkSent || NET.lkN % 30 === 0 || NET.lkN < 15 || (NET.room.oldPeers && NET.room.oldPeers()); if (sendLook) NET.lkSent = lk;
-    try { NET.room.presence({ drift: { t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
+    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
   }
+  // v82 snapshot playback: estimate the sender's clock (min one-way gap), play back D ms behind it (D adapts to packet spacing + jitter),
+  // cubic Hermite between the two samples around that time using their velocities; short extrapolation if the next packet is late
+  function playback(nc, buf) { if (!buf || buf.length < 2) return null; const pn = performance.now(), last = buf[buf.length - 1];
+    let off = Infinity; for (const b of buf) off = Math.min(off, b.at - b.ts); nc.off = nc.off == null ? off : Math.min(off, nc.off + 0.02);   // slowly lets go of a stale minimum
+    let gaps = 0, jit = 0; for (let i = 1; i < buf.length; i++) gaps += buf[i].ts - buf[i - 1].ts; gaps /= buf.length - 1; for (const b of buf) jit = Math.max(jit, b.at - b.ts - nc.off);
+    const Dw = clamp(gaps * 1.5 + Math.min(jit, 200), 60, 380); nc.D = nc.D == null ? Dw : nc.D + (Dw - nc.D) * 0.05; const rt = pn - nc.off - nc.D;
+    const V = b => [num(b.d.x, -50, 50), num(b.d.y, -50, 50), num(b.d.vx, -12, 12), num(b.d.vy, -12, 12), num(b.d.yw, -1e4, 1e4), num(b.d.r, -30, 30)];
+    if (rt >= last.ts) { const e = Math.min(0.2, (rt - last.ts) / 1000), a = V(last); return { x: a[0] + a[2] * e, y: a[1] + a[3] * e, vx: a[2], vy: a[3], yaw: a[4] + a[5] * e, r: a[5], d: last.d }; }
+    let i = buf.length - 1; while (i > 0 && buf[i - 1].ts > rt) i--; if (i === 0) { const a = V(buf[0]); return { x: a[0], y: a[1], vx: a[2], vy: a[3], yaw: a[4], r: a[5], d: buf[0].d }; }
+    const A = V(buf[i - 1]), B = V(buf[i]), h = Math.max(1e-3, (buf[i].ts - buf[i - 1].ts) / 1000), t = clamp((rt - buf[i - 1].ts) / 1000 / h, 0, 1);
+    if (Math.hypot(B[0] - A[0], B[1] - A[1]) > 1.5) return { x: B[0], y: B[1], vx: B[2], vy: B[3], yaw: B[4], r: B[5], d: buf[i].d };   // a reset / teleport: no curve through it
+    const t2 = t * t, t3 = t2 * t, h00 = 2 * t3 - 3 * t2 + 1, h10 = t3 - 2 * t2 + t, h01 = -2 * t3 + 3 * t2, h11 = t3 - t2;
+    const x = h00 * A[0] + h10 * h * A[2] + h01 * B[0] + h11 * h * B[2], y = h00 * A[1] + h10 * h * A[3] + h01 * B[1] + h11 * h * B[3];
+    return { x, y, vx: A[2] + (B[2] - A[2]) * t, vy: A[3] + (B[3] - A[3]) * t, yaw: A[4] + wrap(B[4] - A[4]) * t, r: A[5] + (B[5] - A[5]) * t, d: t < 0.5 ? buf[i - 1].d : buf[i].d }; }
   function netRecv(dt) {
     if (!NET.room) return; let peers = []; try { peers = NET.room.peers(); } catch (e) { return; }
     const seen = new Set(), now = Date.now(); let n = 0;
     for (const p of peers) {
-      if (p.sameTab || p.kind !== 'viewer') continue; const d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
+      if (p.sameTab || p.kind !== 'viewer') continue; let d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
       if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
       const l = NET.looks.get(p.peer) || {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
       const sig = JSON.stringify(look), name = String(d.n || 'Driver').slice(0, 16); let nc = netCars.get(p.peer);
       if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(isCrawl() ? Object.assign({}, look, { tires: 'crawl' }) : look); scene.add(mesh);
         const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; sp.userData.tag = 1; mesh.add(sp); const mic = new T.Sprite(new T.SpriteMaterial({ map: micTex(), depthTest: false, transparent: true })); mic.scale.set(0.05, 0.05, 1); mic.position.y = 0.215; mic.visible = false; mic.userData.tag = 1; mic.userData.mic = 1; mesh.add(mic);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
-      seen.add(p.peer); nc.seenAt = now; const s = nc.sim, age = clamp((now - p.updatedAt) / 1000, 0, 0.25), k = 1 - Math.exp(-dt * 14);
-      s.vx = num(d.vx, -12, 12); s.vy = num(d.vy, -12, 12); s.r = num(d.r, -30, 30); const tx = num(d.x, -50, 50) + s.vx * age, ty = num(d.y, -50, 50) + s.vy * age, tyaw = num(d.yw, -1e4, 1e4) + s.r * age;
-      if (Math.hypot(tx - s.x, ty - s.y) > 1.5) { s.x = tx; s.y = ty; s.yaw = tyaw; } else { s.x += (tx - s.x) * k; s.y += (ty - s.y) * k; s.yaw += wrap(tyaw - s.yaw) * k; }
+      seen.add(p.peer); nc.seenAt = now; const s = nc.sim, k = 1 - Math.exp(-dt * 14); let tx, ty, tyaw;
+      const pb = playback(nc, p.buf);   // v82: smooth playback a little behind real time, curved through the real samples (new senders stamp q + ts)
+      if (pb) { s.vx = pb.vx; s.vy = pb.vy; s.r = pb.r; tx = pb.x; ty = pb.y; tyaw = pb.yaw; if (pb.d) d = pb.d; s.x = tx; s.y = ty; s.yaw = tyaw; }
+      else { const age = clamp((now - p.updatedAt) / 1000, 0, 0.25); s.vx = num(d.vx, -12, 12); s.vy = num(d.vy, -12, 12); s.r = num(d.r, -30, 30); tx = num(d.x, -50, 50) + s.vx * age; ty = num(d.y, -50, 50) + s.vy * age; tyaw = num(d.yw, -1e4, 1e4) + s.r * age;
+        if (Math.hypot(tx - s.x, ty - s.y) > 1.5) { s.x = tx; s.y = ty; s.yaw = tyaw; } else { s.x += (tx - s.x) * k; s.y += (ty - s.y) * k; s.yaw += wrap(tyaw - s.yaw) * k; } }
       if (isCrawl() && d.cz && Array.isArray(d.cz.q) && d.cz.q.length === 4) { const z = d.cz, q = z.q.map(v => num(v, -1, 1)), L = Math.hypot(q[0], q[1], q[2], q[3]) || 1; q.forEach((v, i) => q[i] = v / L);
         if (!s.q || Math.hypot(tx - s.x, ty - s.y) > 1.5) s.q = q.slice(); else { if (s.q[0] * q[0] + s.q[1] * q[1] + s.q[2] * q[2] + s.q[3] * q[3] < 0) q.forEach((v, i) => q[i] = -v); for (let i = 0; i < 4; i++) s.q[i] += (q[i] - s.q[i]) * k; const L2 = Math.hypot(...s.q); for (let i = 0; i < 4; i++) s.q[i] /= L2; }
         s.crawl = true; s.z = s.z == null ? num(z.z, -1, 3) : s.z + (num(z.z, -1, 3) - s.z) * k; s.ws = Array.isArray(z.ws) && z.ws.length === 4 ? z.ws.map(v => num(v, 0, 0.12)) : [0.062, 0.062, 0.062, 0.062]; s.deltaR = num(z.dr, -1, 1);
@@ -5254,6 +5276,13 @@ const ONLINE = (() => {
     const bp = (S.pb || {})[track.def.id]; const lt = score.lapStart !== null ? simTime - score.lapStart : 0, cap = lapCap(); hud.lap.classList.toggle('slow', lt > cap || !!score.stall);
     hud.lap.textContent = (score.lapStart !== null ? 'LAP ' + (score.laps + 1) + ' · ' + lt.toFixed(1) + 's / ' + cap + 's' + (lt > cap ? ' · TOO SLOW, won\'t count' : score.stall ? ' · STALLED, won\'t count' : '') : 'OUT LAP') + (score.lastPts != null ? ' · last ' + score.lastPts.toLocaleString() : '') + (bp ? ' · best ' + bp.toLocaleString() : '') + (score.total ? ' · session ' + Math.round(score.total).toLocaleString() : '');
     hud.net.textContent = NET.room ? 'ONLINE' + (ONLINE.room ? ' · ' + ONLINE.room.code : '') + ' · ' + (NET.count + 1) + (NET.count ? ' drivers here' : ' driver (waiting for others)') : 'SOLO SESSION'; hud.net.className = NET.room ? 'on' : ''; document.documentElement.classList.toggle('inroom', !!ONLINE.room);
+    // v82: who's in the room, on screen while you drive (you first; talking = mic; on another track = dimmed with the track name)
+    { const R = ONLINE.room, el2 = hud.roster || (hud.roster = (() => { const d = document.createElement('div'); d.id = 'hRoster'; $('#hTR').appendChild(d); return d; })());
+      if (!R || !R.names || S.opt.roster === false) { if (el2.childNodes.length) el2.textContent = ''; el2.style.display = 'none'; }
+      else if ((hud.rT = (hud.rT || 0) - 1) <= 0) { hud.rT = 20; el2.style.display = '';
+        const here = new Map(); for (const [pid, nc] of netCars) here.set(pid, nc); const rows = [['● ' + (S.opt.name || 'You') + ' (you)', 'me']];
+        for (const [pid, n] of Object.entries(R.names)) { const nc = here.get(pid); rows.push([(nc && nc.vt ? '🎤 ' : '') + n + (nc ? '' : ' · other track'), nc ? '' : 'away']); }
+        const html = rows.map(([t, c]) => '<div class="' + c + '">' + t.replace(/[<>&]/g, '') + '</div>').join(''); if (el2.innerHTML !== html) el2.innerHTML = html; } }
     if (hud.ww) hud.ww.className = mode === 'drive' && score.wrong && !player.sim.inf ? 'on' : '';
     { const ct = document.getElementById('crawlTip'); if (ct) { const P = player.sim, msg = !isCrawl() || mode !== 'drive' ? '' : P.righting ? 'FLIPPING IT BACK OVER…' : P.flip > 0.3 ? (P.turtle ? 'TURTLED · hang on, or press R' : 'ON ITS SIDE · hang on, or press R') : S.hunt.egg === 'carry' ? '🥚 CARRYING THE EGG · take it home' : P.wet ? 'FORDING · keep it steady' : ''; ct.textContent = msg; ct.className = msg ? 'on' : ''; } }
     if (hud.stale) hud.stale.className = mode === 'drive' && score.stale && !score.wrong && !score.void && !player.sim.inf && player.sim.speed > 0.3 && !(track.def && track.def.crawl) ? 'on' : '';
@@ -5957,6 +5986,7 @@ const ONLINE = (() => {
       h('Display');
       add(row('Graphics', chips([{ id: 0, name: 'Low', sub: 'very old phones' }, { id: 1, name: 'Medium', sub: 'older phones' }, { id: 2, name: 'High', sub: 'phones + computers' }], S.opt.quality, v => { S.opt.quality = v; save(); resize(); loadTrack(S.opt.track); applyTune(); })));
       add(row('Blood splats', onOff(S.opt.blood !== false, v => { S.opt.blood = v; save(); }), 'Run over the little 1/10 people and they leave a splat. Off = they just get flattened.'));
+      add(row('Driver list', onOff(S.opt.roster !== false, v => { S.opt.roster = v; save(); }), 'Online: the names of everyone in your room, top right while you drive.'));
       add(row('Live screens', onOff(S.opt.liveScr !== false, v => { S.opt.liveScr = v; save(); }), 'Prodigy V2 shows your driving live on the projector, the lounge TV and Bret\'s laptop. Only runs while a screen is in view; turn off if your device struggles.'));
       add(row('HUD', onOff(S.opt.hud !== false, v => { S.opt.hud = v; save(); }), 'H toggles it while driving. Handy for clean screenshots and videos.'));
       add(row('Speed', chips([{ id: 'mph', name: 'Scale mph' }, { id: 'kmh', name: 'Scale km/h' }], S.opt.units || 'mph', v => { S.opt.units = v; save(); }), 'Scale speed: what the car would be doing at full size.'));
