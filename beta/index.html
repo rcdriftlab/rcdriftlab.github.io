@@ -69,6 +69,7 @@ html.crawlmode #hTL,html.crawlmode #hB,html.crawlmode #hBL,html.crawlmode #mini,
 #trailerGo{position:fixed;left:50%;bottom:30%;transform:translateX(-50%);z-index:7;display:none;padding:14px 22px;border-radius:12px;border:2px solid #ffb06a;background:rgba(18,12,6,.88);color:#fff;font-weight:800;font-size:15px;letter-spacing:.06em;box-shadow:0 0 30px rgba(255,106,0,.45);animation:tgo 1.2s ease-in-out infinite}
 #trailerGo small{display:block;font-size:11px;font-weight:700;opacity:.75;letter-spacing:.12em;margin-top:3px}
 #trailerGo.on{display:block}
+#micB{position:fixed;left:14px;top:26%;z-index:7;display:none;width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(10,11,15,.65);color:#fff;font-size:20px;line-height:1;touch-action:none;-webkit-user-select:none;user-select:none}#micB small{display:block;font-size:8px;font-weight:800;letter-spacing:.06em;margin-top:2px}#micB.on{border-color:#35e0ff;box-shadow:0 0 14px rgba(53,224,255,.6)}html.inroom body:not(.inmenu) #micB{display:block}
 #rideCard{position:fixed;left:50%;bottom:26%;transform:translateX(-50%);z-index:8;display:none;flex-direction:column;gap:8px;padding:14px 16px;min-width:260px;border-radius:12px;border:2px solid #ffcf3a;background:rgba(14,10,4,.92);box-shadow:0 0 30px rgba(255,190,40,.35)}#rideCard.on{display:flex}#rideCard .rt{color:#ffcf3a;font-weight:900;letter-spacing:.14em;font-size:13px;text-align:center}
 #rideOut{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:8;display:none;padding:10px 22px;width:auto!important;min-width:0!important}#rideOut.on{display:block}
 @keyframes tgo{50%{box-shadow:0 0 50px rgba(255,106,0,.8)}}
@@ -264,6 +265,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <div id="touch"><div class="tz" id="tzL"></div><div class="tz" id="tzR"></div>
   <div class="stick" id="tsteer"><div class="lbl">STEER</div><div class="knob"></div></div>
   <div class="stick" id="tthr"><div class="lbl">THROTTLE</div><div class="knob"></div></div>
+  <button id="micB">🔇<small>MIC OFF</small></button>
   <div id="tbtns"><button data-a="menu">II</button><button data-a="cam">CAM</button><button data-a="reset">RESET</button><button data-a="gm">GYRO −</button><button data-a="gp">GYRO +</button><button data-a="chat">CHAT</button><button data-a="flip" class="rotOnly">⟲</button></div><button id="talkB" data-a="talk">TALK</button><div id="qchat"><button data-a="q0">GG!</button><button data-a="q1">Nice angle! 🔥</button><button data-a="q2">Tandem? I&#39;ll lead</button><button data-a="q3">Chase me!</button><button data-a="q4">My bad, sorry</button><button data-a="q5">Lag 😬</button><button data-a="q6">One more lap</button><button data-a="q7">brb</button><button data-a="qtype" class="qk">Type…</button><button data-a="qx" class="qk">✕</button></div></div>
 <div id="chat"><div id="chatLog"></div><input id="chatIn" type="text" maxlength="160" placeholder="Chat to the room · Enter sends · Esc cancels" autocomplete="off"></div>
 <div id="rotate"><div style="font-size:42px">⟲</div>Turn your phone sideways to drive</div>
@@ -3284,6 +3286,7 @@ const SCN = (function () {
         for (const a of [-0.45, 0.45]) { Bg(BOX, colM, gx + a, gy - 0.12, 0.2, 0, 0.035, 0.4, 0.035); Bg(BOX, mc(0x2a7ad8, 0.5), gx + a - 0.12, gy - 0.12, 0.08, 0, 0.06, 0.16, 0.05); Bg(BOX, mc(0xe8e8e8, 0.4), gx + a + 0.12, gy - 0.12, 0.07, 0, 0.05, 0.14, 0.05); Bg(BOX, mc(0x8f9296, 0.6), gx + a, gy - 0.12, 0.008, 0, 0.38, 0.016, 0.1); }
         fig(gx + 0.1, gy - 0.35, -Math.PI / 2, 0x111111, 'down', 1, 'w_skirt'); fig(gx - 0.3, gy - 0.32, -Math.PI / 2 + 0.4, 0, 'down', 1, 'w_skirt'); fig(gx + 0.42, gy - 0.4, -Math.PI / 2 - 0.5, 0, 'down', 1, 'w_skirt'); const mb = frame(gx - 0.2, gy - 0.4, 0.4); Bg(BOX, blackM, ...mb(0, 0), 0.04, 0.4, 0.13, 0.03, 0.02); for (const a of [-0.06, 0.06]) { const p = mb(a, 0); Bg(WHEEL, tireM, p[0], p[1], 0.03, 0.4, 0.06, 0.06, 0.02); } fig(...mb(-0.01, 0), 0.4 - Math.PI / 2, 0x1c1d22, 'out', 0.85); }
       (info.props || (info.props = [])).push({ id: 'w_skirt', x: -16.72, y: 11.74, z: 0, ry: -1.05, s: 0.1, seed: 786, noHit: true });
+      info.props.push({ id: 'limo', x: -16.95, y: 6.9, z: 0, ry: Math.PI / 2, s: 0.1, seed: 4242 }); (info.colliders || (info.colliders = [])).push([-16.95 - 0.07, 6.9 - 0.2, -16.95 + 0.07, 6.9 + 0.2]);   // v94: a limo pulled up by the 7-Eleven (secret ride)
       { // v93: a little neon sign next to her so whoever finds her gets the hint (1/10 scale, on a post, arrow at the spot)
         const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const g = cv.getContext('2d');
         g.fillStyle = '#0c0812'; g.fillRect(0, 0, 256, 128); g.strokeStyle = '#ff3b8a'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 118); g.shadowColor = '#ff5aa8'; g.shadowBlur = 14;
@@ -5467,6 +5470,7 @@ const ONLINE = (() => {
     if (keys[k]) return; keys[k] = true; audioStart();
     if (CT.on) { if (k === 'escape') ctClose(); if (k === ' ' && CT.on === 'photo') snapPhoto(); return; }
     if (ONLINE.room && mode === 'drive' && /^[1-8]$/.test(k)) { qSend('q' + (+k - 1)); return; }
+    if (k === 'v' && keys['shift']) { micQuick(); return; }   // v94: Shift+V flips open mic on / off
     if (k === 'v' && ONLINE.room) { talk(true); return; }
     if (k === 'escape' || k === 'p') { mode === 'drive' ? openMenu('pause') : mode === 'pause' ? drive(false) : 0; }
     if (mode !== 'drive') return;
@@ -5601,7 +5605,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v93', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v94', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5980,7 +5984,7 @@ const ONLINE = (() => {
     P.p = SIM.derive(Object.assign({}, S.tune, RIDES[r.id].tune), track.surface, physK()); player.mesh.visible = false; rideUI(false); toast('👊 You took the ' + RIDES[r.id].nm.toLowerCase() + '! · E or HOP OUT to park it', 'good'); }
   function rideExit(why) { const r = RD; if (!r) return; RD = null; const P = player.sim, R0 = RIDES[r.id]; r.x = P.x; r.y = P.y; r.yaw = P.yaw; r.moved = true; ridePose(r); rideCols(r, true);
     const off = R0.wid / 2 + 0.16; P.x += -Math.sin(P.yaw) * off; P.y += Math.cos(P.yaw) * off; P.vx = P.vy = P.r = 0; player.skid = [null, null]; applyTune(); player.mesh.visible = true; rideT = -6; rideUI(false); if (why) toast(why, 'bad'); }
-  function rideTick(dt) { for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; nc.rideG.position.set(nc.sim.x, 0, -nc.sim.y); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; }
+  function rideTick(dt) { document.documentElement.classList.toggle('inroom', !!ONLINE.room); if (ONLINE.room && !rideTick.mu) { rideTick.mu = 1; micUI(); } if (!ONLINE.room) rideTick.mu = 0; for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; nc.rideG.position.set(nc.sim.x, 0, -nc.sim.y); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; }
     if (!rides.length || !player) return; const P = player.sim;
     if (RD) { if (!RD.g) return; RD.x = P.x; RD.y = P.y; RD.yaw = P.yaw; ridePose(RD); player.mesh.visible = false; const fwd = P.vx * Math.cos(P.yaw) + P.vy * Math.sin(P.yaw);
       for (const w of RD.g.userData.spin || []) w.rotation.z -= fwd * dt / (w.userData.r || 0.05); return; }
@@ -6922,7 +6926,7 @@ const ONLINE = (() => {
   // ---------------- voice chat in rooms: off by default; push-to-talk (hold TALK / V) or open mic. Talking needs sign-in; anyone can listen ----------------
   const VO = { stream: null, track: null, talk: false, level: 0, an: null, buf: null };
   function voiceSync() { const v = ONLINE.voice; if (!v) return; v.hear = S.opt.hear !== false; v.vol = (S.opt.vvol ?? 100) / 100; v.track = VO.track; if (ONLINE.room) { ONLINE.room.setMic(VO.track); ONLINE.room.hearAll(); }
-    document.documentElement.classList.toggle('vptt', S.opt.voice === 'ptt' && !!VO.track); }
+    document.documentElement.classList.toggle('vptt', S.opt.voice === 'ptt' && !!VO.track); micUI(); }
   function canTalk() { return ONLINE.signedIn && ONLINE.signedIn() && !!ONLINE.profile && !ONLINE.banned; }
   async function micOn() { if (VO.track) { voiceSync(); return true; }
     if (!canTalk()) { toast('Sign in on the Online tab to talk. You can still hear the room.'); return false; }
@@ -6934,6 +6938,10 @@ const ONLINE = (() => {
     voiceSync(); return true; }
   function micOff() { if (VO.stream) VO.stream.getTracks().forEach(t => t.stop()); VO.stream = VO.track = VO.an = null; VO.talk = false; voiceSync(); }
   async function setVoiceMode(v) { S.opt.voice = v; save(); if (v === 'off') { micOff(); return; } const ok = await micOn(); if (!ok) { S.opt.voice = 'off'; save(); micOff(); } else { VO.track.enabled = v === 'open'; voiceSync(); toast(v === 'ptt' ? 'Push-to-talk: hold TALK (or V on a keyboard)' : 'Open mic: the room hears you when you speak'); } if (mode !== 'drive') renderPanel(); }
+  // v94: one-tap open mic toggle (the MIC button in rooms, Shift+V): off -> open mic, open mic -> off. Push-to-talk users get switched to open mic.
+  async function micQuick() { if (S.opt.voice === 'open') { await setVoiceMode('off'); toast('🔇 Mic off'); } else { await setVoiceMode('open'); } micUI(); }
+  function micUI() { const b = document.getElementById('micB'); if (b) { const on = S.opt.voice === 'open' && !!VO.track; b.classList.toggle('on', on); b.innerHTML = on ? '🎙<small>MIC ON</small>' : '🔇<small>MIC OFF</small>'; } }
+  { const b = document.getElementById('micB'); if (b) { b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); micQuick(); }); b.addEventListener('click', e => e.stopPropagation()); } }
   function talk(on) { if (!VO.track || S.opt.voice !== 'ptt') return; VO.track.enabled = !!on; VO.talk = !!on; const b = document.querySelector('#talkB'); if (b) b.classList.toggle('on', !!on); }
   // talking flag for the 🎙 over your car on other screens: PTT = button held; open mic = voice level over a threshold
   function voiceTalking() { if (!VO.track || !ONLINE.room || !ONLINE.room.voiceOn()) return false; if (S.opt.voice === 'ptt') return VO.talk;
