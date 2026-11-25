@@ -1471,6 +1471,10 @@ const SCN = (function () {
   const T = THREE;
   let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const ctex = (w, h, draw, rep, srgb = true) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new T.CanvasTexture(c); if (srgb) t.encoding = T.sRGBEncoding; t.anisotropy = 8; if (rep) { t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rep[0], rep[1]); } return t; };
+  // v80 shared: real banner photos (tex/v2_*.jpg) with a drawn fallback, and the live game feed (projector / TVs)
+  const photoTex = (name, fb) => { const im = new Image(); im.onload = () => { fb.image = im; fb.repeat && fb.repeat.set(1, 1); fb.needsUpdate = true; }; im.src = (window.__ASSET_IMAGES && window.__ASSET_IMAGES['v2_' + name]) || (window.__ASSET_BASE || 'tex/') + 'v2_' + name + '.jpg'; return fb; };
+  const liveFeed = info => { if (info.liveFeed) return info.liveFeed; const cv = document.createElement('canvas'); cv.width = 384; cv.height = 216; const g = cv.getContext('2d'); g.fillStyle = '#9aa6aa'; g.fillRect(0, 0, 384, 216); g.fillStyle = '#0f2a24'; g.font = 'italic 900 30px Arial'; g.textAlign = 'center'; g.fillText('RC DRIFT LAB', 192, 115);
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return (info.liveFeed = { cv, g, t, n: 0, meshes: [] }); };
   const speck = (g, w, h, n, cols, max, a0 = 0.05, a1 = 0.3) => { for (let i = 0; i < n; i++) { g.fillStyle = cols[(rnd() * cols.length) | 0]; g.globalAlpha = a0 + rnd() * (a1 - a0); const s = 0.6 + rnd() * max; g.fillRect(rnd() * w, rnd() * h, s, s); } g.globalAlpha = 1; };
   const TX = {
     // Prodigy-style speckled grey sheet vinyl, with faint drift marks
@@ -1515,14 +1519,20 @@ const SCN = (function () {
     frond: () => ctex(128, 512, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = '#3e5a2a'; g.lineWidth = 6; g.beginPath(); g.moveTo(w / 2, h); g.lineTo(w / 2, 0); g.stroke(); for (let y = 10; y < h; y += 7) { const l = (1 - y / h) * 0.2 + Math.sin(y / h * 3.1) * 0.8; g.strokeStyle = ['#4c7a33', '#3f6b2b', '#5a8a3a'][(y / 7 | 0) % 3]; g.lineWidth = 3; g.beginPath(); g.moveTo(w / 2, y); g.lineTo(w / 2 - l * 58, y + 22); g.moveTo(w / 2, y); g.lineTo(w / 2 + l * 58, y + 22); g.stroke(); } }, null),
   };
   // ---------- small prop builders ----------
-  function kit(grp) {
+  function kit(grp, info) {
     const add = o => { grp.add(o); return o; };
     const std = (c, r = 0.8, m = 0, extra) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: r, metalness: m }, extra || {}));
     const bx = (w, h, d, mat, x, y, z, ry, shadow = true) => { const o = new T.Mesh(new T.BoxGeometry(w, h, d), mat); o.position.set(x, y, z); if (ry) o.rotation.y = ry; o.castShadow = shadow; o.receiveShadow = true; return add(o); };
     const cyl = (r0, r1, h, mat, x, y, z, seg = 16) => { const o = new T.Mesh(new T.CylinderGeometry(r0, r1, h, seg), mat); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; return add(o); };
     const glowM = () => new T.MeshBasicMaterial({ color: 0xffffff });
     // a person (seated or standing), real scale
-    const person = (x, z, ry, shirt, sit, s = 1, o = {}) => { const g = new T.Group(), skin = std(o.skin || [0x8d5524, 0xc68642, 0xe0ac69, 0x5c3a1e][(rnd() * 4) | 0], 0.7), cloth = std(shirt, 0.9), pants = std(o.pants || [0x2a2c34, 0x3b4a5c, 0x6b6f5a][(rnd() * 3) | 0], 0.9);
+    // v80: pit / lounge people are real scanned figures now (props/*.bin at full size) instead of block figures; seated ones use the seated scans.
+    // Colours follow the spot: o.pants / shirt / o.skin override the prop palette bands [clothes, shirt, skin]; o.lift raises the seat (bar stools).
+    const PSTAND = [['p_tommy', 0], ['p_bad', 0], ['p_hips', 0], ['p_walk', -Math.PI / 2]];   // scans checked to face +x (p_walk is scanned side-on)
+    const person = (x, z, ry, shirt, sit, s = 1, o = {}) => { if (info && typeof GFX !== 'undefined' && GFX.PROP_SETS && !o.block) { const ps = PSTAND[(rnd() * PSTAND.length) | 0], id = sit ? (o.cap ? 'drv_homie2' : rnd() < 0.5 ? 'drv_homie1' : 'drv_homie2') : ps[0];
+        (info.props || (info.props = [])).push({ id, x, y: -z, z: sit ? 0.46 * s + (o.lift || 0) : (o.lift || 0), ry: ry + (sit ? 0 : ps[1]), s: sit ? 0.96 * s : s * (0.95 + rnd() * 0.08), seed: 1 + ((rnd() * 1e6) | 0), cols: [o.pants, shirt, o.skin] });
+        return add(new T.Group()); }
+      const g = new T.Group(), skin = std(o.skin || [0x8d5524, 0xc68642, 0xe0ac69, 0x5c3a1e][(rnd() * 4) | 0], 0.7), cloth = std(shirt, 0.9), pants = std(o.pants || [0x2a2c34, 0x3b4a5c, 0x6b6f5a][(rnd() * 3) | 0], 0.9);
       const leg = sit ? 0.45 : 0.85, hip = sit ? 0.48 : 0.88;
       for (const sd of [-1, 1]) { const l = new T.Mesh(new T.CylinderGeometry(0.075, 0.065, leg, 8), pants); if (sit) { l.rotation.z = Math.PI / 2; l.position.set(0.22, hip - 0.02, sd * 0.1); } else l.position.set(0, leg / 2, sd * 0.1); g.add(l); if (sit) { const sh = new T.Mesh(new T.CylinderGeometry(0.06, 0.06, 0.45, 8), pants); sh.position.set(0.44, 0.23, sd * 0.1); g.add(sh); } }
       const torso = new T.Mesh(new T.CylinderGeometry(0.19, 0.16, 0.6, 10), cloth); torso.position.y = hip + 0.3; g.add(torso);
@@ -1553,7 +1563,7 @@ const SCN = (function () {
   // ================= venues =================
   // ---------- Prodigy RC (Las Vegas) ----------
   function prodigy(ctx) {
-    const { grp, tr, info } = ctx, K = kit(grp), { add, std, bx, cyl } = K, hw = tr.width / 2, night = !!info.night, N = tr.N;
+    const { grp, tr, info } = ctx, K = kit(grp, info), { add, std, bx, cyl } = K, hw = tr.width / 2, night = !!info.night, N = tr.N;
     const pf0 = info.platform || { x0: info.minX - 2, x1: info.maxX + 2, y0: info.minY - 2, y1: info.maxY + 2 }, X0 = Math.min(info.minX - 3.6, pf0.x0 - 2.2), X1 = Math.max(info.maxX + 4.4, pf0.x1 + 3.0), Y0 = Math.min(info.minY - 4.6, pf0.y0 - 3.4), Y1 = Math.max(info.maxY + 2.6, pf0.y1 + 1.6), H = 5.4;     // room in track coords (y = -z)
     const W = X1 - X0, D = Y1 - Y0, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2, FL = -0.055;                      // checker floor sits below the P-tile platform
     info.room = { X0, X1, Y0, Y1, H }; info.sx = 2 * Math.min(info.cx - X0, X1 - info.cx) - 0.3; info.sy = 2 * Math.min(info.cy - Y0, Y1 - info.cy) - 0.3;
@@ -1596,7 +1606,12 @@ const SCN = (function () {
     // ---- banners (generic), the arena banner, posters ----
     const banner = (b, w, h, x, y, z, ry) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshStandardMaterial({ map: TX.banner(...b), roughness: 0.75, envMapIntensity: 0.4 })); m.position.set(x, y + FL, z); m.rotation.y = ry; add(m); };
     banner([['PRODIGY RC', 'DRIFT ARENA · LAS VEGAS'], '#0e0e10', '#f4f4f4', '#9a9ca0', 3], 5.2, 1.5, X0 + W * 0.2, 3.3, -(Y1 - 0.03), 0);
-    banner([['TANDEM NIGHTS', 'EVERY FRIDAY'], '#d4202a', '#ffffff', '#141414', 3], 2.6, 1.0, X0 + 0.03, 3.4, -(cy - 4.2), Math.PI / 2);
+    // v80: the same real banners as V2 (same building, old layout)
+    const rb = (name, w, h, x, y, z, ry) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshStandardMaterial({ map: photoTex(name, TX.banner([name.toUpperCase()], '#141416', '#ffffff', '#d4202a', 1)), roughness: 0.75, envMapIntensity: 0.4 })); m.position.set(x, y + FL, z); m.rotation.y = ry; add(m); };
+    rb('yokomo', 2.2, 0.9, X0 + 0.03, 3.4, -(cy - 4.2), Math.PI / 2); rb('ds', 2.4, 1.2, X0 + 0.03, 3.3, -(cy + 1.0), Math.PI / 2); rb('sindakat', 2.4, 1.2, X0 + 0.03, 1.95, -(cy + 1.0), Math.PI / 2);
+    rb('reved', 2.2, 0.73, X0 + W * 0.42 - 3.0, 2.0, -(Y1 - 0.03), 0); rb('bret', 0.68, 1.75, X0 + W * 0.42 - 1.4, 2.6, -(Y1 - 0.03), 0);
+    rb('tandem', 1.5, 0.75, X1 - 0.03, 3.6, -(cy + 6.5), -Math.PI / 2); rb('acuvance', 1.7, 0.7, X1 - 0.03, 2.4, -(cy + 6.5), -Math.PI / 2); rb('tech1', 1.3, 0.93, X1 - 0.03, 2.3, -(cy + 1.5), -Math.PI / 2);
+    rb('vrds', 1.35, 0.81, X0 + W * 0.42 + 2.2, 3.4, -(Y0 + 0.03), Math.PI); rb('scalesci', 0.95, 0.47, X0 + W * 0.42 - 2.0, 3.4, -(Y0 + 0.03), Math.PI); rb('apexi', 1.7, 0.8, X0 + W * 0.15, 3.2, -(Y0 + 0.03), Math.PI); rb('gensace', 1.5, 0.83, X0 + W * 0.7, 3.2, -(Y0 + 0.03), Math.PI);
     banner([['SIDEWAYS SOCIETY', 'LAS VEGAS'], '#141414', '#ffffff', '#d4202a', 1], 3.0, 1.2, X1 - 0.03, 3.4, -(cy + 3.5), -Math.PI / 2);
     banner([['STRANGER KREATIONS', 'RC DRIFT LAB'], '#0b0c10', '#35e0ff', '#ff5a1f', 3], 3.0, 1.1, X1 - 0.03, 3.4, -(cy - 1.5), -Math.PI / 2);
     banner([['LOW & SLOW', 'SCALE SCIENCE'], '#1b1b1b', '#f2f2f2', '#c8a050', 3], 2.2, 0.9, X0 + W * 0.42, 3.6, -(Y0 + 0.03), Math.PI);
@@ -1606,8 +1621,8 @@ const SCN = (function () {
       g.globalAlpha = 1; g.fillStyle = '#e8ff5a'; g.font = 'italic 900 92px Arial'; g.textAlign = 'center'; g.fillText('DRIFT NIGHT', w * 0.5, h * 0.44); g.font = '700 40px Arial'; g.fillStyle = '#ffffff'; g.fillText('LAS VEGAS · TANDEM BATTLES', w * 0.5, h * 0.56);
       g.fillStyle = 'rgba(255,255,255,0.7)'; g.font = '700 26px Arial'; g.fillText('RC DRIFT LAB · STRANGER KREATIONS', w * 0.5, h * 0.9); });
     const pw = Math.min(9, W * 0.38), ph = pw * 0.5625, px = X0 + W * 0.62, py = 2.9;
-    const pm = new T.Mesh(new T.PlaneGeometry(pw, ph), new T.MeshBasicMaterial({ map: projT, color: night ? 0xffffff : 0x8a8c90, transparent: true, opacity: night ? 1 : 0.75, blending: night ? T.AdditiveBlending : T.NormalBlending, depthWrite: false }));
-    pm.position.set(px, py + FL, -(Y1 - 0.025)); add(pm);
+    const FD = liveFeed(info); void projT; const pm = new T.Mesh(new T.PlaneGeometry(pw, ph), new T.MeshBasicMaterial({ map: FD.t, color: night ? 0xf2f2f2 : 0xc8ced0, transparent: true, opacity: 0.93, depthWrite: false, toneMapped: false }));   // v80: the live game on the projector
+    pm.position.set(px, py + FL, -(Y1 - 0.025)); add(pm); FD.meshes.push(pm);
     bx(0.45, 0.18, 0.4, std(0xdcdcd8, 0.5), px, H + FL - 0.9, -(Y1 - 7.5), 0, false); cyl(0.015, 0.015, 0.8, std(0x222222, 0.5), px, H + FL - 0.4, -(Y1 - 7.5));
     if (night) { const beam = new T.Mesh(new T.ConeGeometry(1, 1, 4, 1, true), new T.MeshBasicMaterial({ color: 0x4a7aff, transparent: true, opacity: 0.05, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
       const L = 7.5, sxz = pw * 0.55; beam.scale.set(sxz, L, ph * 0.55); beam.rotation.x = -Math.PI / 2 - Math.atan2(H - 0.9 - py, L); beam.rotation.y = Math.PI / 4 * 0; beam.position.set(px, (H + FL - 0.9 + py + FL) / 2, -(Y1 - L / 2)); add(beam); }
@@ -1701,7 +1716,7 @@ const SCN = (function () {
   }
   // ---------- Sunset Lot: life-size outdoor parking lot with buildings, palms, street lights ----------
   function lot(ctx) {
-    const { grp, tr, info } = ctx, K = kit(grp), { add, std, bx, cyl } = K;
+    const { grp, tr, info } = ctx, K = kit(grp, info), { add, std, bx, cyl } = K;
     const cx = info.cx, cy = info.cy;
     // ground
     const at = TX.asphalt(); at.repeat.set(40, 40); const gm0 = new T.MeshStandardMaterial({ map: at, roughness: 0.88, envMapIntensity: 0.5 }); ASSETS.pbr(gm0, 'asphalt', 100, 100, { tint: 0x8c8c8c, ns: 0.35 }); const g0 = new T.Mesh(new T.PlaneGeometry(260, 260), gm0); g0.rotation.x = -Math.PI / 2; g0.position.set(cx, -0.004, -cy); g0.receiveShadow = true; add(g0);
@@ -1751,7 +1766,7 @@ const SCN = (function () {
 
   // ---------- generic shop dressing for The Warehouse / P-Tile (pallet racks, roll-up doors, posters, pit crowd, infield displays) ----------
   function shop(ctx) {
-    const { grp, tr, info, x0, x1, z0, z1, H, tile } = ctx, K = kit(grp), { add, std, bx, cyl } = K, hw = tr.width / 2;
+    const { grp, tr, info, x0, x1, z0, z1, H, tile } = ctx, K = kit(grp, info), { add, std, bx, cyl } = K, hw = tr.width / 2;
     const shirts = [0x111111, 0xd4202a, 0x2a4dd4, 0x6b6b6b, 0xc8a050, 0x0f5a3a, 0xe8e8e8];
     // roll-up doors on the right wall, with yellow bollards
     const shut = ctex(128, 128, (g, w, h) => { g.fillStyle = '#b8bec4'; g.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 8) { g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(0, y, w, 2); g.fillStyle = 'rgba(255,255,255,0.15)'; g.fillRect(0, y + 3, w, 1); } }, [1, 1]);
@@ -1784,7 +1799,7 @@ const SCN = (function () {
   }
   // ---------- Diamondback RC (Arizona): black P-tile on a low white wall with turf trim, neon city mural, red shop, window wall, scale town ----------
   function diamondback(ctx) {
-    const { grp, tr, info } = ctx, K = kit(grp), { add, std, bx, cyl } = K, hw = tr.width / 2, N = tr.N;
+    const { grp, tr, info } = ctx, K = kit(grp, info), { add, std, bx, cyl } = K, hw = tr.width / 2, N = tr.N;
     const pf = info.platform, X0 = pf.x0 - 7.5, X1 = pf.x1 + 1.5, Y0 = pf.y0 - 4.2, Y1 = pf.y1 + 1.3, H = 3.4, FL = -0.06;
     const W = X1 - X0, D = Y1 - Y0, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2;
     info.room = { X0, X1, Y0, Y1, H }; info.sx = 2 * Math.min(info.cx - X0, X1 - info.cx) - 0.3; info.sy = 2 * Math.min(info.cy - Y0, Y1 - info.cy) - 0.3;
@@ -1988,7 +2003,7 @@ const SCN = (function () {
   }
   // ---------- Tandem RC (Arizona), mapped from the photos. Room coords: x west->east, y entrance/shop (south) -> banner wall (north). ----------
   function tandem(ctx) {
-    const { grp, tr, info } = ctx, def = tr.def, K = kit(grp), { add, std } = K, hw = tr.width / 2, N = tr.N, FL = -0.06;
+    const { grp, tr, info } = ctx, def = tr.def, K = kit(grp, info), { add, std } = K, hw = tr.width / 2, N = tr.N, FL = -0.06;
     const pf = info.platform, X0 = 0, X1 = 27.6, Y0 = -1.6, Y1 = 35.6, H = 3.4, W = X1 - X0, D = Y1 - Y0, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2;
     info.room = { X0, X1, Y0, Y1, H }; info.sx = 2 * Math.min(info.cx - X0, X1 - info.cx) - 0.3; info.sy = 2 * Math.min(info.cy - Y0, Y1 - info.cy) - 0.3;
     // ---------- batching: one draw call per material ----------
@@ -2356,7 +2371,7 @@ const SCN = (function () {
   // ---------- pit areas for any venue: folding tables along the walls (or under pop-up canopies outdoors) with chairs, pit bags, cases, coolers, chargers,
   // cars on the tables, racers in the chairs; tire stacks with flags marking every clip. Spots are only used where nothing else already stands. ----------
   function pits(ctx) {
-    const { grp, tr, info, b, kind } = ctx, K = kit(grp), { add, std } = K, hw = tr.width / 2, N = tr.N, G0 = ctx.ground || 0, avoid = ctx.avoid || [];
+    const { grp, tr, info, b, kind } = ctx, K = kit(grp, info), { add, std } = K, hw = tr.width / 2, N = tr.N, G0 = ctx.ground || 0, avoid = ctx.avoid || [];
     const lists = new Map(), BOX = new T.BoxGeometry(1, 1, 1), CYL = new T.CylinderGeometry(0.5, 0.5, 1, 12), TIRE = new T.CylinderGeometry(0.5, 0.5, 1, 16, 1, true), CONE4 = new T.ConeGeometry(0.72, 1, 4);
     const B = (geo, mat, x, y, z, ry, sx, sy, sz) => { let g = geo.index ? geo.toNonIndexed() : geo.clone(); for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
       g.applyMatrix4(new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromEuler(new T.Euler(0, ry || 0, 0)), new T.Vector3(sx || 1, sy || 1, sz || 1))); let L = lists.get(mat); if (!L) lists.set(mat, L = []); L.push(g); };
@@ -2377,7 +2392,7 @@ const SCN = (function () {
       p = P(0.42, 0.55); B(BOX, std(0x1c1d21, 0.4), p[0], G0 + 0.79, -p[1], ry, 0.12, 0.06, 0.16); B(BOX, led[n % 3], p[0] - 0.04 * c, G0 + 0.825, -(p[1] - 0.04 * s), ry, 0.03, 0.01, 0.03);
       if (cars < 7 && rr < 0.6) { p = P(0.3, -0.25); info.propCars.push([p[0], p[1], face + Math.PI / 2 + (rnd() - 0.5) * 0.6, ['#d4202a', '#f2f2f2', '#2a4dd4', '#111214', '#ff7a1a', '#ff5ab0', '#9ee03a'][cars % 7], null, G0 + 0.76]); cars++; }
       for (const bq of [-0.45, 0.45]) { const q = P(-0.42, bq), cm = chairC[(n + (bq > 0)) % chairC.length]; B(BOX, cm, q[0], G0 + 0.46, -q[1], ry, 0.42, 0.04, 0.42); const r = P(-0.64, bq); B(BOX, cm, r[0], G0 + 0.72, -r[1], ry, 0.04, 0.46, 0.42); for (const [a, b2] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) { const l = P(-0.42 + a, bq + b2); B(BOX, leg, l[0], G0 + 0.23, -l[1], 0, 0.02, 0.46, 0.02); } }
-      if (people < 9 && rr > 0.35) { const q = P(-0.5, rr > 0.7 ? 0.45 : -0.45); K.person(q[0], -q[1], ry + Math.PI / 2 - Math.PI / 2 + 0, shirts[people % shirts.length], true); const pg = grp.children[grp.children.length - 1]; pg.position.y = G0; pg.rotation.y = face; people++; }
+      if (people < 9 && rr > 0.35) { const q = P(-0.5, rr > 0.7 ? 0.45 : -0.45); K.person(q[0], -q[1], face, shirts[people % shirts.length], true, 1, { lift: G0 }); const pg = grp.children[grp.children.length - 1]; pg.position.y = G0; pg.rotation.y = face; people++; }
       p = P(-1.2 - rnd() * 0.3, (rnd() - 0.5) * 1.4); const br = ry + (rnd() - 0.5) * 0.9; B(BOX, bagM[n % 2], p[0], G0 + 0.15, -p[1], br, 0.62, 0.3, 0.32); B(BOX, strip[n % 5], p[0], G0 + 0.302, -p[1], br, 0.62, 0.01, 0.07);
       if (n % 2) { p = P(0.35, 1.25); B(BOX, caseM, p[0], G0 + 0.3, -p[1], ry, 0.3, 0.6, 0.42); B(BOX, std(0x111111, 0.5), p[0], G0 + 0.78, -p[1], ry, 0.22, 0.36, 0.04); }
       if (n % 3 === 1) { p = P(-0.9, -1.25); B(BOX, std([0x2a5fd8, 0xd4202a, 0xf2f2f2][n % 3], 0.5), p[0], G0 + 0.2, -p[1], ry, 0.36, 0.4, 0.55); B(BOX, std(0xf2f2f2, 0.5), p[0], G0 + 0.42, -p[1], ry, 0.38, 0.05, 0.57); }
@@ -2400,7 +2415,7 @@ const SCN = (function () {
   // ---------- Prodigy RC V2 (Las Vegas, Nov 2026 layout), dressed from the photos of the room ----------
   // game coords: x = roll-up door (-) -> windows / driver riser (+); y = pit tables (-) -> projector wall (+). three: (x, up, -y)
   function prodigy2(ctx) {
-    const { grp, tr, info } = ctx, K = kit(grp), { add, std } = K, hw = tr.width / 2, N = tr.N, FL = -0.004;
+    const { grp, tr, info } = ctx, K = kit(grp, info), { add, std } = K, hw = tr.width / 2, N = tr.N, FL = -0.004;
     const X0 = -18.4, X1 = 21.0, Y0 = -12.6, Y1 = 12.0, H = 6.0, W = X1 - X0, D = Y1 - Y0, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2, PY = -8.7;
     info.room = { X0, X1, Y0, Y1, H }; info.sx = 2 * Math.min(info.cx - X0, X1 - info.cx) - 0.3; info.sy = 2 * Math.min(info.cy - Y0, Y1 - info.cy) - 0.3;
     const n0 = grp.children.length;
@@ -2430,10 +2445,9 @@ const SCN = (function () {
     const PO = { polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 };
     // v77: the real Prodigy RC banners, straightened from Shaun's photos of the room (tex/v2_*.jpg, tools/v2_banners_rect.py); the drawn stand-ins show until they load
     // v77 live feed: the game itself on the projector wall, the lounge TV and Bret's laptop, like the real room (main.js copies the frame in)
-    const FEED = (() => { const cv = document.createElement('canvas'); cv.width = 384; cv.height = 216; const g = cv.getContext('2d'); g.fillStyle = '#9aa6aa'; g.fillRect(0, 0, 384, 216); g.fillStyle = '#0f2a24'; g.font = 'italic 900 30px Arial'; g.textAlign = 'center'; g.fillText('RC DRIFT LAB', 192, 115);
-      const t = new T.CanvasTexture(cv); t.encoding = T.sRGBEncoding; t.minFilter = T.LinearFilter; t.generateMipmaps = false; return { cv, g, t, n: 0 }; })(); info.liveFeed = FEED;
+    const FEED = liveFeed(info);
     const feedM = o => new T.MeshBasicMaterial(Object.assign({ map: FEED.t, toneMapped: false }, o || {}));
-    const PH = (name, fb) => { const im = new Image(); im.onload = () => { fb.image = im; fb.repeat && fb.repeat.set(1, 1); fb.needsUpdate = true; }; im.src = (window.__ASSET_IMAGES && window.__ASSET_IMAGES['v2_' + name]) || (window.__ASSET_BASE || 'tex/') + 'v2_' + name + '.jpg'; return fb; };
+    const PH = photoTex;
 
     // ================= track walls: white 1/10 board walls with sponsor stickers, taped down at every joint =================
     const rib = (i0, n, oA, oB, y, mat, uLen) => { const p = [], uv = [], ix = []; for (let k = 0; k <= n; k++) { const j = ((i0 + k) % N + N) % N, nx = -tr.TY[j], ny = tr.TX[j]; p.push(tr.X[j] + nx * oA, y, -(tr.Y[j] + ny * oA), tr.X[j] + nx * oB, y, -(tr.Y[j] + ny * oB)); const u = uLen ? k * tr.ds / uLen : 0; uv.push(u, 0, u, 1); if (k < n) { const q = k * 2; ix.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } }
@@ -2465,11 +2479,49 @@ const SCN = (function () {
     { const lg = ctex(1024, 384, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(245,245,242,0.92)'; g.textAlign = 'center'; g.font = 'italic 900 58px Arial'; g.fillText('DRIFT BARKADA', w / 2, 70); g.font = '900 150px Arial'; g.fillText('PRODIGY RC', w / 2, 230); g.font = 'italic 900 62px Arial'; g.fillText('DRIFT ARENA', w / 2, 310); g.globalCompositeOperation = 'destination-out'; for (let k = 0; k < 900; k++) { g.globalAlpha = 0.3 + rnd() * 0.7; g.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 3, 1 + rnd() * 3); } });
       const m = new T.Mesh(new T.PlaneGeometry(2.4, 0.9), new T.MeshBasicMaterial(Object.assign({ map: lg, transparent: true, depthWrite: false, color: 0xdddddd }, PO))); m.rotation.x = -Math.PI / 2; m.position.set(-2.3, 0.003, 7.75); m.renderOrder = 3; add(m); }
 
+    const nightT = ctex(2048, 640, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h * 0.55); gr.addColorStop(0, '#05070d'); gr.addColorStop(1, '#141a26'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+          for (let k = 0; k < 4; k++) { const bx = k * 540 + rnd() * 120, bw = 360 + rnd() * 160, bt = h * (0.12 + rnd() * 0.1), bb = h * 0.62; g.fillStyle = ['#2a2320', '#30302c', '#272522', '#2d2824'][k];
+            g.fillRect(bx, bt, bw, bb - bt); for (let fy = bt + 18; fy < bb - 30; fy += 46) for (let fx = bx + 16; fx < bx + bw - 30; fx += 44) { const lit = rnd(); g.fillStyle = lit < 0.55 ? 'rgba(255,196,120,' + (0.55 + rnd() * 0.4) + ')' : lit < 0.7 ? 'rgba(170,200,255,0.5)' : '#161412'; g.fillRect(fx, fy, 24, 26); }
+            g.fillStyle = 'rgba(255,170,90,0.08)'; g.fillRect(bx, bb - 40, bw, 40); }
+          for (let k = 0; k < 7; k++) { const x = 120 + k * 300 + rnd() * 80; g.fillStyle = '#2a2b2e'; g.fillRect(x, h * 0.28, 7, h * 0.4); g.fillStyle = '#fff8e8'; g.fillRect(x - 14, h * 0.27, 34, 8);
+            const rg = g.createRadialGradient(x + 3, h * 0.3, 2, x + 3, h * 0.3, 110); rg.addColorStop(0, 'rgba(255,248,225,0.55)'); rg.addColorStop(1, 'rgba(255,248,225,0)'); g.fillStyle = rg; g.fillRect(x - 110, h * 0.3 - 110, 220, 220); }
+          for (let k = 0; k < 4; k++) { const x = 300 + k * 470 + rnd() * 100, top = h * 0.12; g.strokeStyle = '#1b1a16'; g.lineWidth = 10; g.beginPath(); g.moveTo(x, h * 0.66); g.quadraticCurveTo(x + 8, h * 0.4, x + 4, top); g.stroke();
+            g.strokeStyle = '#18251a'; g.lineWidth = 8; for (let j = 0; j < 9; j++) { const a = j / 9 * 6.28; g.beginPath(); g.moveTo(x + 4, top); g.quadraticCurveTo(x + 4 + Math.cos(a) * 60, top - 30, x + 4 + Math.cos(a) * 110, top + 30 + Math.abs(Math.sin(a)) * 40); g.stroke(); } }
+          const lg = g.createLinearGradient(0, h * 0.62, 0, h); lg.addColorStop(0, '#2c2c2e'); lg.addColorStop(1, '#3a3a3c'); g.fillStyle = lg; g.fillRect(0, h * 0.62, w, h * 0.38);
+          g.fillStyle = 'rgba(255,255,255,0.35)'; for (let x = 20; x < w; x += 150) { g.save(); g.translate(x, h * 0.66); g.transform(1, 0, -0.6, 1, 0, 0); g.fillRect(0, 0, 4, h * 0.3); g.restore(); }
+          for (let k = 0; k < 11; k++) { const x = 40 + k * 185 + rnd() * 30, y = h * 0.66 + (k % 2) * 34, cw = 150, c = ['#e8e8e6', '#15161a', '#5a1a1a', '#8a8d94', '#1f2a44', '#e8e8e6', '#2a2b2e'][k % 7]; if (rnd() < 0.25) continue;
+            g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x - 4, y + 52, cw + 8, 10); g.fillStyle = c; g.beginPath(); g.moveTo(x, y + 52); g.lineTo(x, y + 26); g.lineTo(x + 26, y + 20); g.lineTo(x + 44, y); g.lineTo(x + 108, y); g.lineTo(x + 128, y + 20); g.lineTo(x + cw, y + 26); g.lineTo(x + cw, y + 52); g.fill();
+            g.fillStyle = '#20262e'; g.fillRect(x + 48, y + 4, 56, 16); g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(x + 6, y + 26, cw - 12, 3); g.fillStyle = '#ff4030'; g.fillRect(x + 4, y + 30, 10, 5); g.fillRect(x + cw - 14, y + 30, 10, 5);
+            g.fillStyle = '#0b0b0c'; g.beginPath(); g.arc(x + 28, y + 52, 13, 0, 6.3); g.arc(x + cw - 28, y + 52, 13, 0, 6.3); g.fill(); } });
+    const bronze = mc(0x4a3a28, 0.45, 0.55);
     // ================= room shell =================
     const wallT = TX.whiteWall(); wallT.repeat.set(W / 4, H / 4); const wm = new T.MeshStandardMaterial({ map: wallT, roughness: 0.92, envMapIntensity: 0.35, color: 0xfafafa });
     const wallP = (w, x, z, ry, h, y0) => { const o = new T.Mesh(new T.PlaneGeometry(w, h || H), wm); o.position.set(x, (h || H) / 2 + FL + (y0 || 0), z); o.rotation.y = ry; o.receiveShadow = true; add(o); return o; };
-    wallP(W, cx, -Y1, 0); wallP(W, cx, -Y0, Math.PI); wallP(D, X0, -cy, Math.PI / 2);
-    wallP(D, X1, -cy, -Math.PI / 2);
+    wallP(W, cx, -Y1, 0);
+    { const ax0 = -0.15, ax1 = 0.95, at = 2.95;   // v80: south wall with the arched doorway to the lobby cut out
+      wallP(ax0 - X0, (X0 + ax0) / 2, -Y0, Math.PI); wallP(X1 - ax1, (ax1 + X1) / 2, -Y0, Math.PI); wallP(ax1 - ax0, (ax0 + ax1) / 2, -Y0, Math.PI, H - at, at);
+      const capT = ctex(256, 128, (g, w, h) => { g.fillStyle = '#f6f6f3'; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(w / 2, h, w / 2, Math.PI, 0); g.fill(); }, null);
+      const cap = new T.Mesh(new T.PlaneGeometry(ax1 - ax0, 0.55), new T.MeshStandardMaterial({ map: capT, transparent: true, alphaTest: 0.5, roughness: 0.92 })); cap.position.set((ax0 + ax1) / 2, 2.675 + FL, -Y0); cap.rotation.y = Math.PI; add(cap);
+      // the lobby (from the photo through the arch): glossy beige tile, drop ceiling with cans, glass storefront doors at night, drink fridge, D10 boxes, boards, bin, black curtain
+      const LX0 = -3.0, LX1 = 3.6, LY = Y0 - 4.2, lw = mc(0xf2f1ec, 0.9), lc = (LX0 + LX1) / 2;
+      const tileT = ctex(256, 256, (g, w, h) => { g.fillStyle = '#d9d1c1'; g.fillRect(0, 0, w, h); speck(g, w, h, 2500, ['#cfc6b4', '#e4dccc'], 1.5, 0.2, 0.6); g.strokeStyle = '#bdb3a0'; g.lineWidth = 3; g.strokeRect(0, 0, w, h); }, [6, 4]);
+      const lf = new T.Mesh(new T.PlaneGeometry(LX1 - LX0, Y0 - LY), new T.MeshStandardMaterial({ map: tileT, roughness: 0.18, metalness: 0.05 })); lf.rotation.x = -Math.PI / 2; lf.position.set(lc, FL + 0.001, -(Y0 + LY) / 2); add(lf);
+      const lcl = new T.Mesh(new T.PlaneGeometry(LX1 - LX0, Y0 - LY), mc(0xeeeeea, 0.9)); lcl.rotation.x = Math.PI / 2; lcl.position.set(lc, 3.0 + FL, -(Y0 + LY) / 2); add(lcl);
+      for (const [w2, x, z, r] of [[Y0 - LY, LX0, -(Y0 + LY) / 2, Math.PI / 2], [Y0 - LY, LX1, -(Y0 + LY) / 2, -Math.PI / 2]]) { const o = new T.Mesh(new T.PlaneGeometry(w2, 3.0), lw); o.position.set(x, 1.5 + FL, z); o.rotation.y = r; add(o); }
+      for (const [x, y] of [[-1.5, Y0 - 1.2], [1.4, Y0 - 1.2], [-1.5, Y0 - 3.1], [1.4, Y0 - 3.1]]) Bg(CYL, new T.MeshBasicMaterial({ color: 0xfff4e0 }), x, y, 2.99, 0, 0.22, 0.01, 0.22);
+      // storefront at the back: night outside + bronze frames + doors
+      const out = new T.Mesh(new T.PlaneGeometry(LX1 - LX0, 3.0), new T.MeshBasicMaterial({ map: nightT, color: 0xbbbbbb })); out.position.set(lc, 1.5 + FL, -LY); add(out);
+      Bg(BOX, bronze, lc, LY + 0.05, 2.75, 0, LX1 - LX0, 0.1, 0.1); Bg(BOX, bronze, lc, LY + 0.05, 0.06, 0, LX1 - LX0, 0.12, 0.1); for (let x = LX0 + 0.05; x <= LX1; x += (LX1 - LX0) / 5) Bg(BOX, bronze, x, LY + 0.05, 1.5, 0, 0.08, 3.0, 0.1);
+      Bg(BOX, mc(0xb8bbc0, 0.25, 0.9), 0.2, LY + 0.12, 1.05, 0, 0.6, 0.04, 0.04); Bg(BOX, mc(0x0b0b0c, 0.9), LX0 + 0.6, LY + 0.3, 1.5, 0, 1.1, 3.0, 0.1);
+      // fridge (glowing), D10 boxes, leaning boards, bin
+      Bg(BOX, mc(0xdcdcd8, 0.4, 0.3), LX1 - 0.5, Y0 - 1.5, 1.0, 0, 0.75, 2.0, 0.7); const fr = new T.Mesh(new T.PlaneGeometry(0.62, 1.55), new T.MeshBasicMaterial({ map: ctex(64, 160, (g, w, h) => { g.fillStyle = '#dff2ff'; g.fillRect(0, 0, w, h); for (let r = 0; r < 5; r++) for (let x = 3; x < w - 6; x += 7) { g.fillStyle = ['#d4202a', '#2a4dd4', '#ffc21a', '#35c759', '#ff7a1a', '#ffffff'][(Math.random() * 6) | 0]; g.fillRect(x, 12 + r * 30, 5, 18); } }) })); fr.position.set(LX1 - 0.5 - 0.38, 1.05 + FL, -(Y0 - 1.5)); fr.rotation.y = -Math.PI / 2; add(fr);
+      for (let k = 0; k < 4; k++) { Bg(BOX, mc(0x7a2a1a, 0.6), LX1 - 1.3, Y0 - 0.9, 0.12 + k * 0.24, 0.1, 0.55, 0.22, 0.4); Bg(BOX, mc(0x111214, 0.6), LX1 - 1.3, Y0 - 0.9, 0.12 + k * 0.24, 0.1, 0.4, 0.1, 0.405); }
+      for (let k = 0; k < 4; k++) Bg(BOX, mc(0xd8c49a, 0.8), LX1 - 1.95 - k * 0.03, Y0 - 1.1, 1.0, 0, 0.02, 2.0, 0.5, 0.2);
+      Bg(CYL, mc(0x151517, 0.6), LX0 + 0.45, Y0 - 0.6, 0.45, 0, 0.45, 0.9, 0.45);
+      plane(ctex(128, 48, (g, w, h) => { g.fillStyle = '#1a0606'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff3a30'; g.font = '900 34px Arial'; g.textAlign = 'center'; g.fillText('EXIT', w / 2, 36); }), 0.34, 0.13, lc, 2.7 + FL, -(Y0 - 0.15), 0, true);
+      (info.colliders || (info.colliders = [])).push([ax0 - 0.4, Y0 - 0.3, ax0, Y0 + 0.05], [ax1, Y0 - 0.3, ax1 + 0.4, Y0 + 0.05]); } wallP(D, X0, -cy, Math.PI / 2);
+    { const gy0 = -5.5, gy1 = 11.6, top = 3.24;   // v80: east wall with the storefront opening cut out
+      wallP(gy0 - Y0, X1, -(Y0 + gy0) / 2, -Math.PI / 2); wallP(Y1 - gy1, X1, -(gy1 + Y1) / 2, -Math.PI / 2); wallP(gy1 - gy0, X1, -(gy0 + gy1) / 2, -Math.PI / 2, H - top, top); }
     const baseM = mc(0x0d0d0f, 0.6); Bg(BOX, baseM, cx, Y1 - 0.012, 0.06, 0, W, 0.12, 0.02); Bg(BOX, baseM, cx, Y0 + 0.012, 0.06, 0, W, 0.12, 0.02); Bg(BOX, baseM, X0 + 0.012, cy, 0.06, 0, 0.02, 0.12, D); Bg(BOX, baseM, X1 - 0.012, cy, 0.06, 0, 0.02, 0.12, D);
     // ---- black open ceiling: deck, joists, three big round ducts with diffusers, pendant cans, LED troffers, sprinkler pipe ----
     { const ceil = new T.Mesh(new T.PlaneGeometry(W, D), mc(0x0b0b0d, 1)); ceil.rotation.x = Math.PI / 2; ceil.position.set(cx, H + FL, -cy); add(ceil);
@@ -2516,7 +2568,7 @@ const SCN = (function () {
         g.textAlign = 'left'; g.fillStyle = mint; g.font = 'italic 800 30px Arial'; g.fillText('ON TRACK / R16-7', 90, 560); g.font = '800 34px Arial'; g.fillText('07  Dr. Dingus', 90, 610); g.fillText('10  Alex Red', 90, 656); g.font = '700 20px Arial'; g.fillText('LEAD', 400, 610); g.fillText('CHASE', 400, 656);
         g.fillStyle = '#ff4a4a'; g.fillRect(470, 590, 54, 26); g.fillStyle = '#fff'; g.font = '900 18px Arial'; g.fillText('LIVE', 476, 610); g.fillStyle = '#9fb8b0'; g.font = '700 20px Arial'; g.fillText('NEXT  Tanner Cole vs Keegan Jenks', 90, 706); g.font = '700 22px Arial'; g.fillText('ROUND OF 16', 90, 770); g.fillStyle = mint; g.font = '900 54px Arial'; g.fillText('6', 330, 780); g.font = '700 18px Arial'; g.fillText('/ 8 DECIDED', 362, 776);
         for (let k = 0; k < 8; k++) { g.fillStyle = k < 6 ? mint : 'rgba(200,245,228,0.25)'; g.fillRect(90 + k * 46, 800, 38, 22); } });
-      void brT; const br = new T.Mesh(new T.PlaneGeometry(8.8, 4.95), feedM({ color: 0xd2d8da, transparent: true, opacity: 0.93, depthWrite: false })); br.position.set(-1.2, 3.05 + FL, z + 0.006); br.renderOrder = 1; add(br); FEED.meshes = [br];
+      void brT; const br = new T.Mesh(new T.PlaneGeometry(8.8, 4.95), feedM({ color: 0xd2d8da, transparent: true, opacity: 0.93, depthWrite: false })); br.position.set(-1.2, 3.05 + FL, z + 0.006); br.renderOrder = 1; add(br); FEED.meshes.push(br);
       const proj = (x, yy) => { Bg(BOX, mc(0xdcdcd8, 0.5), x, yy, H - 1.2, 0, 0.45, 0.16, 0.38); Bg(CYL, mc(0x222222, 0.5), x, yy, H - 0.6, 0, 0.03, 1.1, 0.03); Bg(CYL, mc(0x1a1a1c, 0.2, 0.3), x, yy + 0.2, H - 1.2, 0, 0.09, 0.03, 0.09, 0, Math.PI / 2); };
       proj(-1.2, 6.2); proj(-8.5, -4.0); proj(9.5, -4.0);
       // right of the projection
@@ -2604,7 +2656,7 @@ const SCN = (function () {
         Bg(BOX, mc(0x121214, 0.5), wx, Y0 + 2.0, 1.13, 0, 0.5, 0.42, 0.36); Bg(BOX, mc(0x2a2b2e, 0.4, 0.4), wx, Y0 + 2.0, 1.35, 0, 0.3, 0.02, 0.02); Bg(BOX, mc(0x1a1b1e, 0.5), wx, Y0 + 3.0, 1.06, 0, 0.45, 0.28, 0.32);
         Bg(BOX, mc(0xd4202a, 0.4), wx + 0.05, Y0 + 1.4, 0.95, 0.4, 0.42, 0.09, 0.19); Bg(BOX, mc(0xf2f2f2, 0.4), wx, Y0 + 3.3, 0.95, -0.2, 0.44, 0.1, 0.2); Bg(BOX, mc(0x2a4dd4, 0.5), wx + 0.1, Y0 + 0.7, 0.94, 0, 0.2, 0.04, 0.12);
         stool(wx + 0.75, Y0 + 1.4, 0.72, blk); stool(wx + 0.8, Y0 + 2.5, 0.72, blk);
-        K.person(wx + 0.95, -(Y0 + 2.5), Math.PI, 0x5a1f2a, true, 1, { pants: 0x2a2c34, cap: 0x2f4a2a, capBack: true, shoes: 0xd8d8d8 }); grp.children[grp.children.length - 1].position.y = FL + 0.24;
+        K.person(wx + 0.95, -(Y0 + 2.5), Math.PI, 0x5a1f2a, true, 1, { pants: 0x2a2c34, cap: 0x2f4a2a, capBack: true, shoes: 0xd8d8d8, lift: 0.24 }); grp.children[grp.children.length - 1].position.y = FL + 0.24;
         plane(PH('yokomo', ban(['YOKAZE', 'RC MODEL CARS'], '#e8202a', '#ffd21a', '#ffd21a', 1)), 1.55, 0.64, X0 + 0.02, 2.3 + FL, -(cY1 - 0.95), Math.PI / 2);
         plane(PH('gensace', ban(['GEN POWER', 'power your passion'], '#0f1a12', '#ffffff', '#35c759', 3)), 1.5, 0.83, X0 + 0.02, 2.25 + FL, -(Y0 + 1.1), Math.PI / 2);
         for (const [y, c] of [[Y0 + 2.05, 0x5a3ae0], [Y0 + 2.4, 0x2a2224]]) { const b = new T.Mesh(new T.SphereGeometry(0.2, 14, 8, 0, Math.PI), mc(c, 0.25, 0.3)); b.scale.set(0.45, 0.95, 0.42); b.position.set(X0 + 0.05, 2.1 + FL, -y); b.rotation.y = Math.PI / 2; add(b); }
@@ -2617,7 +2669,7 @@ const SCN = (function () {
             const p = F(a, 0); Bg(BOX, wh, p[0], p[1], 0.012, 0, 0.09, 0.024, Wd + 0.1); Bg(BOX, wh, p[0], p[1], h - 0.03, 0, 0.05, 0.04, Wd); }
           const e = F(L / 2, 0); Bg(BOX, rd, e[0], e[1], h - 0.03, 0, 0.02, 0.06, Wd + 0.02); }
         // two racers at the back: one on the laptop at the draped table (TV shows the game), one standing over him
-        K.person(-13.0, -(Y0 + 0.95), -Math.PI / 2, 0x2a2b30, true, 1, { pants: 0x1c1d22, cap: 0x111214 }); grp.children[grp.children.length - 1].position.y = FL + 0.24;
+        K.person(-13.0, -(Y0 + 0.95), -Math.PI / 2, 0x2a2b30, true, 1, { pants: 0x1c1d22, cap: 0x111214, lift: 0.24 }); grp.children[grp.children.length - 1].position.y = FL + 0.24;
         K.person(-13.6, -(Y0 + 1.0), -Math.PI / 2 + 0.4, 0x6b6e74, false, 1, { pants: 0x2a2c34 }); onFloor(); }
       // long black pit bench with stools, tool boxes, chargers, cars on stands; racers working
       const benchM = mc(0x121214, 0.45, 0.2), legM = mc(0x2a2b2e, 0.4, 0.6), stoolM = mc(0x0c0c0d, 0.5, 0.4);
@@ -2630,7 +2682,7 @@ const SCN = (function () {
           else { Bg(BOX, mc(0xe6e6e2, 0.5), x, Y0 + 0.28, 1.15, 0, 0.36, 0.42, 0.34); } } }
       for (const [x, s, ry] of [[-6.6, 0x2a2b2e, Math.PI / 2], [-3.4, 0x111111, Math.PI / 2 + 0.3], [5.2, 0x1f2a4a, Math.PI / 2], [7.0, 0xdedede, Math.PI / 2 - 0.4], [9.4, 0x1c1d21, Math.PI / 2], [11.6, 0x6b6b6b, -Math.PI / 2]]) { K.person(x, -(Y0 + 1.15), ry, s, false); onFloor(); }
       // v77: Bret on a stool at the bench, playing RC Drift Lab on the laptop with his purple radio (black cap, black jacket, black pants, black/white sneakers)
-      { const bx = 10.4, by = Y0 + 1.05; K.person(bx, -by, -Math.PI / 2, 0x141416, true, 1, { skin: 0xd9a47a, pants: 0x111214, cap: 0x0d0d0f, tx: 0x5a1fc8, shoes: 0x121214 }); grp.children[grp.children.length - 1].position.y = FL + 0.29;
+      { const bx = 10.4, by = Y0 + 1.05; K.person(bx, -by, -Math.PI / 2, 0x141416, true, 1, { skin: 0xd9a47a, pants: 0x111214, cap: 0x0d0d0f, tx: 0x5a1fc8, shoes: 0x121214, lift: 0.29 }); grp.children[grp.children.length - 1].position.y = FL + 0.29;
         const lx = bx, ly = Y0 + 0.5, lap = mc(0x1c1d22, 0.35, 0.4), th = 0.94;
         Bg(BOX, lap, lx, ly, th + 0.009, 0, 0.36, 0.018, 0.25); Bg(BOX, mc(0x2a2c31, 0.4, 0.3), lx, ly + 0.03, th + 0.019, 0, 0.3, 0.002, 0.1);   // base + keyboard deck
         const hy = ly - 0.125, tilt = 0.24, sh = 0.23, cyh = th + 0.018 + Math.cos(tilt) * sh / 2, cyy = hy - Math.sin(tilt) * sh / 2;
@@ -2643,7 +2695,7 @@ const SCN = (function () {
       plane(ctex(1024, 300, (g, w, h) => { g.fillStyle = '#1b1c1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2f2f2'; g.font = '900 150px Arial'; g.textAlign = 'center'; g.fillText('PRODIGY RC', w / 2, 170); g.font = 'italic 900 56px Arial'; g.fillText('DRIFT ARENA', w * 0.42, 250); }), 4.0, 1.18, 7.2, 2.15 + FL, z, Math.PI);
       plane(PH('sdc', ctex(1024, 512, (g, w, h) => { g.fillStyle = '#141416'; g.fillRect(0, 0, w, h); g.fillStyle = '#d8b03a'; g.beginPath(); g.arc(860, 150, 90, 0, 6.3); g.fill(); g.fillStyle = '#ffffff'; g.font = '900 64px Arial'; g.textAlign = 'center'; g.fillText('SDC 2026', 470, 200); g.font = '700 34px Arial'; g.fillText('SUPER DRIFT COMPETITION', 470, 250); g.fillStyle = '#d8b03a'; g.fillRect(250, 280, 440, 48); g.fillStyle = '#141416'; g.font = '700 30px Arial'; g.fillText('Nevada Region', 470, 315);
         g.fillStyle = '#ffffff'; g.font = '900 120px Arial'; g.fillText('2', 120, 450); g.fillText('1', 470, 440); g.fillText('3', 830, 460); g.font = '700 24px Arial'; g.fillText('PRODIGY RC · LAS VEGAS', 160, 60); g.fillText('ROUND', 860, 270); })), 2.3, 0.94, 2.3, 2.75 + FL, z, Math.PI);
-      Bg(BOX, mc(0x161514, 0.9), 0.4, pz, 1.2, 0, 1.1, 2.4, 0.02); const arch = new T.Mesh(new T.CircleGeometry(0.55, 20, 0, Math.PI), mc(0x161514, 0.9)); arch.position.set(0.4, 2.4 + FL, -(pz + 0.01)); arch.rotation.y = Math.PI; add(arch);
+      
       plane(ctex(128, 48, (g, w, h) => { g.fillStyle = '#f8f8f8'; g.fillRect(0, 0, w, h); g.fillStyle = '#d4202a'; g.font = '900 34px Arial'; g.textAlign = 'center'; g.fillText('EXIT', w / 2, 36); }), 0.34, 0.13, 0.4, 3.25 + FL, z - 0.01, Math.PI, true);
       plane(PH('vertex', ctex(256, 900, (g, w, h) => { g.fillStyle = '#d4202a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffffff'; g.save(); g.translate(w / 2, h / 2); g.rotate(-Math.PI / 2); g.font = 'italic 900 170px Arial'; g.textAlign = 'center'; g.fillText('VORTEX', 0, 50); g.restore(); g.fillStyle = '#111'; g.fillRect(0, 0, 22, h); })), 0.6, 1.65, 14.4, 1.7 + FL, z, Math.PI);
       for (let k = 0; k < 4; k++) { Bg(BOX, mc(0x18191b, 0.5), 15.9, Y0 + 0.25, 0.45 + k * 0.45, 0, 1.3, 0.03, 0.4); for (let j = 0; j < 5; j++) Bg(BOX, mc([0xd4202a, 0x2a4dd4, 0xffffff, 0x111214, 0xffc21a][(rnd() * 5) | 0], 0.5), 15.4 + j * 0.24, Y0 + 0.25, 0.55 + k * 0.45, 0, 0.18, 0.16, 0.28); }
@@ -2655,15 +2707,23 @@ const SCN = (function () {
 
     // ================= window wall (east): storefront glass with the parking lot + palms + mountains, black curtains, exit sign; driver riser =================
     { const wx = X1 - 0.02, ry = -Math.PI / 2, gy0 = -5.5, gy1 = 11.6, gL = gy1 - gy0;
-      const outT = ctex(2048, 512, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#9ccff0'); gr.addColorStop(0.5, '#dbeef8'); gr.addColorStop(0.62, '#e9ece8'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-        g.fillStyle = '#9a8670'; g.beginPath(); g.moveTo(0, h * 0.5); for (let x = 0; x <= w; x += 32) g.lineTo(x, h * 0.42 - Math.sin(x * 0.006) * 30 - Math.sin(x * 0.021) * 12 - rnd() * 6); g.lineTo(w, h * 0.6); g.lineTo(0, h * 0.6); g.fill();
-        for (let k = 0; k < 7; k++) { const x = rnd() * w, bw = 140 + rnd() * 200, bh = 50 + rnd() * 60; g.fillStyle = ['#e4d4b8', '#d9c4a2', '#efe4d0'][k % 3]; g.fillRect(x, h * 0.58 - bh, bw, bh); g.fillStyle = '#b8603a'; g.beginPath(); g.moveTo(x - 10, h * 0.58 - bh); g.lineTo(x + bw / 2, h * 0.58 - bh - 34); g.lineTo(x + bw + 10, h * 0.58 - bh); g.fill(); }
-        g.fillStyle = '#6a6c70'; g.fillRect(0, h * 0.58, w, h * 0.42); g.fillStyle = 'rgba(255,255,255,0.5)'; for (let x = 40; x < w; x += 140) g.fillRect(x, h * 0.8, 6, h * 0.2);
-        for (let k = 0; k < 9; k++) { const x = 60 + rnd() * (w - 120), y = h * 0.6 + rnd() * h * 0.12, c = ['#f2f2f2', '#1a1b1e', '#7a1f1f', '#c9cbd0', '#2a3a5a'][k % 5]; g.fillStyle = c; g.fillRect(x, y, 150, 56); g.fillRect(x + 20, y - 26, 90, 30); g.fillStyle = '#9fc4dc'; g.fillRect(x + 28, y - 22, 74, 20); g.fillStyle = '#111'; g.beginPath(); g.arc(x + 30, y + 58, 16, 0, 6.3); g.arc(x + 120, y + 58, 16, 0, 6.3); g.fill(); }
-        for (let k = 0; k < 6; k++) { const x = 100 + rnd() * (w - 200), top = h * (0.1 + rnd() * 0.15); g.strokeStyle = '#6a5440'; g.lineWidth = 9; g.beginPath(); g.moveTo(x, h * 0.62); g.quadraticCurveTo(x + 10, h * 0.4, x + 4, top); g.stroke(); g.strokeStyle = '#3e6a2c'; g.lineWidth = 7; for (let j = 0; j < 9; j++) { const a = j / 9 * 6.28; g.beginPath(); g.moveTo(x + 4, top); g.quadraticCurveTo(x + 4 + Math.cos(a) * 50, top - 24, x + 4 + Math.cos(a) * 90, top + 30 + Math.abs(Math.sin(a)) * 20); g.stroke(); } }
-        g.fillStyle = '#1a1b1d'; for (let x = 0; x <= w; x += w / 10) g.fillRect(x - 6, 0, 12, h); g.fillRect(0, h * 0.18, w, 10); g.fillStyle = 'rgba(255,255,255,0.12)'; for (let k = 0; k < 10; k++) { g.save(); g.translate(k * w / 10 + 40, 0); g.transform(1, 0, 0.4, 1, 0, 0); g.fillRect(0, 0, 40, h); g.restore(); } });
-      plane(outT, gL, 2.9, wx, 1.75 + FL, -(gy0 + gL / 2), ry, true, { color: 0xf2f2f2 });
-      Bg(BOX, mc(0x1a1b1d, 0.4, 0.5), wx - 0.02, (gy0 + gy1) / 2, 3.24, 0, 0.06, 0.08, gL); Bg(BOX, mc(0x1a1b1d, 0.4, 0.5), wx - 0.02, (gy0 + gy1) / 2, 0.29, 0, 0.06, 0.08, gL);
+      // v80: the real storefront at night (Shaun's photos): bronze frames + double doors with push bars, a covered walkway outside
+      // (sloped glass roof on bronze rafters, cans), then the parking lot, pole lights, parked cars and the lit building across the lot
+      plane(nightT, gL + 14, 5.2, X1 + 5.5, 2.0 + FL, -(gy0 + gL / 2), ry, true, { color: 0xd8d8d8 });
+      // walkway floor, curb, the sloped walkway roof with rafters + cans, columns
+      const wk = mc(0x55524c, 0.85); Bg(BOX, wk, X1 + 1.25, (gy0 + gy1) / 2, -0.03 + FL, 0, 2.5, 0.06, gL + 6); Bg(BOX, mc(0xbdb8ae, 0.7), X1 + 2.55, (gy0 + gy1) / 2, -0.05 + FL, 0, 0.18, 0.16, gL + 6);
+      Bg(BOX, mc(0x2a2b2e, 0.95), X1 + 4.0, (gy0 + gy1) / 2, -0.12 + FL, 0, 3.0, 0.05, gL + 6);
+      const wood = mc(0x8a6a48, 0.8);
+      { const roof = new T.Mesh(new T.PlaneGeometry(gL + 6, 2.8), new T.MeshStandardMaterial({ color: 0x8a7a62, roughness: 0.5, transparent: true, opacity: 0.55, side: T.DoubleSide })); roof.position.set(X1 + 1.3, 3.55 + FL, -(gy0 + gy1) / 2); roof.rotation.set(-Math.PI / 2 + 0.38, -Math.PI / 2, 0, 'YXZ'); add(roof); }
+      for (let y = gy0 - 2.5; y <= gy1 + 2.5; y += 1.25) { Bg(BOX, bronze, X1 + 1.3, y, 3.55, 0, 2.75, 0.09, 0.07, -0.38); }
+      for (let y = gy0 - 2; y <= gy1 + 2; y += 3.2) { Bg(BOX, bronze, X1 + 2.45, y, 1.55, 0, 0.12, 3.1, 0.12); Bg(CYL, new T.MeshBasicMaterial({ color: 0xfff1d6 }), X1 + 1.3, y + 0.6, 3.48, 0, 0.18, 0.02, 0.18); }
+      Bg(BOX, wood, X1 + 1.3, (gy0 + gy1) / 2, 3.06, 0, 0.14, 0.14, gL + 6);
+      // bronze frames: sill, head, transom bar, mullions every 1.7 m; double doors with push bars mid-run
+      const gL2 = gL, fy0 = gy0; Bg(BOX, bronze, wx, (gy0 + gy1) / 2, 0.06, 0, 0.1, 0.12, gL2); Bg(BOX, bronze, wx, (gy0 + gy1) / 2, 3.18, 0, 0.1, 0.12, gL2); Bg(BOX, bronze, wx, (gy0 + gy1) / 2, 2.55, 0, 0.1, 0.07, gL2);
+      for (let y = fy0; y <= gy1 + 0.01; y += gL2 / 10) Bg(BOX, bronze, wx, y, 1.6, 0, 0.1, 3.2, 0.08);
+      const dc = gy0 + gL2 * 0.35; for (const sd of [-1, 1]) { Bg(BOX, bronze, wx - 0.02, dc + sd * 0.85, 1.25, 0, 0.12, 2.5, 0.07); Bg(BOX, mc(0xb8bbc0, 0.25, 0.9), wx - 0.07, dc + sd * 0.45, 1.05, 0, 0.04, 0.04, 0.62); Bg(BOX, mc(0xe8e8e6, 0.5), wx - 0.06, dc + sd * 0.45, 2.42, 0, 0.06, 0.07, 0.32); }
+      // the glass itself: faint, slightly bronze-tinted, reflecting the room
+      { const gm = new T.MeshBasicMaterial({ color: 0x8a7a66, transparent: true, opacity: 0.07, depthWrite: false }); const gp = new T.Mesh(new T.PlaneGeometry(gL2, 3.1), gm); gp.position.set(wx + 0.01, 1.6 + FL, -(gy0 + gL2 / 2)); gp.rotation.y = ry; gp.renderOrder = 2; add(gp); }
       const cur = mc(0x08080a, 0.95); for (const [y0, y1] of [[gy0 - 0.9, gy0 + 0.1], [gy1 - 0.4, Y1]]) Bg(BOX, cur, X1 - 0.12, (y0 + y1) / 2, 1.8, 0, 0.12, 3.6, y1 - y0);
       plane(ctex(128, 48, (g, w, h) => { g.fillStyle = '#f8f8f8'; g.fillRect(0, 0, w, h); g.fillStyle = '#d4202a'; g.font = '900 34px Arial'; g.textAlign = 'center'; g.fillText('EXIT', w / 2, 36); }), 0.34, 0.13, wx - 0.03, 3.5 + FL, -2.6, ry, true);
       // the drivers' riser in front of the glass: black stage decks, carpet top, two steps, rail; five drivers with radios watching the course
@@ -2671,7 +2731,7 @@ const SCN = (function () {
       Bg(BOX, deck, (rx0 + rx1) / 2, (ry0 + ry1) / 2, rh / 2, 0, rx1 - rx0, rh, ry1 - ry0); Bg(BOX, carpet, (rx0 + rx1) / 2, (ry0 + ry1) / 2, rh + 0.005, 0, rx1 - rx0 - 0.04, 0.01, ry1 - ry0 - 0.04);
       for (let k = 0; k < 2; k++) Bg(BOX, deck, rx0 - 0.2 - k * 0.22, ry0 + 0.9, rh * (2 - k) / 3, 0, 0.22, rh * (2 - k) / 1.5, 1.0);
       for (let y = ry0 + 0.6; y < ry1; y += 1.2) Bg(BOX, mc(0x8e9196, 0.3, 0.8), rx1 - 0.08, y, rh + 0.5, 0, 0.04, 1.0, 0.04); Bg(BOX, mc(0x8e9196, 0.3, 0.8), rx1 - 0.08, (ry0 + ry1) / 2, rh + 1.0, 0, 0.05, 0.05, ry1 - ry0);
-      const drv = [0x6a4a3a, 0x111111, 0x2a2b2e, 0xdedede, 0x3b4a5c]; for (let k = 0; k < 5; k++) { K.person(19.4 + (rnd() - 0.5) * 0.4, -(ry0 + 1.3 + k * 1.75), Math.PI + (rnd() - 0.5) * 0.4, drv[k], false); grp.children[grp.children.length - 1].position.y = rh + FL; }
+      const drv = [0x6a4a3a, 0x111111, 0x2a2b2e, 0xdedede, 0x3b4a5c]; for (let k = 0; k < 5; k++) { K.person(19.4 + (rnd() - 0.5) * 0.4, -(ry0 + 1.3 + k * 1.75), Math.PI + (rnd() - 0.5) * 0.4, drv[k], false, 1, { lift: rh }); grp.children[grp.children.length - 1].position.y = rh + FL; }
       info.stand = { x: 19.5, y: 1.8, h: rh + 1.62 + FL };
       // pit tables in the window corner on the projector side, with the crew around them
       K.table(18.8, -9.6, 2.2, 0.8, Math.PI / 2, 0xe6e6e2); onFloor(); K.table(17.0, -11.4, 2.2, 0.8, 0.1, 0xe6e6e2); onFloor();
@@ -2835,7 +2895,7 @@ const SCN = (function () {
   // ~0.5 m taped lanes are sized for 1/24-1/28 mini drifters, so a 1/10 car needs the room scaled up; the near half of the floor is stretched 1.25x where the photo foreshortens it). Blue painter's tape and black rubber
   // landscape-edging curbs are drawn exactly where they sit in the photo; the drivable corridor (track def 'britt') runs between them.
   function britt(ctx) {
-    const { grp, tr, info } = ctx, K = kit(grp), { add, std } = K, S = 2.8;
+    const { grp, tr, info } = ctx, K = kit(grp, info), { add, std } = K, S = 2.8;
     const zs = z => z >= 3 ? z : 3 - (3 - z) * 1.25, gx = X => X * S, gy = Z => zs(Z) * S, V = (X, Z, h) => new T.Vector3(gx(X), h, -gy(Z));
     const RX0 = -3.6, RX1 = 3.25, RZ0 = 0.0, RZ1 = 6.95, H = 2.75 * S;                     // room: walls + ceiling (real 2.75 m)
     const x0 = gx(RX0), x1 = gx(RX1), y0 = gy(RZ0), y1 = gy(RZ1);
@@ -2971,7 +3031,18 @@ const SCN = (function () {
     RB(std(0x1d3fbf, 0.5), 3.02, 3.72, 0.12, 0.3, 0.42, 0.1); for (const [a, b] of [[-0.15, -0.17], [0.15, -0.17], [-0.15, 0.17], [0.15, 0.17]]) B(TOR, tireRub, gx(3.02 + a), 0.09 * S, -gy(3.72 + b), Math.PI / 2, 0.17 * S, 0.17 * S, 0.11 * S, 0, 0);
     flush();
   }
-  return { TX, prodigy, prodigy2, lot, shop, diamondback, tandem, britt, pits, setMats, infieldSpots };
+  // v80: a wall TV showing the live game, on the wall the driver stand looks at (indoor venues without a projector)
+  function feedTV(ctx) { const { grp, info } = ctx, R = info.room, st = info.stand; if (!R || !st) return; const T = THREE, F = liveFeed(info);
+    const walls = [[R.Y1, 'n'], [R.Y0, 's'], [R.X0, 'w'], [R.X1, 'e']], d = { n: R.Y1 - st.y, s: st.y - R.Y0, w: st.x - R.X0, e: R.X1 - st.x }, best = walls.map(w => w[1]).sort((a, b) => d[b] - d[a])[0];
+    const wC = 2.4, hC = 1.35, y0 = 2.35, g = new T.Group(); const bez = new T.Mesh(new T.BoxGeometry(wC + 0.08, hC + 0.08, 0.06), new T.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.3, metalness: 0.4 }));
+    const scr = new T.Mesh(new T.PlaneGeometry(wC, hC), new T.MeshBasicMaterial({ map: F.t, toneMapped: false })); scr.position.z = 0.032; g.add(bez, scr); F.meshes.push(scr);
+    const cx = (R.X0 + R.X1) / 2, cy = (R.Y0 + R.Y1) / 2, off = 0.06;
+    if (best === 'n') { g.position.set(Math.max(R.X0 + 2, Math.min(R.X1 - 2, st.x)), y0, -(R.Y1 - off)); g.rotation.y = 0; }
+    if (best === 's') { g.position.set(Math.max(R.X0 + 2, Math.min(R.X1 - 2, st.x)), y0, -(R.Y0 + off)); g.rotation.y = Math.PI; }
+    if (best === 'w') { g.position.set(R.X0 + off, y0, -Math.max(R.Y0 + 2, Math.min(R.Y1 - 2, st.y))); g.rotation.y = Math.PI / 2; }
+    if (best === 'e') { g.position.set(R.X1 - off, y0, -Math.max(R.Y0 + 2, Math.min(R.Y1 - 2, st.y))); g.rotation.y = -Math.PI / 2; }
+    void cx; void cy; grp.add(g); }
+  return { feedTV, TX, prodigy, prodigy2, lot, shop, diamondback, tandem, britt, pits, setMats, infieldSpots };
 })();
 
 </script>
@@ -3520,7 +3591,7 @@ const GFX = (function () {
       for (const p of L) {
         const d = PROP[p.id], k = d.hdr.kind, pal = PROP_PAL[k] || PROP_PAL.solid, s = p.s || 1, c = Math.cos(p.ry || 0), sn = Math.sin(p.ry || 0); let seed = (p.seed || 1) * 9301 + 49297;
         const pick = arr => { seed = (seed * 9301 + 49297) % 233280; return arr[Math.floor(seed / 233280 * arr.length)]; };
-        const cols = pal.map(a => { col.setHex(pick(a)); return [col.r, col.g, col.b]; });
+        const cols = pal.map((a, bi) => { const h = pick(a), ov = p.cols && p.cols[bi]; col.setHex(ov != null ? ov : h); return [col.r, col.g, col.b]; });
         for (let i = 0; i < d.hdr.nv; i++) { const x = d.pos[i * 3] * s, y = d.pos[i * 3 + 1] * s, z = d.pos[i * 3 + 2] * s, j = (vo + i) * 3;
           P[j] = p.x + x * c + z * sn; P[j + 1] = (p.z || 0) + y; P[j + 2] = -p.y - x * sn + z * c;
           const nx = d.nor[i * 3], nz = d.nor[i * 3 + 2]; Nn[j] = nx * c + nz * sn; Nn[j + 1] = d.nor[i * 3 + 1]; Nn[j + 2] = -nx * sn + nz * c;
@@ -4087,6 +4158,7 @@ const GFX = (function () {
         [['DRIFT', '#ff2a6a'], ['HOTEL', '#35e0ff'], ['RAMEN', '#ffb020'], ['24H', '#a46bff']].forEach(([t2, c5], k) => { const a = (k + 0.3) / 4 * Math.PI * 2, r = 30, px = cx + Math.cos(a) * r, pz = -cy + Math.sin(a) * r; const m = new T.Mesh(new T.PlaneGeometry(8, 2), new T.MeshBasicMaterial({ map: neon(t2, c5), fog: false })); m.position.set(px, 8 + k * 3, pz); m.lookAt(cx, 8 + k * 3, -cy); add(m); }); }
       SCN.pits({ grp, tr, info, b: { x0, x1, y0: -z1, y1: -z0 }, kind: 'roof', avoid: [[cx, minY - 2.1, 2.8]], max: 8, flag: 0xffd23a });
     }
+    if (info.room && !info.liveFeed && !info.night && env !== 'touge') SCN.feedTV({ grp, info });
     scene.add(grp); info.group = grp;
     return info;
   }
@@ -4744,7 +4816,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v79', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v80', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
