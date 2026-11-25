@@ -95,6 +95,15 @@ h3{margin:20px 0 8px;font-size:11px;letter-spacing:.22em;text-transform:uppercas
 .big:hover{filter:brightness(1.1)}
 .ghost{display:block;width:100%;margin:6px 0;padding:10px;border:1px solid var(--ln);border-radius:4px;background:rgba(255,255,255,.04);font-weight:600;cursor:pointer;text-align:center}
 .ghost:hover{border-color:var(--ac)}
+body.phototool #menu,body.phototool #hud,body.phototool #mini,body.phototool #chat,body.phototool #touch,body.phototool .tc,body.phototool #pauseBtn{display:none!important}
+#camtool{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;width:min(680px,94vw);background:rgba(10,11,14,.78);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);color:#eee;font:13px/1.35 system-ui,sans-serif}
+#camtool .cthint{opacity:.75;margin-bottom:8px;text-align:center}
+#camtool .ctrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#camtool .ctrow .big,#camtool .ctrow .ghost{width:auto;flex:1 1 auto;margin:0;padding:10px 12px}
+#camtool .ctfov{display:flex;align-items:center;gap:6px;flex:1 1 140px}#camtool .ctfov input{flex:1}
+#camtool .ctpad{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px}#camtool .ctpad .ghost{margin:0;padding:12px 4px;touch-action:none;user-select:none}
+#ctflash{position:fixed;inset:0;background:#fff;z-index:70;pointer-events:none;animation:ctf .35s ease-out forwards}@keyframes ctf{from{opacity:.85}to{opacity:0}}
+.ctmenu{display:flex;gap:8px}.ctmenu .big,.ctmenu .ghost{flex:1;margin:6px 0}
 .row{display:grid;grid-template-columns:132px 1fr;gap:4px 12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .row>label{font-size:13px;font-weight:600}
 .row>.tip{grid-column:1/-1;margin:0}
@@ -2507,7 +2516,7 @@ const SCN = (function () {
         g.textAlign = 'left'; g.fillStyle = mint; g.font = 'italic 800 30px Arial'; g.fillText('ON TRACK / R16-7', 90, 560); g.font = '800 34px Arial'; g.fillText('07  Dr. Dingus', 90, 610); g.fillText('10  Alex Red', 90, 656); g.font = '700 20px Arial'; g.fillText('LEAD', 400, 610); g.fillText('CHASE', 400, 656);
         g.fillStyle = '#ff4a4a'; g.fillRect(470, 590, 54, 26); g.fillStyle = '#fff'; g.font = '900 18px Arial'; g.fillText('LIVE', 476, 610); g.fillStyle = '#9fb8b0'; g.font = '700 20px Arial'; g.fillText('NEXT  Tanner Cole vs Keegan Jenks', 90, 706); g.font = '700 22px Arial'; g.fillText('ROUND OF 16', 90, 770); g.fillStyle = mint; g.font = '900 54px Arial'; g.fillText('6', 330, 780); g.font = '700 18px Arial'; g.fillText('/ 8 DECIDED', 362, 776);
         for (let k = 0; k < 8; k++) { g.fillStyle = k < 6 ? mint : 'rgba(200,245,228,0.25)'; g.fillRect(90 + k * 46, 800, 38, 22); } });
-      void brT; const br = new T.Mesh(new T.PlaneGeometry(8.8, 4.95), feedM({ color: 0xd2d8da, transparent: true, opacity: 0.93, depthWrite: false })); br.position.set(-1.2, 3.05 + FL, z + 0.006); br.renderOrder = 1; add(br);
+      void brT; const br = new T.Mesh(new T.PlaneGeometry(8.8, 4.95), feedM({ color: 0xd2d8da, transparent: true, opacity: 0.93, depthWrite: false })); br.position.set(-1.2, 3.05 + FL, z + 0.006); br.renderOrder = 1; add(br); FEED.meshes = [br];
       const proj = (x, yy) => { Bg(BOX, mc(0xdcdcd8, 0.5), x, yy, H - 1.2, 0, 0.45, 0.16, 0.38); Bg(CYL, mc(0x222222, 0.5), x, yy, H - 0.6, 0, 0.03, 1.1, 0.03); Bg(CYL, mc(0x1a1a1c, 0.2, 0.3), x, yy + 0.2, H - 1.2, 0, 0.09, 0.03, 0.09, 0, Math.PI / 2); };
       proj(-1.2, 6.2); proj(-8.5, -4.0); proj(9.5, -4.0);
       // right of the projection
@@ -2538,21 +2547,78 @@ const SCN = (function () {
       for (const [y, c] of [[3.2, 0x15161a], [3.8, 0x1f5a2a]]) { Bg(CYL, mc(c, 0.7), X0 + 0.45, y, 0.4, 0, 0.55, 0.8, 0.55); Bg(CYL, mc(c, 0.6), X0 + 0.45, y, 0.82, 0, 0.6, 0.05, 0.6); }
       Bg(BOX, mc(0x0f0f10, 0.5), X0 + 0.4, 5.0, 0.55, 0, 0.45, 1.1, 0.4); Bg(BOX, mc(0x2a2b2e, 0.4), X0 + 0.63, 5.0, 0.7, 0, 0.02, 0.6, 0.3);
       // white folding table along the wall with a speaker + boxes (behind the mini-mart corner)
-      K.table(X0 + 0.6, -(-9.0), 1.8, 0.7, Math.PI / 2, 0xeeeeea); onFloor(); K.chair(X0 + 1.3, -(-8.5), Math.PI); onFloor(); }
+      // v79 room details from the photos: fire extinguisher + lock-up signs by the exit, Igloo cooler + folded green camp chairs by the roll-up door
+      Bg(CYL, mc(0xc8141c, 0.4, 0.2), X0 + 0.1, -2.35, 0.95, 0, 0.12, 0.42, 0.12); Bg(BOX, mc(0x111214, 0.5), X0 + 0.1, -2.35, 1.2, 0, 0.06, 0.08, 0.06); Bg(BOX, mc(0x2a2b2e, 0.5), X0 + 0.04, -2.35, 1.05, 0, 0.02, 0.5, 0.08);
+      for (const [y, t] of [[-1.85, ['Lock Door', '@', 'End Of Day']], [-1.35, ['All doors must', 'be locked @', '5:00pm']]]) plane(ctex(160, 160, (g, w, h) => { g.fillStyle = '#fbfbf8'; g.fillRect(0, 0, w, h); g.fillStyle = y > -1.5 ? '#c8141c' : '#111'; g.font = '700 22px Arial'; g.textAlign = 'center'; t.forEach((l, k) => g.fillText(l, w / 2, 50 + k * 34)); }), 0.26, 0.26, X0 + 0.07, 1.85 + FL, -y, Math.PI / 2);
+      plane(ctex(256, 96, (g, w, h) => { g.fillStyle = '#f7d14a'; g.fillRect(0, 0, w, h); g.fillStyle = '#c8141c'; g.font = '900 24px Arial'; g.textAlign = 'center'; g.fillText('EMERGENCY EXIT ONLY', w / 2, 36); g.fillText('ALARM WILL SOUND', w / 2, 70); }), 0.5, 0.19, X0 + 0.07, 1.42 + FL, 1.6, Math.PI / 2);
+      { const ig = 0x1f3f8a; Bg(BOX, mc(0xf2f2ee, 0.4), X0 + 0.45, 8.5, 0.24, 0, 0.42, 0.34, 0.7); Bg(BOX, mc(ig, 0.4), X0 + 0.45, 8.5, 0.42, 0, 0.44, 0.04, 0.72); Bg(BOX, mc(ig, 0.4), X0 + 0.45, 8.5, 0.1, 0, 0.43, 0.2, 0.71); }
+      for (const y of [9.25, 9.5]) { Bg(BOX, mc(0x1a1b1e, 0.6), X0 + 0.18, y, 0.55, 0, 0.12, 1.1, 0.3, 0.15); Bg(BOX, mc(0x7de05a, 0.5), X0 + 0.2, y, 0.55, 0, 0.13, 1.08, 0.02, 0.15); }
+      // louvred return vents high on the long walls, fire-alarm strobes, ceiling security cams
+      { const lv = ctex(128, 64, (g, w, h) => { g.fillStyle = '#ececea'; g.fillRect(0, 0, w, h); g.fillStyle = '#b9bab7'; for (let k = 0; k < 8; k++) g.fillRect(4, 4 + k * 7.5, w - 8, 3.5); g.fillRect(w / 2 - 1, 0, 2, h); });
+        for (const x of [-1.6, 6.2]) plane(lv, 1.15, 0.6, x, 4.45 + FL, -(Y0 + 0.03), Math.PI); for (const x of [-12.5, 14.5]) plane(lv, 1.15, 0.6, x, 4.45 + FL, -(Y1 - 0.03), 0);
+        const strobe = (x, y, ry) => { const g2 = new T.Group(); const b = new T.Mesh(new T.BoxGeometry(0.11, 0.14, 0.05), mc(0xf4f4f2, 0.5)); g2.add(b); const r = new T.Mesh(new T.BoxGeometry(0.06, 0.03, 0.03), new T.MeshBasicMaterial({ color: 0xff3b30 })); r.position.set(0, 0.03, 0.03); g2.add(r); g2.position.set(x, 2.75 + FL, -y); g2.rotation.y = ry; add(g2); };
+        strobe(4.4, Y0 + 0.03, Math.PI); strobe(-3.0, Y1 - 0.03, 0); strobe(X1 - 0.03, -4, -Math.PI / 2); strobe(X0 + 0.03, -4.2, Math.PI / 2);
+        for (const [x, y] of [[X0 + 0.4, Y1 - 0.4], [X1 - 0.4, Y0 + 0.4], [X1 - 0.4, Y1 - 0.4], [-9.0, Y0 + 0.4]]) { Bg(CYL, mc(0xf2f2f0, 0.5), x, y, H - 1.05, 0, 0.012, 0.1, 0.012); Bg(CYL, mc(0x111214, 0.4), x, y, H - 1.14, 0, 0.07, 0.1, 0.07, Math.PI / 2 - 0.4); } }
+      // two tall black column speakers, like the ones by the exit and under the banner wall
+      for (const [x, y] of [[X0 + 0.35, 0.9], [X1 - 0.45, Y1 - 1.6]]) { Bg(BOX, mc(0x0e0e10, 0.45), x, y, 0.95, 0, 0.32, 1.9, 0.32); Bg(BOX, mc(0x1a1a1c, 0.8), x, y, 0.95, 0, 0.325, 1.7, 0.31); }
+    }
 
     // ================= pit wall (south): lounge under the drop ceiling, doorway + vertical banner, the long pit bench, venue + podium banners, arched door, back-room door =================
     { const z = -(Y0 + 0.02), pz = Y0 + 0.02;
-      plane(PH('apexi', ban(['APEX-R'], '#f4f4f2', '#111214', '#d4202a', 1)), 1.6, 0.75, -15.9, 2.45 + FL, z, Math.PI);
-      plane(PH('gensace', ban(['GEN POWER', 'power your passion'], '#0f1a12', '#ffffff', '#35c759', 3)), 1.5, 0.83, -13.6, 2.35 + FL, z, Math.PI);
-      plane(PH('yokomo', ban(['YOKAZE', 'RC MODEL CARS'], '#e8202a', '#ffd21a', '#ffd21a', 1)), 1.5, 0.62, -11.9, 2.6 + FL, z, Math.PI);
+      plane(PH('apexi', ban(['APEX-R'], '#f4f4f2', '#111214', '#d4202a', 1)), 1.7, 0.8, -12.3, 2.3 + FL, z, Math.PI);
       Bg(BOX, mc(0x0b0b0c, 0.25, 0.2), -15.0, pz + 0.04, 1.75, 0, 1.3, 0.75, 0.05); Bg(FLAT, mc(0x1a2230, 0.15, 0.1), -15.0, pz + 0.07, 1.75, 0, 1.22, 1, 0.68, 0, -Math.PI / 2);
-      for (const [x, s, sit, ry] of [[-17.2, 0x111214, true, -Math.PI / 2], [-16.4, 0x7a1f3a, true, -Math.PI / 2 - 0.4], [-14.2, 0x1c1d21, true, Math.PI], [-12.6, 0x5a1f2a, false, Math.PI / 2]]) { K.person(x, -(Y0 + 1.3), ry, s, sit); onFloor(); if (sit) { K.chair(x, -(Y0 + 1.3), ry); onFloor(); } }
-      K.table(-16.8, -(Y0 + 0.75), 1.4, 0.7, 0, 0xeeeeea); onFloor(); K.table(-14.0, -(Y0 + 0.45), 1.8, 0.6, 0, 0x2a2b2e); onFloor();
-      Bg(BOX, mc(0x151517, 0.6), -13.0, Y0 + 0.5, 0.35, 0, 0.5, 0.7, 0.4); Bg(BOX, mc(0x8a1a2a, 0.6), -17.8, Y0 + 0.9, 0.3, 0.3, 0.4, 0.6, 0.3);
       // doorway (dark) with frame, vertical yellow/black banner on the column
-      Bg(BOX, mc(0x161514, 0.9), -10.6, pz, 1.1, 0, 1.0, 2.2, 0.02); for (const x of [-11.12, -10.08]) Bg(BOX, mc(0x3b2a22, 0.6), x, pz + 0.02, 1.1, 0, 0.06, 2.22, 0.06); Bg(BOX, mc(0x3b2a22, 0.6), -10.6, pz + 0.02, 2.23, 0, 1.1, 0.06, 0.06);
+      Bg(BOX, mc(0x161514, 0.9), -8.7, pz, 1.1, 0, 1.0, 2.2, 0.02); for (const x of [-9.22, -8.18]) Bg(BOX, mc(0x3b2a22, 0.6), x, pz + 0.02, 1.1, 0, 0.06, 2.22, 0.06); Bg(BOX, mc(0x3b2a22, 0.6), -8.7, pz + 0.02, 2.23, 0, 1.1, 0.06, 0.06);
+      plane(ctex(128, 96, (g, w, h) => { g.fillStyle = '#fbfbf8'; g.fillRect(0, 0, w, h); g.fillStyle = '#333'; g.font = 'italic 26px Arial'; g.textAlign = 'center'; g.fillText('Restroom', w / 2, 40); g.font = '30px Arial'; g.fillText('←', w / 2, 80); }), 0.28, 0.21, -8.62, 1.65 + FL, z - 0.03, Math.PI);
       const tsT = ctex(256, 900, (g, w, h) => { g.fillStyle = '#121214'; g.fillRect(0, 0, w, h); g.fillStyle = '#e9d27a'; g.save(); g.translate(w / 2, h / 2); g.rotate(Math.PI / 2); g.font = 'italic 900 150px Arial'; g.textAlign = 'center'; g.fillText('TOP★SECTOR', 0, 40); g.font = '700 34px Arial'; g.fillText('PERFORMANCE ENGINEERING SERVICE', 0, 100); g.restore(); });
-      plane(PH('topsecret', tsT), 0.62, 1.86, -11.6, 2.75 + FL, z, Math.PI);
+      plane(PH('topsecret', tsT), 0.62, 1.86, -10.45, 1.75 + FL, -(-8.79), 0);   // on the cove's front wall, facing the track
+      // ================= v79 the side pit cove: a real recessed room (own side wall + front wing wall, low tile ceiling), laid out from Shaun's photos =================
+      { const cw = mc(0xf3f3f0, 0.92), base = mc(0x0d0d0f, 0.6), cX1 = -9.6, cY1 = -8.9, dH = 3.15;
+        Bg(BOX, cw, cX1 + 0.1, (Y0 + cY1) / 2, H / 2, 0, 0.2, H, cY1 - Y0 + 0.1);                 // side wall (full height) between the cove and the main pit wall
+        Bg(BOX, cw, -10.55, cY1 + 0.0, dH / 2, 0, 2.1, dH, 0.2);                                       // front wing wall where Top Secret hangs
+        Bg(BOX, base, cX1 - 0.005, (Y0 + cY1) / 2, 0.06, 0, 0.02, 0.12, cY1 - Y0); Bg(BOX, base, -10.55, cY1 - 0.105, 0.06, 0, 2.1, 0.12, 0.02); Bg(BOX, base, -10.55, cY1 + 0.105, 0.06, 0, 2.1, 0.12, 0.02);
+        (info.colliders || (info.colliders = [])).push([cX1, Y0, cX1 + 0.2, cY1 + 0.1], [-11.6, cY1 - 0.1, cX1 + 0.2, cY1 + 0.1]);
+        // grey steel door on the cove side of the wall, electrical panel + lever by the opening, thermostat
+        Bg(BOX, mc(0x9a9ca0, 0.45, 0.4), cX1 - 0.02, -11.4, 1.05, 0, 0.04, 2.1, 0.95); Bg(BOX, mc(0xc9cbd0, 0.3, 0.7), cX1 - 0.05, -11.05, 1.0, 0, 0.05, 0.04, 0.16);
+        Bg(BOX, mc(0xa9abaf, 0.45, 0.5), cX1 - 0.06, -9.45, 1.5, 0, 0.1, 0.75, 0.45); Bg(BOX, mc(0xd4202a, 0.5), cX1 - 0.12, -9.45, 1.35, 0, 0.03, 0.03, 0.14);
+        Bg(BOX, mc(0xe6e6e2, 0.5), -15.9, Y0 + 0.03, 1.5, 0, 0.12, 0.09, 0.03);
+        // back wall: TV (already), white mini-split AC high up, black draped table under the APEXi flag with a box, a truss piece, a bag of parts
+        Bg(BOX, mc(0xf4f4f2, 0.5), -15.4, Y0 + 0.13, 2.75, 0, 0.95, 0.3, 0.24); Bg(BOX, mc(0xdadad6, 0.5), -15.4, Y0 + 0.25, 2.62, 0, 0.9, 0.02, 0.02);
+        const drape = mc(0x0f0f11, 0.85); Bg(BOX, drape, -12.3, Y0 + 0.45, 0.45, 0, 1.6, 0.9, 0.7); Bg(BOX, mc(0x18181b, 0.7), -12.3, Y0 + 0.45, 0.905, 0, 1.62, 0.012, 0.72);
+        plane(ctex(256, 64, (g, w, h) => { g.fillStyle = '#0f0f11'; g.fillRect(0, 0, w, h); g.fillStyle = '#e8e8e8'; g.font = 'italic 900 26px Arial'; g.textAlign = 'center'; g.fillText('Royal Gourmet', w / 2, 40); }), 0.42, 0.105, -12.0, 0.65 + FL, -(Y0 + 0.805), 0);
+        Bg(BOX, mc(0xb8864e, 0.85), -12.6, Y0 + 0.45, 1.08, 0.2, 0.3, 0.32, 0.26); Bg(BOX, mc(0xa47040, 0.85), -12.6, Y0 + 0.45, 1.25, 0.2, 0.32, 0.02, 0.28);
+        Bg(BOX, mc(0x8a8d92, 0.4, 0.7), -12.95, Y0 + 0.4, 1.3, 0, 0.06, 0.75, 0.06); Bg(BOX, mc(0x8a8d92, 0.4, 0.7), -12.85, Y0 + 0.4, 1.66, 0, 0.3, 0.05, 0.05); Bg(BOX, mc(0xb05a2a, 0.7), -11.7, Y0 + 0.4, 0.98, 0, 0.12, 0.16, 0.12);
+        // white folding table with the boxed D10, black bar stools, a chrome bar stool, folding chairs
+        K.table(-13.3, -(Y0 + 1.5), 1.1, 0.55, 0, 0xf2f2ee); onFloor(); Bg(BOX, mc(0xd8521c, 0.5), -13.35, Y0 + 1.5, 0.86, 0.15, 0.5, 0.18, 0.22); Bg(BOX, mc(0x111214, 0.5), -13.35, Y0 + 1.5, 0.87, 0.15, 0.3, 0.12, 0.226);
+        const stool = (x, y, h, m) => { Bg(CYL, m, x, y, h / 2, 0, 0.03, h, 0.03); Bg(CYL, m, x, y, h + 0.02, 0, 0.36, 0.06, 0.36); for (let k = 0; k < 4; k++) { const a = k * 1.5708 + 0.785; Bg(BOX, m, x + Math.cos(a) * 0.16, y + Math.sin(a) * 0.16, h / 2, -a, 0.025, h, 0.025, 0.18); } };
+        const blk = mc(0x0c0c0d, 0.5, 0.4); stool(-11.3, Y0 + 1.25, 0.72, blk); stool(-10.6, Y0 + 1.1, 0.72, blk);
+        Bg(CYL, mc(0xd8dade, 0.15, 0.95), -12.5, Y0 + 1.7, 0.02, 0, 0.5, 0.03, 0.5); Bg(CYL, mc(0xd8dade, 0.15, 0.95), -12.5, Y0 + 1.7, 0.4, 0, 0.05, 0.78, 0.05); Bg(BOX, mc(0x111214, 0.4), -12.5, Y0 + 1.7, 0.82, 0.3, 0.44, 0.08, 0.42); Bg(BOX, mc(0x111214, 0.4), -12.5, Y0 + 1.48, 1.08, 0.3, 0.42, 0.45, 0.06, 0, 0.12);
+        K.chair(-14.0, -(Y0 + 1.6), Math.PI / 2); onFloor(); K.chair(-10.9, -(Y0 + 2.2), -Math.PI / 2 + 0.3); onFloor();
+        // side (west) wall: the long wood-top pit table, wall car stands, power towers, tool cases, hung bodies, Gens Ace + Yokomo, a fan
+        const wx = X0 + 0.32, wood = mc(0x7a4a2a, 0.55), legs = mc(0x18191b, 0.5, 0.5);
+        Bg(BOX, wood, wx, (Y0 + cY1) / 2 + 0.2, 0.9, 0, 0.62, 0.035, 3.3); Bg(BOX, mc(0x111214, 0.5), wx + 0.31, (Y0 + cY1) / 2 + 0.2, 0.89, 0, 0.012, 0.05, 3.3);
+        for (const y of [Y0 + 0.5, Y0 + 1.7, Y0 + 2.9]) { Bg(BOX, legs, wx, y, 0.45, 0, 0.5, 0.9, 0.04); }
+        for (let y = Y0 + 0.6; y < cY1 - 0.2; y += 0.62) { Bg(BOX, mc(0x151618, 0.5), X0 + 0.03, y, 1.32, 0, 0.06, 0.16, 0.12); Bg(BOX, mc(0x151618, 0.5), X0 + 0.12, y, 1.42, 0, 0.18, 0.012, 0.14);   // wall car stands
+          Bg(BOX, mc(0xf2f2ee, 0.5), X0 + 0.015, y + 0.25, 1.05, 0, 0.02, 0.1, 0.06); }                                                                                          // outlets
+        for (const y of [Y0 + 1.0, Y0 + 2.6]) { Bg(BOX, mc(0x0e0e10, 0.4), wx + 0.1, y, 1.04, 0, 0.1, 0.26, 0.1); for (let k = 0; k < 3; k++) Bg(BOX, new T.MeshBasicMaterial({ color: 0x2ad46a }), wx + 0.151, y, 0.96 + k * 0.07, 0, 0.003, 0.012, 0.03); }   // power towers
+        Bg(BOX, mc(0x121214, 0.5), wx, Y0 + 2.0, 1.13, 0, 0.5, 0.42, 0.36); Bg(BOX, mc(0x2a2b2e, 0.4, 0.4), wx, Y0 + 2.0, 1.35, 0, 0.3, 0.02, 0.02); Bg(BOX, mc(0x1a1b1e, 0.5), wx, Y0 + 3.0, 1.06, 0, 0.45, 0.28, 0.32);
+        Bg(BOX, mc(0xd4202a, 0.4), wx + 0.05, Y0 + 1.4, 0.95, 0.4, 0.42, 0.09, 0.19); Bg(BOX, mc(0xf2f2f2, 0.4), wx, Y0 + 3.3, 0.95, -0.2, 0.44, 0.1, 0.2); Bg(BOX, mc(0x2a4dd4, 0.5), wx + 0.1, Y0 + 0.7, 0.94, 0, 0.2, 0.04, 0.12);
+        stool(wx + 0.75, Y0 + 1.4, 0.72, blk); stool(wx + 0.8, Y0 + 2.5, 0.72, blk);
+        K.person(wx + 0.95, -(Y0 + 2.5), Math.PI, 0x5a1f2a, true, 1, { pants: 0x2a2c34, cap: 0x2f4a2a, capBack: true, shoes: 0xd8d8d8 }); grp.children[grp.children.length - 1].position.y = FL + 0.24;
+        plane(PH('yokomo', ban(['YOKAZE', 'RC MODEL CARS'], '#e8202a', '#ffd21a', '#ffd21a', 1)), 1.55, 0.64, X0 + 0.02, 2.3 + FL, -(cY1 - 0.95), Math.PI / 2);
+        plane(PH('gensace', ban(['GEN POWER', 'power your passion'], '#0f1a12', '#ffffff', '#35c759', 3)), 1.5, 0.83, X0 + 0.02, 2.25 + FL, -(Y0 + 1.1), Math.PI / 2);
+        for (const [y, c] of [[Y0 + 2.05, 0x5a3ae0], [Y0 + 2.4, 0x2a2224]]) { const b = new T.Mesh(new T.SphereGeometry(0.2, 14, 8, 0, Math.PI), mc(c, 0.25, 0.3)); b.scale.set(0.45, 0.95, 0.42); b.position.set(X0 + 0.05, 2.1 + FL, -y); b.rotation.y = Math.PI / 2; add(b); }
+        const fan = (x, y) => { Bg(CYL, mc(0xe8e8e4, 0.5), x, y, 0.02, 0, 0.3, 0.03, 0.3); Bg(CYL, mc(0xe8e8e4, 0.5), x, y, 0.55, 0, 0.025, 1.05, 0.025); Bg(CYL, mc(0xf0f0ec, 0.4), x, y, 1.15, 0, 0.42, 0.12, 0.42, 0, Math.PI / 2); };
+        fan(X0 + 0.5, cY1 - 0.4);
+        // the white 1/10 bridge in front of the cove: black slatted deck on three white trestles with red stripes, red end board (you can drive under it)
+        { const F = frame(-13.7, -7.95, 0), wh = mc(0xf0f0ec, 0.6), rd = mc(0xb3121a, 0.55), bk = mc(0x111214, 0.7), L = 1.7, Wd = 0.8, h = 0.34;
+          for (let k = 0; k < 9; k++) { const p = F(-L / 2 + (k + 0.5) * L / 9, 0); Bg(BOX, bk, p[0], p[1], h, 0, L / 9 - 0.03, 0.02, Wd); }
+          for (const a of [-L / 2 + 0.06, 0, L / 2 - 0.06]) { for (const b of [-Wd / 2 + 0.05, Wd / 2 - 0.05]) { const p = F(a, b); Bg(BOX, wh, p[0], p[1], h / 2, 0, 0.05, h, 0.05); Bg(BOX, rd, p[0], p[1], 0.06, 0, 0.052, 0.012, 0.052); Bg(BOX, rd, p[0], p[1], 0.085, 0, 0.052, 0.012, 0.052); }
+            const p = F(a, 0); Bg(BOX, wh, p[0], p[1], 0.012, 0, 0.09, 0.024, Wd + 0.1); Bg(BOX, wh, p[0], p[1], h - 0.03, 0, 0.05, 0.04, Wd); }
+          const e = F(L / 2, 0); Bg(BOX, rd, e[0], e[1], h - 0.03, 0, 0.02, 0.06, Wd + 0.02); }
+        // two racers at the back: one on the laptop at the draped table (TV shows the game), one standing over him
+        K.person(-13.0, -(Y0 + 0.95), -Math.PI / 2, 0x2a2b30, true, 1, { pants: 0x1c1d22, cap: 0x111214 }); grp.children[grp.children.length - 1].position.y = FL + 0.24;
+        K.person(-13.6, -(Y0 + 1.0), -Math.PI / 2 + 0.4, 0x6b6e74, false, 1, { pants: 0x2a2c34 }); onFloor(); }
       // long black pit bench with stools, tool boxes, chargers, cars on stands; racers working
       const benchM = mc(0x121214, 0.45, 0.2), legM = mc(0x2a2b2e, 0.4, 0.6), stoolM = mc(0x0c0c0d, 0.5, 0.4);
       for (const [a, b] of [[-9.3, 2.6], [3.2, 13.4]]) { Bg(BOX, benchM, (a + b) / 2, Y0 + 0.4, 0.92, 0, b - a, 0.04, 0.7); for (let x = a + 0.1; x <= b; x += 1.6) Bg(BOX, legM, x, Y0 + 0.4, 0.46, 0, 0.04, 0.92, 0.6);
@@ -2569,10 +2635,10 @@ const SCN = (function () {
         Bg(BOX, lap, lx, ly, th + 0.009, 0, 0.36, 0.018, 0.25); Bg(BOX, mc(0x2a2c31, 0.4, 0.3), lx, ly + 0.03, th + 0.019, 0, 0.3, 0.002, 0.1);   // base + keyboard deck
         const hy = ly - 0.125, tilt = 0.24, sh = 0.23, cyh = th + 0.018 + Math.cos(tilt) * sh / 2, cyy = hy - Math.sin(tilt) * sh / 2;
         Bg(BOX, lap, lx, cyy - 0.006, cyh, 0, 0.36, sh + 0.02, 0.012, 0, -tilt);   // lid
-        const scr = new T.Mesh(new T.PlaneGeometry(0.33, 0.2), feedM()); scr.position.set(lx, cyh, -(cyy + 0.009)); scr.rotation.order = 'YXZ'; scr.rotation.set(tilt, Math.PI, 0); add(scr);
+        const scr = new T.Mesh(new T.PlaneGeometry(0.33, 0.2), feedM()); scr.position.set(lx, cyh, -(cyy + 0.009)); scr.rotation.order = 'YXZ'; scr.rotation.set(tilt, Math.PI, 0); add(scr); FEED.meshes.push(scr);
         Bg(CYL, mc(0x111214, 0.5), lx - 0.3, ly + 0.05, th + 0.005, 0, 0.004, 0.01, 0.004); Bg(BOX, mc(0x0d0d0f, 0.5), lx - 0.75, Y0 + 0.22, th + 0.12, 0, 0.1, 0.24, 0.1); }   // cable + power tower
       // the lounge TV plays the game too
-      { const tv = new T.Mesh(new T.PlaneGeometry(1.2, 0.66), feedM()); tv.position.set(-15.0, 1.75 + FL, -(Y0 + 0.02 + 0.073)); tv.rotation.y = Math.PI; add(tv); }
+      { const tv = new T.Mesh(new T.PlaneGeometry(1.2, 0.66), feedM()); tv.position.set(-15.0, 1.75 + FL, -(Y0 + 0.02 + 0.073)); tv.rotation.y = Math.PI; add(tv); FEED.meshes.push(tv); }
       // venue banner (plain lettering), the SDC-style podium banner, arched door with exit sign, red vertical banner by the windows, back-room door
       plane(ctex(1024, 300, (g, w, h) => { g.fillStyle = '#1b1c1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2f2f2'; g.font = '900 150px Arial'; g.textAlign = 'center'; g.fillText('PRODIGY RC', w / 2, 170); g.font = 'italic 900 56px Arial'; g.fillText('DRIFT ARENA', w * 0.42, 250); }), 4.0, 1.18, 7.2, 2.15 + FL, z, Math.PI);
       plane(PH('sdc', ctex(1024, 512, (g, w, h) => { g.fillStyle = '#141416'; g.fillRect(0, 0, w, h); g.fillStyle = '#d8b03a'; g.beginPath(); g.arc(860, 150, 90, 0, 6.3); g.fill(); g.fillStyle = '#ffffff'; g.font = '900 64px Arial'; g.textAlign = 'center'; g.fillText('SDC 2026', 470, 200); g.font = '700 34px Arial'; g.fillText('SUPER DRIFT COMPETITION', 470, 250); g.fillStyle = '#d8b03a'; g.fillRect(250, 280, 440, 48); g.fillStyle = '#141416'; g.font = '700 30px Arial'; g.fillText('Nevada Region', 470, 315);
@@ -4571,6 +4637,7 @@ const ONLINE = (() => {
     if (chatBox && chatBox.classList.contains('typing')) return;
     const k = e.key.toLowerCase(); if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
     if (keys[k]) return; keys[k] = true; audioStart();
+    if (CT.on) { if (k === 'escape') ctClose(); if (k === ' ' && CT.on === 'photo') snapPhoto(); return; }
     if (ONLINE.room && mode === 'drive' && /^[1-8]$/.test(k)) { qSend('q' + (+k - 1)); return; }
     if (k === 'v' && ONLINE.room) { talk(true); return; }
     if (k === 'escape' || k === 'p') { mode === 'drive' ? openMenu('pause') : mode === 'pause' ? drive(false) : 0; }
@@ -4677,7 +4744,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v78', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v79', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -4913,22 +4980,67 @@ const ONLINE = (() => {
   { const C = canvas, isMenu = () => mode !== 'drive';
     C.addEventListener('pointerdown', e => { if (!isMenu()) return; OV.ptrs.set(e.pointerId, [e.clientX, e.clientY]); try { C.setPointerCapture(e.pointerId); } catch (er) { } OV.pinch = 0; });
     C.addEventListener('pointermove', e => { const p = OV.ptrs.get(e.pointerId); if (!p || !isMenu()) return; const dx = e.clientX - p[0], dy = e.clientY - p[1]; OV.ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-      if (OV.ptrs.size >= 2) { const [a, b] = Array.from(OV.ptrs.values()), d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (OV.pinch) OV.dist = clamp(OV.dist * OV.pinch / d, 0.3, mode === 'pause' ? 7 : 2.6); OV.pinch = d; }
+      const zmax = CT.on === 'photo' ? 30 : mode === 'pause' ? 7 : 2.6, pan = (mx, my) => { const k = OV.dist * 0.0016, r = [Math.sin(OV.yaw), -Math.cos(OV.yaw)], f = [-Math.cos(OV.yaw), -Math.sin(OV.yaw)]; CT.pan[0] += -r[0] * mx * k + f[0] * my * k; CT.pan[2] += -r[1] * mx * k + f[1] * my * k; };
+      if (OV.ptrs.size >= 2) { const [a, b] = Array.from(OV.ptrs.values()), d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (OV.pinch) OV.dist = clamp(OV.dist * OV.pinch / d, 0.3, zmax); OV.pinch = d; if (CT.on === 'photo') pan(dx / 2, dy / 2); }
+      else if (CT.on === 'photo' && (e.buttons & 2 || e.shiftKey)) pan(dx, dy);
       else { OV.yaw += dx * 0.009; OV.pitch = clamp(OV.pitch + dy * 0.006, 0.04, 1.35); }
       OV.user = 8; OV.focus = null; });
     const up = e => { OV.ptrs.delete(e.pointerId); OV.pinch = 0; }; C.addEventListener('pointerup', up); C.addEventListener('pointercancel', up);
-    C.addEventListener('wheel', e => { if (!isMenu()) return; e.preventDefault(); OV.dist = clamp(OV.dist * Math.exp(e.deltaY * 0.0012), 0.3, mode === 'pause' ? 7 : 2.6); OV.user = 8; }, { passive: false }); }
+    C.addEventListener('wheel', e => { if (!isMenu()) return; e.preventDefault(); OV.dist = clamp(OV.dist * Math.exp(e.deltaY * 0.0012), 0.3, CT.on === 'photo' ? 30 : mode === 'pause' ? 7 : 2.6); OV.user = 8; }, { passive: false });
+    C.addEventListener('contextmenu', e => { if (CT.on) e.preventDefault(); }); }
   const _o1 = new T.Vector3(), _o2 = new T.Vector3();
+  // ===================== v79 camera tools (pause menu): photo mode + pick where you stand to drive =====================
+  const CT = { on: null, pan: [0, 0, 0], fov: 42, el: null, hold: null };
+  const standKey = () => track && track.def.id;
+  function myStand() { const o = S.opt.stands && S.opt.stands[standKey()]; return o || world.stand; }
+  function ctClose() { if (CT.el) CT.el.remove(); CT.el = null; CT.on = null; CT.hold = null; document.body.classList.remove('phototool'); OV.enter = true; renderPanel(); }
+  function ctOpen(kind) { if (mode === 'drive') openMenu('pause'); if (CT.el) CT.el.remove(); CT.on = kind; CT.hold = null; document.body.classList.add('phototool');
+    const w = el('div'); w.id = 'camtool'; document.body.appendChild(w); CT.el = w; return w; }
+  const ctBtn = (w, txt, fn, cls) => { const b = el('button', cls || 'ghost', txt); b.onclick = fn; w.appendChild(b); return b; };
+  function photoMode() { const w = ctOpen('photo'); CT.pan = [0, 0, 0]; CT.fov = 42; OV.focus = null; OV.user = 8; if (OV.dist < 1.2) OV.dist = 1.6;
+    w.appendChild(el('div', 'cthint', 'Drag to orbit · scroll or pinch to zoom · two fingers, right-drag or WASD to move · Q/E up/down'));
+    const row1 = el('div', 'ctrow'); w.appendChild(row1);
+    ctBtn(row1, '📸 Take photo', snapPhoto, 'big'); ctBtn(row1, 'Re-center', () => { CT.pan = [0, 0, 0]; });
+    const fv = el('input'); fv.type = 'range'; fv.min = 15; fv.max = 90; fv.value = CT.fov; fv.oninput = () => { CT.fov = +fv.value; }; const fl = el('label', 'ctfov', 'Lens '); fl.appendChild(fv); row1.appendChild(fl);
+    ctBtn(row1, 'Done', ctClose); }
+  function snapPhoto() { try { if (composer) composer.render(0); else renderer.render(scene, camera);
+      const url = renderer.domElement.toDataURL('image/jpeg', 0.93), name = 'rc-drift-lab-' + (standKey() || 'shot') + '-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.jpg';
+      const fl = el('div'); fl.id = 'ctflash'; document.body.appendChild(fl); setTimeout(() => fl.remove(), 350);
+      fetch(url).then(r => r.blob()).then(b => { const f = new File([b], name, { type: 'image/jpeg' });
+        if (isTouch && navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], title: 'RC Drift Lab' }).catch(() => { });
+        else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('Photo saved · ' + name, 'good'); } });
+    } catch (e) { toast('Could not take the photo on this device', 'bad'); } }
+  function standEdit() { const w = ctOpen('stand'); const S0 = myStand(); S.opt.stands = S.opt.stands || {}; S.opt.stands[standKey()] = { x: S0.x, y: S0.y, h: S0.h };
+    w.appendChild(el('div', 'cthint', 'Where you stand to drive (Driver stand camera). Hold the arrows or use WASD / arrow keys · Q/E or the buttons for height.'));
+    const pad = el('div', 'ctpad'); w.appendChild(pad);
+    const hb = (txt, v) => { const b = el('button', 'ghost', txt); const on = e => { e.preventDefault(); CT.hold = v; }, off = () => { CT.hold = null; }; b.addEventListener('pointerdown', on); ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, off)); pad.appendChild(b); return b; };
+    hb('◀ Left', [0, -1, 0]); hb('▲ Closer', [1, 0, 0]); hb('▼ Back', [-1, 0, 0]); hb('Right ▶', [0, 1, 0]); hb('⤒ Higher', [0, 0, 1]); hb('⤓ Lower', [0, 0, -1]);
+    const row1 = el('div', 'ctrow'); w.appendChild(row1);
+    ctBtn(row1, 'Reset to the venue stand', () => { delete S.opt.stands[standKey()]; save(); const d = world.stand; S.opt.stands[standKey()] = { x: d.x, y: d.y, h: d.h }; });
+    ctBtn(row1, 'Done', () => { const st = S.opt.stands[standKey()], d = world.stand; if (st && Math.hypot(st.x - d.x, st.y - d.y) < 0.02 && Math.abs(st.h - d.h) < 0.02) delete S.opt.stands[standKey()]; save(); if (S.opt.cam !== 4) { S.opt.cam = 4; save(); toast('Camera set to Driver stand'); } ctClose(); }, 'big'); }
+  function ctTick(dt) {
+    if (CT.on === 'photo') { const f = [-Math.cos(OV.yaw), -Math.sin(OV.yaw)], r = [Math.sin(OV.yaw), -Math.cos(OV.yaw)], v = dt * Math.max(0.4, OV.dist * 0.7);
+      const a = (keys['w'] ? 1 : 0) - (keys['s'] ? 1 : 0), b = (keys['d'] ? 1 : 0) - (keys['a'] ? 1 : 0), u = (keys['e'] ? 1 : 0) - (keys['q'] ? 1 : 0);
+      CT.pan[0] += (f[0] * a + r[0] * b) * v; CT.pan[2] += (f[1] * a + r[1] * b) * v; CT.pan[1] = clamp(CT.pan[1] + u * v, -0.05, 6); }
+    if (CT.on === 'stand') { const st = S.opt.stands[standKey()], c = player.sim; let dx = c.x - st.x, dy = c.y - st.y; const dd = Math.hypot(dx, dy) || 1; dx /= dd; dy /= dd;
+      const k = CT.hold || [((keys['w'] || keys['arrowup']) ? 1 : 0) - ((keys['s'] || keys['arrowdown']) ? 1 : 0), ((keys['d'] || keys['arrowright']) ? 1 : 0) - ((keys['a'] || keys['arrowleft']) ? 1 : 0), (keys['e'] ? 1 : 0) - (keys['q'] ? 1 : 0)];
+      const sp = 1.6 * dt; st.x += (dx * k[0] + dy * k[1]) * sp; st.y += (dy * k[0] - dx * k[1]) * sp; st.h = clamp(st.h + k[2] * dt * 0.8, -0.3, 5);
+      const B = camBox(0.35); st.x = clamp(st.x, B[0], B[1]); st.y = clamp(st.y, B[2], B[3]); } }
+  function camBox(m) { const R = world.room; return R ? [R.X0 + m, R.X1 - m, R.Y0 + m, R.Y1 - m] : [world.cx - world.sx / 2 + m, world.cx + world.sx / 2 - m, world.cy - world.sy / 2 + m, world.cy + world.sy / 2 - m]; }
+
   let camYaw = 0, shake = 0, menuAng = 0.6; const cp = new T.Vector3(), cl = new T.Vector3(), tp = new T.Vector3(), tl = new T.Vector3(); let camInit = false;
+  // v79: the live screens only copy a frame when at least one of them is actually on screen (no cost while you're looking elsewhere)
+  const _fr = new T.Frustum(), _fm = new T.Matrix4();
+  function feedSeen(F) { if (!F.meshes || !F.meshes.length) return true; _fm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _fr.setFromProjectionMatrix(_fm); return F.meshes.some(m => m.visible && _fr.intersectsObject(m)); }
   function updateCam(dt) {
-    const c = player.sim, px = c.x, pz = -c.y, cam = mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
+    if (CT.on) ctTick(dt); const c = player.sim, px = c.x, pz = -c.y, cam = CT.on === 'stand' ? 4 : mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
     const vdir = c.speed > 0.8 ? Math.atan2(c.vy, c.vx) : c.yaw, want = c.yaw + wrap(vdir - c.yaw) * 0.6; camYaw += wrap(want - camYaw) * (1 - Math.exp(-dt * 5));
     const fx = Math.cos(camYaw), fz = -Math.sin(camYaw), cx = Math.cos(c.yaw), cz = -Math.sin(c.yaw);
     if (cam === -1) {
       if (OV.enter) { OV.enter = false; if (camInit) { const dx = cp.x - px, dz = cp.z - pz, hd = Math.hypot(dx, dz); OV.yaw = Math.atan2(dz, dx); OV.dist = clamp(Math.hypot(hd, cp.y), 0.45, 7); OV.pitch = clamp(Math.atan2(cp.y - 0.05, hd), 0.04, 1.35); } else { OV.yaw = menuAng; OV.dist = 0.82; OV.pitch = 0.3; } }
       OV.user = Math.max(0, OV.user - dt); if (OV.focus && (OV.fT -= dt) <= 0) OV.focus = null;
       if (!OV.user && !OV.focus && mode === 'menu') OV.yaw += dt * 0.22;   // showroom spin when nobody's touching it
-      const u = player.mesh.userData; let cx3 = px, cy3 = 0.06, cz3 = pz, wantD = OV.dist, wantY = OV.yaw, wantP = OV.pitch;
+      const u = player.mesh.userData; let cx3 = px + (CT.on === 'photo' ? CT.pan[0] : 0), cy3 = 0.06 + (CT.on === 'photo' ? CT.pan[1] : 0), cz3 = pz + (CT.on === 'photo' ? CT.pan[2] : 0), wantD = OV.dist, wantY = OV.yaw, wantP = OV.pitch;
       if (OV.focus) { const f = OV.focus, W = u.wheels || [], pick = fr => W.find(w => w.front === fr && w.sd > 0) || W.find(w => w.front === fr);
         let side = 1;
         if (f.at === 'wf' || f.at === 'wr') { const w = pick(f.at === 'wf'); if (w) { w.k.getWorldPosition(_o1); cx3 = _o1.x; cy3 = 0.035; cz3 = _o1.z; side = w.sd; } }
@@ -4939,10 +5051,10 @@ const ONLINE = (() => {
         wantY = Math.atan2(vz, vx); wantP = Math.atan2(f.v[1], Math.hypot(f.v[0], f.v[2])); wantD = f.d;
         OV.yaw += wrap(wantY - OV.yaw) * (1 - Math.exp(-dt * 6)); OV.pitch += (wantP - OV.pitch) * (1 - Math.exp(-dt * 6)); OV.dist += (wantD - OV.dist) * (1 - Math.exp(-dt * 6)); }
       const cpp = Math.cos(OV.pitch), ox = cx3 + Math.cos(OV.yaw) * cpp * OV.dist, oz = cz3 + Math.sin(OV.yaw) * cpp * OV.dist, oy = Math.max(0.03, cy3 + Math.sin(OV.pitch) * OV.dist);
-      tp.set(ox, oy, oz); tl.set(cx3, cy3, cz3); fov = 42; k = OV.focus ? 1 - Math.exp(-dt * 6) : 1; }
+      tp.set(ox, oy, oz); tl.set(cx3, cy3, cz3); fov = CT.on === 'photo' ? CT.fov : 42; k = OV.focus ? 1 - Math.exp(-dt * 6) : 1; }
     else if (cam === 0 || cam === 1) { const d = cam ? 1.15 : 0.66, h = cam ? 0.5 : 0.25; near = 0.06; tp.set(px - fx * d, h, pz - fz * d); tl.set(px + fx * 0.2, 0.05, pz + fz * 0.2); fov = cam ? 50 : 60; k = 1 - Math.exp(-dt * 9); }
     else if (cam === 2 || cam === 3) { const u = player.mesh.userData, ox = cam === 2 ? u.B.cowlX - 0.035 : u.xf - 0.012, oy = cam === 2 ? u.B.roofH - 0.014 : 0.05; tp.set(px + cx * ox, oy, pz + cz * ox); tl.set(px + cx * (ox + 1), oy - (cam === 2 ? 0.04 : 0.02), pz + cz * (ox + 1)); fov = cam === 2 ? 82 : 76; near = 0.004; roll = u.body.rotation.x * 0.8; }
-    else if (cam === 4) { const s = world.stand; tp.set(s.x, s.h + 0.55, -s.y); tl.set(px + c.vx * 0.38, 0.03, pz - c.vy * 0.38); const d = Math.hypot(px - s.x, pz + s.y, 2); fov = clamp(2 * Math.atan(1.7 / (S.opt.standZoom || 1) / d) * 57.3, 14, 52); near = 0.6; k = 1 - Math.exp(-dt * 8); }
+    else if (cam === 4) { const s = myStand(); tp.set(s.x, s.h + 0.55, -s.y); tl.set(px + c.vx * 0.38, 0.03, pz - c.vy * 0.38); const d = Math.hypot(px - s.x, pz + s.y, 2); fov = clamp(2 * Math.atan(1.7 / (S.opt.standZoom || 1) / d) * 57.3, 14, 52); near = 0.6; k = 1 - Math.exp(-dt * 8); }
     else { camera.up.set(fx, 0, fz); tp.set(px, 3.4, pz); tl.set(px + fx * 0.4, 0, pz + fz * 0.4); fov = 50; k = 1 - Math.exp(-dt * 6); }
     // v60: cameras ride the terrain (crawler canyon) and the V2 flatbed
     if (c.crawl || c.lift) { const gy = c.crawl ? c.cz - 0.091 : c.lift.z;
@@ -4951,7 +5063,7 @@ const ONLINE = (() => {
       if (c.crawl && cam !== 2 && cam !== 3) { const T2 = CRAWL.build(); tp.y = Math.max(tp.y, CRAWL.HR(T2, tp.x, -tp.z) + 0.08); } }
     if (window.__camOv) { tp.set(...window.__camOv.p); tl.set(...window.__camOv.l); fov = window.__camOv.f || 30; camInit = false; }
     if (!camInit || cam === 2 || cam === 3 || cam === 4) { cp.copy(tp); if (cam !== 4 || !camInit) cl.copy(tl); else cl.lerp(tl, k); camInit = true; } else { cp.lerp(tp, k); cl.lerp(tl, Math.min(1, k * 1.6)); }
-    if (cam !== 2 && cam !== 3) { cp.x = clamp(cp.x, world.cx - world.sx / 2 + 0.3, world.cx + world.sx / 2 - 0.3); cp.z = clamp(cp.z, -world.cy - world.sy / 2 + 0.3, -world.cy + world.sy / 2 - 0.3); }
+    if (cam !== 2 && cam !== 3) { const B = camBox(0.3); cp.x = clamp(cp.x, B[0], B[1]); cp.z = clamp(cp.z, -B[3], -B[2]); }
     camera.position.copy(cp); if (shake > 0.0005) { camera.position.x += (Math.random() - 0.5) * shake; camera.position.y += (Math.random() - 0.5) * shake; shake *= Math.exp(-dt * 9); }
     camera.lookAt(cl); if (roll) camera.rotateZ(roll);
     { let s = 0; if (mode !== 'drive' && menu) { const r = menu.getBoundingClientRect().right; if (r < innerWidth * 0.8) s = Math.round(r / 2); }
@@ -5714,9 +5826,12 @@ const ONLINE = (() => {
       if (ONLINE.isAdmin) { h('The hunt', 'admin · only you see this'); msg('Keys: ' + huntKeyIcons() + ' · egg: ' + (S.hunt.egg === 'done' ? 'turned in 🥚' : S.hunt.egg === 'carry' ? 'carrying' : 'not found') + '. Reset wipes your keys and egg on every device (movie cars lock again) so you can run it fresh.');
         const rb = el('button', 'ghost', 'Reset my hunt'); rb.onclick = () => { if (!rb.dataset.arm) { rb.dataset.arm = '1'; rb.textContent = 'Tap again: wipe keys + egg'; setTimeout(() => { if (rb.isConnected) { rb.dataset.arm = ''; rb.textContent = 'Reset my hunt'; } }, 3500); return; } huntReset(); renderPanel(); }; add(rb); }
       h('Camera'); add(row('View', chips(CAMS.map((n, i) => ({ id: i, name: n })), S.opt.cam, v => { S.opt.cam = v; save(); }), 'Press C while driving (Y on a controller) to cycle.'));
+      { const r2 = el('div', 'ctmenu'); const b1 = el('button', 'big', '📷 Photo mode'); b1.onclick = photoMode; const b2 = el('button', 'ghost', '📍 Pick where I stand'); b2.onclick = standEdit; r2.append(b1, b2); add(r2);
+        msg('Photo mode: frame your car anywhere in the room and save a picture. Pick where I stand: move your driver stand camera spot on this track (it\'s saved per track).'); }
       add(row('Stand cam zoom', slider(60, 200, 10, Math.round((S.opt.standZoom || 1) * 100), v => v + '%', v => { S.opt.standZoom = v / 100; save(); }), 'How tight the driver-stand camera follows your car.'));
       h('Display');
       add(row('Graphics', chips([{ id: 0, name: 'Low', sub: 'very old phones' }, { id: 1, name: 'Medium', sub: 'older phones' }, { id: 2, name: 'High', sub: 'phones + computers' }], S.opt.quality, v => { S.opt.quality = v; save(); resize(); loadTrack(S.opt.track); applyTune(); })));
+      add(row('Live screens', onOff(S.opt.liveScr !== false, v => { S.opt.liveScr = v; save(); }), 'Prodigy V2 shows your driving live on the projector, the lounge TV and Bret\'s laptop. Only runs while a screen is in view; turn off if your device struggles.'));
       add(row('HUD', onOff(S.opt.hud !== false, v => { S.opt.hud = v; save(); }), 'H toggles it while driving. Handy for clean screenshots and videos.'));
       add(row('Speed', chips([{ id: 'mph', name: 'Scale mph' }, { id: 'kmh', name: 'Scale km/h' }], S.opt.units || 'mph', v => { S.opt.units = v; save(); }), 'Scale speed: what the car would be doing at full size.'));
       add(row('FPS counter', onOff(!!S.opt.showFps, v => { S.opt.showFps = v; save(); })));
@@ -5765,7 +5880,7 @@ const ONLINE = (() => {
     updateCam(dt); audioUpdate(); if (mode === 'drive') { updateHud(); drawMini(); }
     if (composer) composer.render(dt); else renderer.render(scene, camera);
     // v77 live feed (Prodigy V2 projector / TV / Bret's laptop): copy the finished frame into a small canvas. Desktop ~10 fps; phones take one still a few seconds in, then every 10 s (a GPU readback is costly there)
-    { const F = world && world.liveFeed; if (F && mode === 'drive') { F.n++; const every = isTouch ? 600 : 6; if (F.n === 120 || (F.n > 120 && F.n % every === 0)) { try { F.g.drawImage(renderer.domElement, 0, 0, F.cv.width, F.cv.height); F.t.needsUpdate = true; } catch (e) { } } } }
+    { const F = world && world.liveFeed; if (F && mode === 'drive' && S.opt.liveScr !== false) { F.n++; const every = isTouch ? 600 : 6; if ((F.n === 120 || (F.n > 120 && F.n % every === 0)) && feedSeen(F)) { try { F.g.drawImage(renderer.domElement, 0, 0, F.cv.width, F.cv.height); F.t.needsUpdate = true; } catch (e) { } } } }
     // dynamic resolution: if a phone can't hold ~40 fps, drop render resolution (one-way per track, no rebuild hitches)
     fEma += (Math.min(dt, 0.1) - fEma) * 0.03; drT += dt;
     if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + ' fps · res ' + Math.round(drs * 100) + '%'; } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
