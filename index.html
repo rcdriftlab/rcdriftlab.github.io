@@ -129,6 +129,7 @@ kbd{display:inline-block;min-width:26px;padding:2px 7px;margin-right:8px;border:
 .keys span{color:var(--mut)}
 :focus-visible{outline:2px solid var(--ac2);outline-offset:2px}
 /* ---------- touch controls ---------- */
+#camRst{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:6;display:none;height:34px;padding:0 14px;border:1px solid rgba(255,255,255,.3);border-radius:17px;background:rgba(10,11,15,.72);color:#fff;font-weight:800;font-size:13px;letter-spacing:.08em;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}#camRst:hover{background:rgba(255,106,31,.5)}html.camoff body:not(.inmenu):not(.phototool) #camRst{display:block}.touch #camRst{top:58px;height:38px}html.narrow #camRst{top:50px}
 #touch{position:fixed;inset:0;display:none;touch-action:none;-webkit-user-select:none;user-select:none;z-index:3}
 .touch body:not(.inmenu) #touch{display:block}
 .tz{position:absolute;top:0;bottom:0;width:50%}#tzL{left:0}#tzR{right:0}
@@ -252,9 +253,10 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
   <div id="hTL"><div class="lbl">LAP SCORE</div><div id="hScore">0</div><div id="hRunRow"><span id="hRun"></span><span id="hMult"></span></div><div id="hTand">TANDEM</div><div id="hZone">IN ZONE</div><div id="hLap"></div></div>
   <div id="hTR"><canvas id="mini" width="210" height="140"></canvas><span id="hNet"></span><span id="hCam"></span></div>
   <div id="hB"><div id="hAng">0°</div><div id="hAngL">DRIFT ANGLE</div><div id="track"><div id="hBar"></div></div></div>
-  <div id="hBL">GYRO <span id="hGyro"></span> <b>[ ]</b><br><b>C</b> camera · <b>R</b> reset · <b>T</b> tune · <b>Esc</b> menu<span class="inroomOnly"> · <b>Enter</b> chat · <b>1-8</b> quick chat · <b>V</b> talk</span><br><span id="hSrc"></span></div>
+  <div id="hBL">GYRO <span id="hGyro"></span> <b>[ ]</b><br><b>C</b> camera · <b>drag</b> look · <b>B</b> reset view · <b>R</b> reset · <b>T</b> tune · <b>Esc</b> menu<span class="inroomOnly"> · <b>Enter</b> chat · <b>1-8</b> quick chat · <b>V</b> talk</span><br><span id="hSrc"></span></div>
   <div id="hBR"><div><div id="hSpd">0</div><div class="unit" id="hUnit">SCALE MPH</div></div><div id="thrBox"><div id="hThr"></div></div></div>
 </div>
+<button id="camRst" title="Reset the camera view (B)">⟲ VIEW</button>
 <div id="touch"><div class="tz" id="tzL"></div><div class="tz" id="tzR"></div>
   <div class="stick" id="tsteer"><div class="lbl">STEER</div><div class="knob"></div></div>
   <div class="stick" id="tthr"><div class="lbl">THROTTLE</div><div class="knob"></div></div>
@@ -4746,7 +4748,7 @@ const ONLINE = (() => {
     if (mode !== 'drive') return;
     if (isCrawl()) { if (k === 'l') crawlCmd('low'); if (k === 'x') crawlCmd('steer'); if (k === 'g') crawlCmd('dig'); }
     if (k === 'e') { const tg = document.getElementById('trailerGo'); if (tg && tg.classList.contains('on') && tg.dataset.to) rideTo(tg.dataset.to); }
-    if (k === 'c') nextCam(); if (k === 'r') resetPlayer(); if (k === '[') gyroAdj(-5); if (k === ']') gyroAdj(5);
+    if (k === 'c') nextCam(); if (k === 'b') camReset(); if (k === 'r') resetPlayer(); if (k === '[') gyroAdj(-5); if (k === ']') gyroAdj(5);
     if (k === 'm') { S.opt.sound = !S.opt.sound; toast('Sound ' + (S.opt.sound ? 'on' : 'off')); save(); }
     if (k === 't') openMenu('pause', 'tune'); if (k === 'enter' && ONLINE.room) { e.preventDefault(); chatOpen(); } if (k === 'h') { S.opt.hud = S.opt.hud === false; document.body.classList.toggle('nohud', S.opt.hud === false); toast('HUD ' + (S.opt.hud ? 'on' : 'off')); save(); }
   });
@@ -4754,6 +4756,18 @@ const ONLINE = (() => {
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   function gyroAdj(d) { S.tune.gyroGain = clamp(S.tune.gyroGain + d, 0, 100); applyTune(); toast('GYRO GAIN ' + S.tune.gyroGain + '%'); save(); }
   function nextCam() { S.opt.cam = (S.opt.cam + 1) % CAMS.length; toast('CAM · ' + CAMS[S.opt.cam]); save(); }
+  // v83: drag the view while driving. Each camera keeps its own [yaw, pitch, zoom] offset until you reset it (B, R3, the ⟲ VIEW button) or drag again.
+  const camOff = (cam = S.opt.cam) => (S.opt.camOff || {})[cam];
+  const camHasOff = (cam = S.opt.cam) => { const o = camOff(cam); return !!o && (Math.abs(o[0]) > 0.01 || Math.abs(o[1]) > 0.01 || Math.abs(o[2] - 1) > 0.01); };
+  let camHint = 0;
+  function camDrag(dx, dy) { if (mode !== 'drive' || CT.on) return; const m = S.opt.camOff || (S.opt.camOff = {}), o = m[S.opt.cam] || (m[S.opt.cam] = [0, 0, 1]);
+    o[0] = wrap(o[0] + dx * 0.0065); o[1] = clamp(o[1] + dy * 0.006, -1.3, 1.3); camSaveT = 1.2;
+    if (!camHint && (Math.abs(dx) + Math.abs(dy)) > 2) { camHint = 1; if (!S.opt.camTip) { S.opt.camTip = 1; toast(isTouch ? 'View locked · tap ⟲ VIEW to reset' : 'View locked · B or ⟲ VIEW resets it'); } } }
+  function camZoom(f) { if (mode !== 'drive' || CT.on) return; const cam = S.opt.cam;
+    if (cam === 4) { S.opt.standZoom = clamp((S.opt.standZoom || 1) / f, 0.6, 2); camSaveT = 1.2; return; }
+    if (cam === 2 || cam === 3) return; const m = S.opt.camOff || (S.opt.camOff = {}), o = m[cam] || (m[cam] = [0, 0, 1]); o[2] = clamp(o[2] * f, 0.45, 3); camSaveT = 1.2; }
+  function camReset() { if (S.opt.camOff && S.opt.camOff[S.opt.cam]) { delete S.opt.camOff[S.opt.cam]; save(); toast('VIEW RESET'); } }
+  let camSaveT = 0;
   function readPad() {
     let pads = []; try { pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : []; } catch (e) { padInfo = { blocked: true }; return null; }
     const p = pads[0]; if (!p) { padInfo = null; return null; }
@@ -4767,7 +4781,8 @@ const ONLINE = (() => {
     else { const sa = S.pad.mode === 'auto' ? 0 : S.pad.steerAxis, ta = S.pad.mode === 'auto' ? 1 : S.pad.thrAxis;
       st = dzf(((p.axes[sa] || 0) - S.pad.cS) * (S.pad.steerInv ? -1 : 1)); const t = dzf(((p.axes[ta] || 0) - S.pad.cT) * (S.pad.thrInv ? -1 : 1)); th = Math.max(0, t); br = Math.max(0, -t); }
     const b = p.buttons.map(x => x.pressed), edge = i => b[i] && !padPrev[i];
-    if (mode === 'drive') { if (edge(0)) resetPlayer(); if (edge(3)) nextCam(); if (isCrawl()) { if (edge(4)) crawlCmd('low'); if (edge(1)) crawlCmd('dig'); if (edge(5)) crawlCmd('steer'); } else { if (edge(4)) gyroAdj(-5); if (edge(5)) gyroAdj(5); }
+    if (mode === 'drive') { if (edge(0)) resetPlayer(); if (edge(3)) nextCam(); if (edge(11)) camReset();
+      if (std) { const lx = p.axes[2] || 0, ly = p.axes[3] || 0, dzr = v => Math.abs(v) < 0.2 ? 0 : (v - Math.sign(v) * 0.2) / 0.8; if (dzr(lx) || dzr(ly)) camDrag(dzr(lx) * 7, dzr(ly) * 5); } if (isCrawl()) { if (edge(4)) crawlCmd('low'); if (edge(1)) crawlCmd('dig'); if (edge(5)) crawlCmd('steer'); } else { if (edge(4)) gyroAdj(-5); if (edge(5)) gyroAdj(5); }
       if (edge(2)) { const tg = document.getElementById('trailerGo'); if (tg && tg.classList.contains('on') && tg.dataset.to) rideTo(tg.dataset.to); } if (edge(9)) openMenu('pause'); }
     else if (mode === 'pause' && edge(9)) drive(false);
     padPrev = b;
@@ -4777,7 +4792,7 @@ const ONLINE = (() => {
   const isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
   if (isTouch) document.documentElement.classList.add('touch');
   try { new MutationObserver(() => applyRot()).observe(document.body, { attributes: true, attributeFilter: ['class'] }); } catch (e) { }
-  const TCH = { steer: 0, thr: 0, brk: 0, sId: null, tId: null, sx: 0, ty: 0, last: 0 };
+  const TCH = { steer: 0, thr: 0, brk: 0, sId: null, tId: null, sx: 0, ty: 0, last: 0, lId: null, lx: 0, ly: 0 };
   (function setupTouch() {
     const tz = document.getElementById('touch'); if (!tz) return;
     const st = document.getElementById('tsteer'), th = document.getElementById('tthr'), R = () => Math.min(58, LH() * 0.14);
@@ -4790,21 +4805,24 @@ const ONLINE = (() => {
       const [x, y] = LP(e);
       if (x < LW() / 2 && TCH.sId === null) { TCH.sId = e.pointerId; TCH.sx = x; place(st, x, y); knob(st, 0, 0); }
       else if (x >= LW() / 2 && TCH.tId === null) { TCH.tId = e.pointerId; TCH.ty = y; place(th, x, y); knob(th, 0, 0); }
+      else if (TCH.lId === null) { TCH.lId = e.pointerId; TCH.lx = x; TCH.ly = y; }   // v83: any extra finger drags the view
       try { tz.setPointerCapture(e.pointerId); } catch (_) { }
     }, { passive: false });
     tz.addEventListener('pointermove', e => {
       const r = R(), [x, y] = LP(e);
       if (e.pointerId === TCH.sId) { const dx = clamp(x - TCH.sx, -r, r), a = Math.max(0, Math.abs(dx) / r - 0.05) / 0.95; TCH.steer = -Math.sign(dx) * a; knob(st, dx, 0); TCH.last = performance.now(); }
       if (e.pointerId === TCH.tId) { const dy = clamp(y - TCH.ty, -r, r); TCH.thr = Math.max(0, -dy / r); TCH.brk = Math.max(0, dy / r); knob(th, 0, dy); TCH.last = performance.now(); }
+      if (e.pointerId === TCH.lId) { camDrag((x - TCH.lx) * 1.3, (y - TCH.ly) * 1.3); TCH.lx = x; TCH.ly = y; }
     }, { passive: false });
     const up = e => {
       if (e.pointerId === TCH.sId) { TCH.sId = null; TCH.steer = 0; knob(st, 0, 0); st.classList.remove('on'); st.style.left = '16%'; st.style.top = '72%'; }
       if (e.pointerId === TCH.tId) { TCH.tId = null; TCH.thr = 0; TCH.brk = 0; knob(th, 0, 0); th.classList.remove('on'); th.style.left = '84%'; th.style.top = '72%'; }
+      if (e.pointerId === TCH.lId) TCH.lId = null;
     };
     tz.addEventListener('pointerup', up); tz.addEventListener('pointercancel', up);
     // v64.1: in-app browsers (Facebook / Messenger / Instagram on iPhone) sometimes lose the finger-up, which left the stick stuck at full lock.
     // Belt and braces: any finger-up anywhere, a lost capture, or no fingers left on the glass releases the sticks.
-    const relAll = () => { if (TCH.sId !== null) up({ pointerId: TCH.sId }); if (TCH.tId !== null) up({ pointerId: TCH.tId }); };
+    const relAll = () => { if (TCH.sId !== null) up({ pointerId: TCH.sId }); if (TCH.tId !== null) up({ pointerId: TCH.tId }); TCH.lId = null; };
     addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true); tz.addEventListener('lostpointercapture', up);
     addEventListener('touchend', e => { if (!e.touches || e.touches.length === 0) relAll(); }, true); addEventListener('touchcancel', e => { if (!e.touches || e.touches.length === 0) relAll(); }, true);
     addEventListener('blur', relAll); document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') relAll(); });
@@ -4817,7 +4835,12 @@ const ONLINE = (() => {
     const tapBtn = (b, a) => { let down = 0; b.addEventListener('pointerdown', ev => { ev.stopPropagation(); down = performance.now(); });
       b.addEventListener('pointerup', ev => { ev.stopPropagation(); ev.preventDefault(); if (down && performance.now() - down < 1500) { down = 0; fire(a()); } });
       b.addEventListener('pointercancel', () => { down = 0; }); };
-    tz.querySelectorAll('#tbtns button:not([data-a=talk]), #qchat button').forEach(b => tapBtn(b, () => b.dataset.a));
+    tz.querySelectorAll('#tbtns button:not([data-a=talk]):not([data-a=cam]), #qchat button').forEach(b => tapBtn(b, () => b.dataset.a));
+    { const cb = tz.querySelector('#tbtns [data-a=cam]'); if (cb) { let d = null;   // v83: tap CAM = next camera, press and drag from CAM = look around
+      cb.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); const [x, y] = LP(ev); d = { id: ev.pointerId, x, y, t: performance.now(), mv: 0 }; try { cb.setPointerCapture(ev.pointerId); } catch (er) { } });
+      cb.addEventListener('pointermove', ev => { if (!d || ev.pointerId !== d.id) return; const [x, y] = LP(ev), dx = x - d.x, dy = y - d.y; d.mv += Math.abs(dx) + Math.abs(dy); if (d.mv > 10) camDrag(dx * 1.3, dy * 1.3); d.x = x; d.y = y; });
+      cb.addEventListener('pointerup', ev => { ev.stopPropagation(); ev.preventDefault(); if (d && d.mv <= 10 && performance.now() - d.t < 1500) fire('cam'); d = null; });
+      cb.addEventListener('pointercancel', () => { d = null; }); cb.addEventListener('lostpointercapture', () => { d = null; }); } }
     { const tb = tz.querySelector('#talkB'); if (tb) { tb.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); try { tb.setPointerCapture(ev.pointerId); } catch (e) { } talk(true); });
       for (const evn of ['pointerup', 'pointercancel', 'lostpointercapture']) tb.addEventListener(evn, ev => { ev.stopPropagation(); talk(false); }); } }
     const tl = document.getElementById('hTL'); if (tl) tapBtn(tl, () => mode === 'drive' ? 'menu' : '');
@@ -4846,7 +4869,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v82.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v83', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5096,6 +5119,12 @@ const ONLINE = (() => {
   };
   function camFocus(key) { const f = FOCUS[key]; if (!f || mode === 'drive') return; OV.focus = f; OV.fT = 7; OV.user = 0; }
   { const C = canvas, isMenu = () => mode !== 'drive';
+    // v83: while driving, a mouse drag on the game turns the view (and the wheel zooms it)
+    const DR = { id: null, x: 0, y: 0 };
+    C.addEventListener('pointerdown', e => { if (!isMenu() && e.pointerType !== 'touch' && !CT.on) { DR.id = e.pointerId; DR.x = e.clientX; DR.y = e.clientY; try { C.setPointerCapture(e.pointerId); } catch (er) { } e.preventDefault(); } });
+    C.addEventListener('pointermove', e => { if (e.pointerId !== DR.id || isMenu()) return; camDrag(e.clientX - DR.x, e.clientY - DR.y); DR.x = e.clientX; DR.y = e.clientY; });
+    const drUp = e => { if (e.pointerId === DR.id) DR.id = null; }; C.addEventListener('pointerup', drUp); C.addEventListener('pointercancel', drUp); C.addEventListener('lostpointercapture', drUp);
+    C.addEventListener('wheel', e => { if (isMenu()) return; e.preventDefault(); camZoom(Math.exp(e.deltaY * 0.0012)); }, { passive: false });
     C.addEventListener('pointerdown', e => { if (!isMenu()) return; OV.ptrs.set(e.pointerId, [e.clientX, e.clientY]); try { C.setPointerCapture(e.pointerId); } catch (er) { } OV.pinch = 0; });
     C.addEventListener('pointermove', e => { const p = OV.ptrs.get(e.pointerId); if (!p || !isMenu()) return; const dx = e.clientX - p[0], dy = e.clientY - p[1]; OV.ptrs.set(e.pointerId, [e.clientX, e.clientY]);
       const zmax = CT.on === 'photo' ? 30 : mode === 'pause' ? 7 : 2.6, pan = (mx, my) => { const k = OV.dist * 0.0016, r = [Math.sin(OV.yaw), -Math.cos(OV.yaw)], f = [-Math.cos(OV.yaw), -Math.sin(OV.yaw)]; CT.pan[0] += -r[0] * mx * k + f[0] * my * k; CT.pan[2] += -r[1] * mx * k + f[1] * my * k; };
@@ -5105,7 +5134,9 @@ const ONLINE = (() => {
       OV.user = 8; OV.focus = null; });
     const up = e => { OV.ptrs.delete(e.pointerId); OV.pinch = 0; }; C.addEventListener('pointerup', up); C.addEventListener('pointercancel', up);
     C.addEventListener('wheel', e => { if (!isMenu()) return; e.preventDefault(); OV.dist = clamp(OV.dist * Math.exp(e.deltaY * 0.0012), 0.3, CT.on === 'photo' ? 30 : mode === 'pause' ? 7 : 2.6); OV.user = 8; }, { passive: false });
-    C.addEventListener('contextmenu', e => { if (CT.on) e.preventDefault(); }); }
+    C.addEventListener('contextmenu', e => { if (CT.on || !isMenu()) e.preventDefault(); });
+    const rb = document.getElementById('camRst'); if (rb) { let dn = 0; rb.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); dn = performance.now(); });
+      rb.addEventListener('pointerup', e => { e.stopPropagation(); e.preventDefault(); if (dn && performance.now() - dn < 1500) camReset(); dn = 0; }); rb.addEventListener('click', e => e.stopPropagation()); } }
   const _o1 = new T.Vector3(), _o2 = new T.Vector3();
   // ===================== v79 camera tools (pause menu): photo mode + pick where you stand to drive =====================
   const CT = { on: null, pan: [0, 0, 0], fov: 42, el: null, hold: null };
@@ -5200,9 +5231,19 @@ const ONLINE = (() => {
     else if (cam === 2 || cam === 3) { const u = player.mesh.userData, ox = cam === 2 ? u.B.cowlX - 0.035 : u.xf - 0.012, oy = cam === 2 ? u.B.roofH - 0.014 : 0.05; tp.set(px + cx * ox, oy, pz + cz * ox); tl.set(px + cx * (ox + 1), oy - (cam === 2 ? 0.04 : 0.02), pz + cz * (ox + 1)); fov = cam === 2 ? 82 : 76; near = 0.004; roll = u.body.rotation.x * 0.8; }
     else if (cam === 4) { const s = myStand(); tp.set(s.x, s.h + 0.55, -s.y); tl.set(px + c.vx * 0.38, 0.03, pz - c.vy * 0.38); const d = Math.hypot(px - s.x, pz + s.y, 2); fov = clamp(2 * Math.atan(1.7 / (S.opt.standZoom || 1) / d) * 57.3, 14, 52); near = 0.6; k = 1 - Math.exp(-dt * 8); }
     else { camera.up.set(fx, 0, fz); tp.set(px, 3.4, pz); tl.set(px + fx * 0.4, 0, pz + fz * 0.4); fov = 50; k = 1 - Math.exp(-dt * 6); }
+    // v83: your dragged view. Chase / far chase / drone orbit the car (the offset rides with the car's heading), FPV / bumper turn your head, the stand cam aims off the car.
+    const off = cam >= 0 && camOff(cam), oy0 = off ? off[0] : 0, op0 = off ? off[1] : 0;
+    if (off && (cam === 0 || cam === 1 || cam === 5)) { const vx = tp.x - tl.x, vy = tp.y - tl.y, vz = tp.z - tl.z, hd = Math.hypot(vx, vz), r = Math.hypot(hd, vy) * off[2];
+      const az = Math.atan2(vz, vx) + oy0, el = clamp(Math.atan2(vy, hd) + op0, 0.06, 1.52);
+      tp.set(tl.x + Math.cos(az) * Math.cos(el) * r, tl.y + Math.sin(el) * r, tl.z + Math.sin(az) * Math.cos(el) * r);
+      if (cam === 5) camera.up.set(-Math.cos(az), 0, -Math.sin(az)); }
+    else if (off && (cam === 2 || cam === 3) && !c.crawl) { const Y = c.yaw - oy0 * 0.8, P = Math.atan(cam === 2 ? -0.04 : -0.02) - op0 * 0.8, cp2 = Math.cos(P);
+      tl.set(tp.x + Math.cos(Y) * cp2, tp.y + Math.sin(P), tp.z - Math.sin(Y) * cp2); }
+    else if (off && cam === 4) { const vx = tl.x - tp.x, vy = tl.y - tp.y, vz = tl.z - tp.z, hd = Math.hypot(vx, vz), r = Math.hypot(hd, vy), az = Math.atan2(vz, vx) + oy0 * 0.6, el = clamp(Math.atan2(vy, hd) - op0 * 0.6, -1.3, 1.3);
+      tl.set(tp.x + Math.cos(az) * Math.cos(el) * r, tp.y + Math.sin(el) * r, tp.z + Math.sin(az) * Math.cos(el) * r); }
     // v60: cameras ride the terrain (crawler canyon) and the V2 flatbed
     if (c.crawl || c.lift) { const gy = c.crawl ? c.cz - 0.091 : c.lift.z;
-      if ((cam === 2 || cam === 3) && c.crawl) { const u = player.mesh.userData, ox = cam === 2 ? u.B.cowlX - 0.035 : u.xf - 0.012, oy = (cam === 2 ? u.B.roofH - 0.014 : 0.05) + 0.036; player.mesh.updateMatrixWorld(); tp.copy(player.mesh.localToWorld(_o1.set(ox, oy, 0))); tl.copy(player.mesh.localToWorld(_o2.set(ox + 1, oy - 0.05, 0))); }
+      if ((cam === 2 || cam === 3) && c.crawl) { const u = player.mesh.userData, ox = cam === 2 ? u.B.cowlX - 0.035 : u.xf - 0.012, oy = (cam === 2 ? u.B.roofH - 0.014 : 0.05) + 0.036, a = -oy0 * 0.8, pp = Math.atan(-0.05) - op0 * 0.8; player.mesh.updateMatrixWorld(); tp.copy(player.mesh.localToWorld(_o1.set(ox, oy, 0))); tl.copy(player.mesh.localToWorld(_o2.set(ox + Math.cos(a) * Math.cos(pp), oy + Math.sin(pp), -Math.sin(a) * Math.cos(pp)))); }
       else { tp.y += gy; tl.y += gy; }
       if (c.crawl && cam !== 2 && cam !== 3) { const T2 = CRAWL.build(); tp.y = Math.max(tp.y, CRAWL.HR(T2, tp.x, -tp.z) + 0.08); } }
     if (window.__camOv) { tp.set(...window.__camOv.p); tl.set(...window.__camOv.l); fov = window.__camOv.f || 30; camInit = false; }
@@ -5210,6 +5251,8 @@ const ONLINE = (() => {
     if (cam !== 2 && cam !== 3) { const B = camBox(0.3); cp.x = clamp(cp.x, B[0], B[1]); cp.z = clamp(cp.z, -B[3], -B[2]); }
     camera.position.copy(cp); if (shake > 0.0005) { camera.position.x += (Math.random() - 0.5) * shake; camera.position.y += (Math.random() - 0.5) * shake; shake *= Math.exp(-dt * 9); }
     camera.lookAt(cl); if (roll) camera.rotateZ(roll);
+    if (camSaveT > 0 && (camSaveT -= dt) <= 0) save();
+    { const on = mode === 'drive' && !CT.on && camHasOff(); if (on !== OV.rst) { OV.rst = on; document.documentElement.classList.toggle('camoff', on); } }
     { let s = 0; if (mode !== 'drive' && menu) { const r = menu.getBoundingClientRect().right; if (r < innerWidth * 0.8) s = Math.round(r / 2); }
       if (s !== OV.vo) { OV.vo = s; if (s) camera.setViewOffset(innerWidth, innerHeight, -s, 0, innerWidth, innerHeight); else camera.clearViewOffset(); } }
     if (Math.abs(camera.fov - fov) > 0.05 || camera.near !== near) { camera.fov += (fov - camera.fov) * (cam === 4 ? Math.min(1, dt * 5) : 1); camera.near = near; camera.updateProjectionMatrix(); }
@@ -5403,7 +5446,7 @@ const ONLINE = (() => {
       : android ? '<ol><li>Open this link in <b>Chrome</b>' + (inApp ? ' (menu → <b>Open in Chrome</b> first)' : '') + '.</li><li>Tap the <b>⋮</b> menu (top right).</li><li>Tap <b>Install app</b> (or <b>Add to Home screen</b>) → <b>Install</b>.</li></ol>'
       : '<ol><li>On your phone, open this same link.</li><li>iPhone: Safari → Share → <b>Add to Home Screen</b>.</li><li>Android: Chrome → ⋮ → <b>Add to Home screen</b>.</li><li>On a computer: bookmark it, or Chrome ⋮ → <b>Cast, save and share</b> → <b>Create shortcut</b>.</li></ol>';
     const ctrl = touch ? '<p><b>Left thumb</b> anywhere on the left half = steering stick. <b>Right thumb</b> on the right half = throttle (slide up for gas, down for brake).</p><p>Turn the phone sideways. Buttons on top: pause, camera, reset.</p>'
-      : '<div class="tkeys"><kbd>W / ↑</kbd> throttle <kbd>Shift</kbd> full send <kbd>S / Space</kbd> brake <kbd>A D</kbd> steer <kbd>C</kbd> camera <kbd>R</kbd> reset <kbd>Esc</kbd> pause</div><p>Got a controller or your RC radio (USB sim mode)? Plug it in and set it up under <b>Controls</b>.' + (inClaude ? ' Heads up: controllers can\'t be read inside Claude, so use ' + WEB + ' for that.' : '') + '</p>';
+      : '<div class="tkeys"><kbd>W / ↑</kbd> throttle <kbd>Shift</kbd> full send <kbd>S / Space</kbd> brake <kbd>A D</kbd> steer <kbd>C</kbd> camera <kbd>Drag</kbd> look around <kbd>R</kbd> reset <kbd>Esc</kbd> pause</div><p>Got a controller or your RC radio (USB sim mode)? Plug it in and set it up under <b>Controls</b>.' + (inClaude ? ' Heads up: controllers can\'t be read inside Claude, so use ' + WEB + ' for that.' : '') + '</p>';
     const tracks = TRK().map(([d]) => '<li><b>' + d.name + '</b> — ' + d.sub + '</li>').join('');
     const steps = [
       ['Welcome to RC Drift Lab', '<p>A 1/10 RC drift sim on real P-tile. Made by <b>Stranger Kreations</b>, Las Vegas.</p><p>Want the 30-second tour? You can skip it and find it later on the Drive tab.</p>'],
@@ -5746,7 +5789,7 @@ const ONLINE = (() => {
       h('Input test', 'live'); const mk = (id, lab) => { const m = el('div', 'meter'); m.appendChild(el('span', '', lab)); const b = el('div', 'mb'), i = el('i'); i.id = id; b.appendChild(i); m.appendChild(b); const o = el('output'); o.id = id + 'o'; m.appendChild(o); add(m); };
       mk('mSt', 'Steer'); mk('mTh', 'Throttle'); mk('mBr', 'Brake'); const src = el('p', 'tip'); src.id = 'mSrc'; add(src);
       msg('Steering mode for each input (Angle assist or Direct) is in Tuning → Steering feel.');
-      h('Keyboard'); const kb = el('div', 'keys'); [['W / ↑', 'Throttle'], ['Shift', 'Full throttle'], ['S / ↓ / Space', 'Brake, then reverse'], ['A D / ← →', 'Steer'], ['C', 'Camera'], ['R', 'Reset to track'], ['[  ]', 'Gyro gain − / +'], ['T', 'Tuning'], ['Enter', 'Room chat'], ['Esc / P', 'Pause'], ['M', 'Sound'], ['H', 'Hide HUD']].forEach(([k, d]) => { const r = el('div'); r.appendChild(el('kbd', '', k)); r.appendChild(el('span', '', d)); kb.appendChild(r); }); add(kb);
+      h('Keyboard'); const kb = el('div', 'keys'); [['W / ↑', 'Throttle'], ['Shift', 'Full throttle'], ['S / ↓ / Space', 'Brake, then reverse'], ['A D / ← →', 'Steer'], ['C', 'Camera'], ['Mouse drag / wheel', 'Aim / zoom the view'], ['B', 'Reset the view'], ['R', 'Reset to track'], ['[  ]', 'Gyro gain − / +'], ['T', 'Tuning'], ['Enter', 'Room chat'], ['Esc / P', 'Pause'], ['M', 'Sound'], ['H', 'Hide HUD']].forEach(([k, d]) => { const r = el('div'); r.appendChild(el('kbd', '', k)); r.appendChild(el('span', '', d)); kb.appendChild(r); }); add(kb);
       add(row('Keyboard throttle', slider(40, 100, 5, S.opt.kbThrottle, v => v + '%', v => { S.opt.kbThrottle = v; save(); }), 'A key is all-or-nothing, so this caps it. Hold Shift for 100%.'));
       add(row('Steer limiter', onOff(S.opt.kbAssist, v => { S.opt.kbAssist = v; save(); }), 'Direct mode only: stops a held key from shoving the front tires past useful angle. Off = raw.'));
       add(row('Throttle assist', onOff(S.opt.kbThrAssist, v => { S.opt.kbThrAssist = v; save(); }), 'Eases the throttle as your angle passes about 30° so a held key does not spin you. Shift overrides it. Never applies to a gamepad or radio.'));
@@ -5761,7 +5804,7 @@ const ONLINE = (() => {
       add(row('Invert steering', chips([{ id: false, name: 'Normal' }, { id: true, name: 'Reversed' }], S.pad.steerInv, v => { S.pad.steerInv = v; save(); })));
       add(row('Invert throttle', chips([{ id: false, name: 'Normal' }, { id: true, name: 'Reversed' }], S.pad.thrInv, v => { S.pad.thrInv = v; save(); })));
       add(row('Deadzone', slider(0, 20, 1, S.pad.dead, v => v + '%', v => { S.pad.dead = v; save(); })));
-      msg('Gamepad buttons: left stick steers, RT throttle, LT brake/reverse, A reset, Y camera, LB/RB gyro gain, Start pause. Any controller or radio your computer sees as a gamepad works, including ones running through an emulator or mapper.');
+      msg('Gamepad buttons: left stick steers, RT throttle, LT brake/reverse, A reset, Y camera, right stick aims the view (R3 resets it), LB/RB gyro gain, Start pause. Any controller or radio your computer sees as a gamepad works, including ones running through an emulator or mapper.');
     }
 
     if (tab === 'online') {
@@ -5982,7 +6025,7 @@ const ONLINE = (() => {
     if (tab === 'settings') {
       if (ONLINE.isAdmin) { h('The hunt', 'admin · only you see this'); msg('Keys: ' + huntKeyIcons() + ' · egg: ' + (S.hunt.egg === 'done' ? 'turned in 🥚' : S.hunt.egg === 'carry' ? 'carrying' : 'not found') + '. Reset wipes your keys and egg on every device (movie cars lock again) so you can run it fresh.');
         const rb = el('button', 'ghost', 'Reset my hunt'); rb.onclick = () => { if (!rb.dataset.arm) { rb.dataset.arm = '1'; rb.textContent = 'Tap again: wipe keys + egg'; setTimeout(() => { if (rb.isConnected) { rb.dataset.arm = ''; rb.textContent = 'Reset my hunt'; } }, 3500); return; } huntReset(); renderPanel(); }; add(rb); }
-      h('Camera'); add(row('View', chips(CAMS.map((n, i) => ({ id: i, name: n })), S.opt.cam, v => { S.opt.cam = v; save(); }), 'Press C while driving (Y on a controller) to cycle.'));
+      h('Camera'); add(row('View', chips(CAMS.map((n, i) => ({ id: i, name: n })), S.opt.cam, v => { S.opt.cam = v; save(); }), 'Press C while driving (Y on a controller) to cycle. Drag the game with the mouse (right stick, or press-and-drag CAM / a third finger on touch) to aim any camera — it stays put until you press B, R3 or ⟲ VIEW.'));
       { const r2 = el('div', 'ctmenu'); const b1 = el('button', 'big', '📷 Photo mode'); b1.onclick = photoMode; const b2 = el('button', 'ghost', '📍 Pick where I stand'); b2.onclick = standEdit; r2.append(b1, b2); add(r2);
         msg('Photo mode: frame your car anywhere in the room and save a picture. Pick where I stand: move your driver stand camera spot on this track (it\'s saved per track).'); }
       add(row('Stand cam zoom', slider(60, 200, 10, Math.round((S.opt.standZoom || 1) * 100), v => v + '%', v => { S.opt.standZoom = v / 100; save(); }), 'How tight the driver-stand camera follows your car.'));
