@@ -4650,7 +4650,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v76', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v76.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5131,18 +5131,18 @@ const ONLINE = (() => {
   }
   function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) { setTimeout(() => tour(0), 600); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } } else setTimeout(announce, 1500); }
   // v76 one-time announcement for returning players (new players get the tour instead)
-  const ANN_KEY = 'rcdl_ann_v76';
+  const ANN_KEY = 'rcdl_ann_v761';
   function announce() {
     try { if (localStorage.getItem(ANN_KEY) === '1') return; } catch (e) { return; } if (document.getElementById('tour')) return;
     const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard synccard'; document.body.appendChild(ov);
     const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'LEADERBOARD UPDATE'));
-    card.appendChild(el('h2', '', 'Lap times count now'));
+    card.appendChild(el('h2', '', 'Fresh boards · lap times count now'));
     const body = el('div', 'tbody'); card.appendChild(body);
-    for (const t of ['Some laps on the boards were dragged out way longer than a real lap to farm points. That\'s fixed.',
-      'Every track now has a lap time limit, set from the average clean lap of everyone who drives it, plus a little extra. Your lap timer shows it while you drive (for example 12.3s / 40s).',
-      'Every lap you drive is saved with its lap time, and the boards show it. A lap over the limit is still saved, it just doesn\'t count on the boards.',
-      'We re-scored the boards from the lap history. Laps that went over the limit, or that had no lap time to check, came off. If a limit ever changes, laps inside the new one come back on their own.',
-      'Bests saved only on your device don\'t upload anymore. Drive it signed in and it counts. Now go send it.']) body.appendChild(el('p', '', t));
+    for (const t of ['Some laps were dragged out way longer than a real lap, or wagged side to side in one spot, to farm points. That\'s fixed, and the boards start fresh so it\'s fair for everybody.',
+      'Every track has a lap time limit: the average clean lap of everyone who drives it, plus a little extra. Your lap timer shows it while you drive (for example 18.3s / 24s).',
+      'Keep moving: if your car sits still or barely creeps for a few seconds, that lap is marked stalled. Transitions only pay when you\'re actually driving down the track.',
+      'Every lap you drive is saved with its lap time, and the boards show the time next to the score. Laps over the limit or stalled are saved but don\'t count.',
+      'The monthly board is the main board now and resets on the 1st. Your old laps are still saved. Now go send it.']) body.appendChild(el('p', '', t));
     const btns = el('div', 'tbtns'); card.appendChild(btns); const ok = el('button', 'big', 'Got it'), lb = el('button', 'ghost', 'See the boards');
     const done = () => { ov.remove(); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } };
     ok.onclick = done; lb.onclick = () => { done(); openMenu('pause', 'boards'); }; btns.append(lb, ok); }
@@ -5325,7 +5325,7 @@ const ONLINE = (() => {
   setInterval(() => { if (document.visibilityState === 'visible' && ONLINE.profile) socPoll(false); }, 90000);
   async function openThread(id, name, request) { thread = { id, name, msgs: null, request: !!request }; tab = 'community'; F.cv = 'messages'; if (mode === 'drive') openMenu('pause', 'community'); else { renderNav(); renderPanel(); } thread.msgs = await ONLINE.thread(id); if (tab === 'community' && mode !== 'drive') renderPanel(); }
   // ---------- leaderboards cache ----------
-  const BC = { t: 0, leaders: null, ranks: null, recent: null, boards: {} }; let lbTrack = null, lbMonth = false;
+  const BC = { t: 0, leaders: null, ranks: null, recent: null, boards: {} }; let lbTrack = null, lbMonth = true;   // v76.1: the monthly board is the main view
   function boardsData(force) { const now = Date.now(); if (!force && BC.leaders && now - BC.t < 25000) return Promise.resolve(false); BC.t = now; BC.boards = {};
     return Promise.all([ONLINE.trackLeaders().then(r => BC.leaders = r), ONLINE.recentPbs(10).then(r => BC.recent = r), ONLINE.profile ? ONLINE.myRanks().then(r => BC.ranks = r) : (BC.ranks = null)]).then(() => true); }
   function boardFor(id, month) { const k = id + (month ? ':m' : ''); if (BC.boards[k]) return Promise.resolve(BC.boards[k]); return (month ? ONLINE.leaderboardMonth(id, 50) : ONLINE.leaderboard(id, 50)).then(r => (BC.boards[k] = r)); }
@@ -5657,13 +5657,13 @@ const ONLINE = (() => {
       }
       { const s = statStrip(); if (s) add(s); }
       // ---- leaders per track ----
-      h('Track leaders', 'best lap score · lap time'); msg('Every lap is saved with its lap time. Only laps inside the track\'s time limit (on your lap timer while driving) count on the boards. ~ = time estimated for laps from before v76.'); const leadBox = el('div', 'lb'); leadBox.textContent = 'Loading…'; add(leadBox);
+      h('Track leaders', 'best lap score · lap time'); msg('Every lap is saved with its lap time. Only laps inside the track\'s time limit (on your lap timer while driving) count on the boards. Boards started fresh on Nov 24 2026.'); const leadBox = el('div', 'lb'); leadBox.textContent = 'Loading…'; add(leadBox);
       // ---- one track's board ----
       const d0 = SIM.TRACK_DEFS[lbTrack]; h('Leaderboard', lbMonth ? new Date().toLocaleString(undefined, { month: 'long', year: 'numeric' }) : 'all time');
       const sel = el('select'); TRK().forEach(([d, i]) => { const o = el('option', '', d.name); o.value = i; if (i === lbTrack) o.selected = true; sel.appendChild(o); }); sel.onchange = () => { lbTrack = +sel.value; renderPanel(); }; add(row('Track', sel));
-      add(row('Board', chips([{ id: false, name: 'All time' }, { id: true, name: 'This month' }], lbMonth, v => { lbMonth = v; })));
+      add(row('Board', chips([{ id: true, name: 'This month' }, { id: false, name: 'All time' }], lbMonth, v => { lbMonth = v; })));
       const myLine = el('p', 'tip', ''); add(myLine); const boardBox = el('div', 'lb'); boardBox.textContent = 'Loading…'; add(boardBox);
-      if (lbMonth) msg('This month\'s board only counts laps actually driven this month while signed in. Resets on the 1st.');
+      if (lbMonth) msg('This month\'s board: your best timed lap this month. Resets on the 1st, so there\'s always a fresh race.'); else msg('All time: best timed lap ever, since the v76 fresh start (Nov 24 2026).');
       // ---- my bests ----
       h('My bests', O.profile ? 'rank on each track' : 'this device'); const mineBox = el('div', 'lb'); add(mineBox);
       if (!O.profile) { msg(O.signedIn() ? 'Claim a driver name on the Online tab and these go on the boards automatically.' : 'Sign in and every PB you set goes on the boards automatically, including the ones below.'); if (O.signedIn()) add(nameBtn()); else add(signInBtn('Sign in with Google', 'ghost')); }
