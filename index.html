@@ -1533,7 +1533,7 @@ const SCN = (function () {
     const PSTAND = [['p_tommy', 0], ['p_bad', 0], ['p_hips', 0], ['p_walk', -Math.PI / 2]];   // scans checked to face +x (p_walk is scanned side-on)
     const person = (x, z, ry, shirt, sit, s = 1, o = {}) => { if (info && typeof GFX !== 'undefined' && GFX.PROP_SETS && !o.block) { const ps = PSTAND[(rnd() * PSTAND.length) | 0], id = o.id || (sit ? (o.cap ? 'drv_homie2' : rnd() < 0.5 ? 'drv_homie1' : 'drv_homie2') : ps[0]);
         // a marker group stands in for the figure; callers may move / lift / re-parent it, the prop takes its final world spot in resolvePeople()
-        const mk = new T.Group(); mk.position.set(x, 0, z); mk.rotation.y = ry; mk.scale.setScalar(s);
+        const mk = new T.Group(); mk.userData.pmk = 1; mk.position.set(x, 0, z); mk.rotation.y = ry; mk.scale.setScalar(s);
         const pr = { id, x, y: -z, z: 0, ry, s: 1, seed: 1 + ((rnd() * 1e6) | 0), cols: [o.pants, shirt, o.skin] }; (info.props || (info.props = [])).push(pr);
         (info._pmk || (info._pmk = [])).push([mk, pr, sit && !o.id ? 0.46 : 0, o.id ? 0.97 + rnd() * 0.06 : (sit ? 0.96 : 0.95 + rnd() * 0.08), sit || o.id ? 0 : ps[1]]); return add(mk); }
       const g = new T.Group(), skin = std(o.skin || [0x8d5524, 0xc68642, 0xe0ac69, 0x5c3a1e][(rnd() * 4) | 0], 0.7), cloth = std(shirt, 0.9), pants = std(o.pants || [0x2a2c34, 0x3b4a5c, 0x6b6f5a][(rnd() * 3) | 0], 0.9);
@@ -2886,7 +2886,7 @@ const SCN = (function () {
         if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new T.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
         g.applyMatrix4(new T.Matrix4().multiplyMatrices(inv, o.matrixWorld)); let bk = buckets.get(k); if (!bk) buckets.set(k, bk = { mat: o.material, gs: [], shadow: false }); bk.gs.push(g); bk.shadow = bk.shadow || o.castShadow; dead.push(o); });
       for (const o of dead) { o.parent.remove(o); }
-      for (const top of grp.children.slice(n0)) { let empty = !top.isMesh; top.traverse(o => { if (o !== top && (o.isMesh || o.isSprite)) empty = false; }); if (empty && top.children.length === 0 && !top.isMesh) grp.remove(top); }
+      for (const top of grp.children.slice(n0)) { let empty = !top.isMesh; top.traverse(o => { if (o !== top && (o.isMesh || o.isSprite)) empty = false; }); if (empty && top.children.length === 0 && !top.isMesh && !top.userData.pmk) grp.remove(top); }
       for (const bk of buckets.values()) { const g = T.BufferGeometryUtils.mergeBufferGeometries(bk.gs); bk.gs.forEach(x => x.dispose()); if (!g) continue; const m = new T.Mesh(g, bk.mat); m.castShadow = false; m.receiveShadow = !bk.mat.transparent; grp.add(m); } }
     // ---- colour bake: every plain (untextured, opaque, non-glowing) standard material folds into vertex colours on a few shared materials ----
     { const pool = new Map(), dead = [], cast = new Set();
@@ -4846,7 +4846,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v82', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v82.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5154,23 +5154,26 @@ const ONLINE = (() => {
   const sceneBodies = () => { const L = GFX.loadedBodies(), f = L.filter(b => b.cls !== 'chibi' && b.cls !== 'movie'); return f.length ? f : L; };
   // ===================== v81 pedestrians: 1/10 people on the floor can be run over (squash + blood splat), counted on your profile =====================
   const PED_KINDS = { crowd: 1, lady: 1, person: 1 }, PED_TITLES = [[1, 'First Blood'], [10, 'Menace'], [50, 'Road Rage'], [100, 'Public Enemy'], [250, 'Grim Reaper'], [500, 'Sidewalk Legend']];
-  let peds = [], pedMesh = null, pedPend = 0, pedT = 0, splatTex = null;
-  function pedSetup(m) { pedMesh = m; peds = (m.userData.items || []).filter(it => PED_KINDS[it.kind] && (it.p.s || 1) < 0.2 && !it.p.noHit).map(it => ({ x: it.p.x, y: it.p.y, z: it.p.z || 0, r: Math.min(it.r, 0.08), v0: it.v0, n: it.n, dead: false })); }
+  let pedOrig = null, peds = [], pedMesh = null, pedPend = 0, pedT = 0, splatTex = null;
+  function pedSetup(m) { pedMesh = m; pedOrig = null; peds = (m.userData.items || []).filter(it => PED_KINDS[it.kind] && (it.p.s || 1) < 0.2 && !it.p.noHit).map(it => ({ x: it.p.x, y: it.p.y, z: it.p.z || 0, r: Math.min(it.r, 0.08), v0: it.v0, n: it.n, dead: false })); }
   const pedTitle = n => { let t = ''; for (const [k, nm] of PED_TITLES) if (n >= k) t = nm; return t; };
   function splatTexture() { if (splatTex) return splatTex; const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), R = (a, b) => a + Math.random() * (b - a);
     g.fillStyle = '#8a0a0a'; g.beginPath(); for (let k = 0; k <= 24; k++) { const a = k / 24 * 6.283, r = R(26, 40); g.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); } g.fill();
     for (let k = 0; k < 14; k++) { const a = R(0, 6.283), d = R(40, 60), r = R(2, 7); g.beginPath(); g.arc(64 + Math.cos(a) * d, 64 + Math.sin(a) * d, r, 0, 6.3); g.fill(); g.lineWidth = r * 0.8; g.strokeStyle = '#7a0808'; g.beginPath(); g.moveTo(64 + Math.cos(a) * 30, 64 + Math.sin(a) * 30); g.lineTo(64 + Math.cos(a) * d, 64 + Math.sin(a) * d); g.stroke(); }
     g.fillStyle = 'rgba(200,30,30,0.5)'; g.beginPath(); g.arc(58, 58, 14, 0, 6.3); g.fill();
     splatTex = new T.CanvasTexture(c); splatTex.encoding = T.sRGBEncoding; return splatTex; }
-  function pedHit(pd, c) { pd.dead = true;
-    if (pedMesh) { const a = pedMesh.geometry.attributes.position, A = a.array, dx = Math.cos(c.yaw), dz = -Math.sin(c.yaw);   // squash flat, smeared a little along the car's path
+  function pedHit(pd, c) { pd.dead = true; pd.back = performance.now() / 1000 + 300;   // v82: back on their feet after 5 minutes (and every time the room is loaded fresh)
+    if (pedMesh) { const a = pedMesh.geometry.attributes.position, A = a.array; if (!pedOrig) pedOrig = A.slice(); const dx = Math.cos(c.yaw), dz = -Math.sin(c.yaw);   // squash flat, smeared a little along the car's path
       for (let i = pd.v0; i < pd.v0 + pd.n; i++) { const j = i * 3, h = A[j + 1] - pd.z; A[j + 1] = pd.z + 0.001 + h * 0.05; A[j] += dx * h * 0.35; A[j + 2] += dz * h * 0.35; } a.needsUpdate = true; pedMesh.geometry.computeBoundingSphere(); }
     if (S.opt.blood !== false) { const sz = 0.07 + Math.random() * 0.05, sp = new T.Mesh(new T.PlaneGeometry(sz * 1.6, sz), new T.MeshBasicMaterial({ map: splatTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, color: 0xffffff }));
-      sp.rotation.x = -Math.PI / 2; sp.rotation.z = c.yaw + (Math.random() - 0.5) * 0.6; sp.position.set(pd.x + Math.cos(c.yaw) * 0.03, pd.z + 0.0015, -(pd.y + Math.sin(c.yaw) * 0.03)); sp.renderOrder = 4; world.group.add(sp); }
+      sp.rotation.x = -Math.PI / 2; sp.rotation.z = c.yaw + (Math.random() - 0.5) * 0.6; sp.position.set(pd.x + Math.cos(c.yaw) * 0.03, pd.z + 0.0015, -(pd.y + Math.sin(c.yaw) * 0.03)); sp.renderOrder = 4; world.group.add(sp); pd.splat = sp; }
     sfxHit(1.1); shake = Math.min(0.012, shake + 0.006);
     S.stats = S.stats || {}; const before = S.stats.peds || 0; S.stats.peds = before + 1; save(); pedPend++;
     const t0 = pedTitle(before), t1 = pedTitle(S.stats.peds); if (t1 !== t0) toast('🏆 ' + t1 + ' · ' + S.stats.peds + ' pedestrians flattened', 'good'); else toast('SPLAT! · ' + S.stats.peds + ' pedestrians', 'bad'); }
-  function pedTick(dt) { if (!peds.length || mode !== 'drive' || !player) return; const c = player.sim; if (c.speed > 0.45) { const gz = c.crawl ? c.cz - 0.091 : 0;
+  function pedRespawn(pd) { pd.dead = false; if (pedMesh && pedOrig) { const a = pedMesh.geometry.attributes.position; a.array.set(pedOrig.subarray(pd.v0 * 3, (pd.v0 + pd.n) * 3), pd.v0 * 3); a.needsUpdate = true; pedMesh.geometry.computeBoundingSphere(); }
+    if (pd.splat) { pd.splat.parent && pd.splat.parent.remove(pd.splat); pd.splat.geometry.dispose(); pd.splat.material.dispose(); pd.splat = null; } }
+  function pedTick(dt) { if (!peds.length || !player) return; for (const pd of peds) if (pd.dead && performance.now() / 1000 > pd.back) { const c = player.sim; if (Math.hypot(pd.x - c.x, pd.y - c.y) > 0.4) pedRespawn(pd); }
+    if (mode !== 'drive') return; const c = player.sim; if (c.speed > 0.45) { const gz = c.crawl ? c.cz - 0.091 : 0;
       for (const pd of peds) { if (pd.dead) continue; const dx = pd.x - c.x, dy = pd.y - c.y; if (dx * dx + dy * dy > 0.04) continue; if (Math.abs(pd.z - gz) > 0.06) continue; if (Math.hypot(dx, dy) < 0.1 + pd.r) pedHit(pd, c); } }
     if (pedPend && (pedT += dt) > 3) { const n = pedPend; pedPend = 0; pedT = 0; if (ONLINE.profile) ONLINE.addPeds(n, track && track.def.id).then(t => { if (t != null && S.stats) { S.stats.pedsAcct = t; } }); } }
   function updateCam(dt) {
