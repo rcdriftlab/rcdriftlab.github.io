@@ -139,7 +139,7 @@ html.rot #mini{width:150px;height:100px}html.rot #hTR{top:8px;right:8px}html.rot
  #mini{width:150px;height:100px}#hTR{top:8px;right:8px}#hB{bottom:8px;width:min(260px,40vw);padding:6px 10px}#hAng{font-size:30px}#hBR{bottom:8px;right:auto;left:50%;transform:translateX(150px);display:none}}
 
 @media (max-width:700px){#hBL,#hCam{display:none}#hAng{font-size:40px}.chips.grid{grid-template-columns:1fr 1fr}}
-.lb{display:grid;gap:2px;margin:6px 0 10px}.lbr{display:grid;grid-template-columns:3em 1fr auto;gap:8px;padding:6px 8px;background:rgba(255,255,255,.04);font-variant-numeric:tabular-nums}.lbr.me{background:rgba(255,106,31,.22)}.lbn{opacity:.6}.lbp{font-weight:700}
+.lb{display:grid;gap:2px;margin:6px 0 10px}.lbr{display:grid;grid-template-columns:3em 1fr auto;gap:8px;padding:6px 8px;background:rgba(255,255,255,.04);font-variant-numeric:tabular-nums}.lbr.me{background:rgba(255,106,31,.22)}.lbn{opacity:.6}.lbp{font-weight:700}.lbp .lbt{font-weight:400;opacity:.6;font-size:.82em}#hLap.slow{color:#ff5a5a}
 /* ---------- menu v2: section cards, track maps, meters, rosters ---------- */
 #nav{position:sticky;top:0;z-index:2;gap:0}.nav{padding:9px 7px 10px;font-size:12px;letter-spacing:.05em}
 .sec{background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:2px 14px 10px;margin:12px 0}
@@ -4174,7 +4174,7 @@ const ONLINE = (() => {
   O.saveGarage = g => { if (!O.profile || !O.synced) return; gPend = g; clearTimeout(gT); gT = setTimeout(gSend, 2500); };
   O.flushGarage = () => { if (gPend) gSend(); };
   O.pullGarage = async () => { if (!O.profile || !O.sb) return null; try { const { data } = await O.sb.rpc('my_profile'); return data && data.id === O.profile.id ? data.garage || {} : null; } catch (e) { return null; } };
-  O.submitLap = async (track, pts, body, ms) => { if (!O.profile || !(pts > 0)) return null; try { const { data } = await O.sb.rpc('submit_lap', { p_track: track, p_pts: Math.round(pts), p_body: body || null, p_ms: Math.max(1, Math.round(ms || 0)) }); return data; } catch (e) { return null; } };
+  O.submitLap = async (track, pts, body, ms, stalled) => { if (!O.profile || !(pts > 0)) return null; try { const { data } = await O.sb.rpc('submit_lap', { p_track: track, p_pts: Math.round(pts), p_body: body || null, p_ms: Math.max(1, Math.round(ms || 0)), p_stall: !!stalled }); return data; } catch (e) { return null; } };
   O.leaderboard = async (track, n) => { if (!O.sb) return []; const { data } = await O.sb.rpc('leaderboard', { p_track: track, p_limit: n || 25 }); return data || []; };
   O.trackLeaders = async () => { if (!O.sb) return []; const { data } = await O.sb.rpc('track_leaders'); return data || []; };
   O.myRanks = async () => { if (!O.profile) return []; const { data } = await O.sb.rpc('my_ranks'); return data || []; };
@@ -4520,7 +4520,7 @@ const ONLINE = (() => {
       const look = { body: b.id, color: GFX.PAINTS[(k * 3 + 2) % GFX.PAINTS.length], color2: GFX.PAINTS[(k * 5 + 1) % GFX.PAINTS.length], finish: GFX.FINISHES[k % 4].id, livery: GFX.LIVERIES[(k + 1) % GFX.LIVERIES.length].id, num: 10 + k * 7, plate: 'DRF ' + (21 + k * 13), wheel: GFX.WHEELS[(k + 1) % GFX.WHEELS.length].id, wheelColor: ['#e8e8ea', '#101114', '#c9a227', '#c8102e'][k % 4], wing: k % 4 === 2 ? 'gt' : 'none', glow: world.night && k % 2 ? GFX.PAINTS[(k * 2 + 6) % GFX.PAINTS.length] : '' };
       const c = makeCarObj('ai', look, {}, AI_NAMES[k % AI_NAMES.length]); c.ai = SIM.makeAI(sk); c.ai.laneBias = (rnd() - 0.5) * 0.2; cars.push(c);
     }
-    resetGrid(); Object.assign(score, { run: 0, mult: 1, total: 0, lapPts: 0, lastPts: null, driftT: 0, graceT: 0, lapStart: null, lastLap: 0, laps: 0, zs: [], maxProg: undefined, lapN: undefined, wwT: 0, wrong: false, stale: false, void: false, pit: false }); if (skids) skids.clear();
+    resetGrid(); Object.assign(score, { stall: false, mv: [], mvT: 0, trT: -9, trP: null, run: 0, mult: 1, total: 0, lapPts: 0, lastPts: null, driftT: 0, graceT: 0, lapStart: null, lastLap: 0, laps: 0, zs: [], maxProg: undefined, lapN: undefined, wwT: 0, wrong: false, stale: false, void: false, pit: false }); if (skids) skids.clear();
   }
   function resetGrid() {
     if (isCrawl()) { CRAWL.spawn(player.sim); arrive = null; return; }
@@ -4650,7 +4650,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v75', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v76', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -4700,7 +4700,7 @@ const ONLINE = (() => {
     if (first && has && carKey(g.look, g.tune) !== carKey(S.look, S.tune)) { applyGarage(g, false, true); ONLINE.synced = false; setTimeout(() => syncChoice(p, g), 300); }
     else { applyGarage(g, first && has); if (!has && !S.syncT) S.syncT = Date.now(); ONLINE.synced = true; try { localStorage.setItem('rcdl_sync2_' + p.id, '1'); } catch (e) { } }
     S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save(); setTimeout(() => socPoll(false), 4000);
-    ONLINE.syncPbs(S.pb).then(n => { if (n) { toast('Your PBs are on the leaderboards', 'good'); if (tab === 'boards' && mode !== 'drive') renderPanel(); } }); };
+  };   // v76: on-device PBs no longer upload (no lap time to check); only laps driven and timed go on the boards
   async function joinLobby(lb, keepPos) {
     const ti = SIM.TRACK_DEFS.findIndex(d => d.id === lb.track); if (ti < 0) return 'That room is on a track this version does not have.';
     if (NET.room && NET.room !== ONLINE.room) NET.room = null;
@@ -4823,7 +4823,9 @@ const ONLINE = (() => {
       score.tandem = drifting && near < 0.8; score.near = near;
       if (drifting) { score.driftT += dt; score.graceT = 0; score.mult = Math.min(5, 1 + Math.floor(score.driftT / 2.5)); score.run += Math.pow(Math.min(ang, 70), 1.25) * Math.min(1, P.speed / 1.5) * dt * 5.5 * score.mult * (score.tandem ? 1 + (0.8 - near) * 3 : 1);
         // transitions: flicking from one side to the other without losing the slide is the real skill
-        const sg = Math.sign(P.slip); if (ang > 15) { if (score.side && sg !== score.side && simTime - score.sideT < 1.0) { const b = Math.round(250 * score.mult); score.run += b; toast('TRANSITION +' + b, 'good'); } score.side = sg; score.sideT = simTime; } }
+        // v76: a transition only pays if the car has actually travelled down the track since the last one (>= 1.5 m, moving >= 0.8 m/s,
+        // >= 0.6 s apart). Wagging side to side in one spot used to pay 250 x mult every swing.
+        const sg = Math.sign(P.slip); if (ang > 15) { const pm = P.prog * track.len; if (score.side && sg !== score.side && simTime - score.sideT < 1.0 && P.speed >= 0.8 && simTime - (score.trT || -9) >= 0.6 && (score.trP == null || pm - score.trP >= 1.5)) { const b = Math.round(250 * score.mult); score.run += b; score.trT = simTime; score.trP = pm; toast('TRANSITION +' + b, 'good'); } score.side = sg; score.sideT = simTime; } }
       else if (score.run > 0) { score.graceT += dt; if (score.graceT > 1.1 || score.wrong) bank(!!score.wrong); }
       // ---- judging zones (same judge the AI is tuned against): depth x angle x coverage ----
       if (track.zones) {
@@ -4836,14 +4838,19 @@ const ONLINE = (() => {
           secure(); }
       }
       const lp = Math.floor(P.prog); if (score.lapN === undefined) score.lapN = lp;
+      // v76 keep-moving rule: a timed lap must keep making forward progress (no parking, no wiggling in place to farm points)
+      if (score.lapStart !== null && simTime - (score.mvT || 0) > 0.25) { score.mvT = simTime; const pm = P.prog * track.len, w = score.mv || (score.mv = []); w.push([simTime, pm]); while (w.length > 1 && simTime - w[1][0] >= MOVE_WIN) w.shift();
+        if (!score.stall && simTime - w[0][0] >= MOVE_WIN - 0.3 && pm - w[0][1] < MOVE_MIN) { score.stall = true; toast('Keep moving · this lap stalled and won\'t count on the boards', 'bad'); } }
       if (lp > score.lapN && !score.wrong) {   // every lap (only the furthest lap reached counts — no back-and-forth over the line): bank the running chain (no need to stop), score the lap, start fresh
         if (score.run > 0) { score.lapPts += score.run; if (score.run > score.best) score.best = score.run; score.run = 0; }
         const wasVoid = !!score.void; if (wasVoid) { score.void = false; score.run = 0; score.lapPts = 0; toast('Lap zeroed · this lap counts', 'good'); }
+        const lapT = score.lapStart !== null ? simTime - score.lapStart : null, stalled = lapT !== null && !!score.stall, slow = lapT !== null && (lapT > lapCap() || stalled);   // v76: a lap has a time limit (no farming points by circling)
         const pts = Math.round(score.lapPts), k0 = track.def.id; score.total += pts; score.lastPts = pts; S.pb = S.pb || {};
-        if (pts > 0) { if (!S.pb[k0] || pts > S.pb[k0]) { S.pb[k0] = pts; save(); toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' · NEW BEST', 'good'); } else toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' pts', 'good'); }
-        if (pts > 0 && score.lapStart !== null && ONLINE.profile) { const isPb = S.pb[k0] === pts; ONLINE.submitLap(k0, pts, S.look.body, (simTime - score.lapStart) * 1000).then(r => { BC.t = 0; if (r && r.pb) toast('LEADERBOARD · ' + pts.toLocaleString() + ' saved', 'good'); else if (r && !r.ok && /update the game/.test(r.why || '')) toast('Reload the page to post laps (new version)', 'bad'); else if (isPb && !(r && r.ok)) ONLINE.syncPbs({ [k0]: pts }); }); }
+        if (slow && pts > 0) toast('LAP ' + pts.toLocaleString() + ' · ' + lapT.toFixed(1) + 's · ' + (stalled ? 'stalled' : 'over the ' + lapCap() + 's limit') + ', saved but not on the boards', 'bad');
+        else if (pts > 0) { if (!S.pb[k0] || pts > S.pb[k0]) { S.pb[k0] = pts; save(); toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' · NEW BEST', 'good'); } else toast((score.lapStart === null ? 'OUT LAP ' : 'LAP ') + pts.toLocaleString() + ' pts', 'good'); }
+        if (pts > 0 && score.lapStart !== null && ONLINE.profile) { const isPb = S.pb[k0] === pts; void isPb; ONLINE.submitLap(k0, pts, S.look.body, lapT * 1000, stalled).then(r => { BC.t = 0; if (r && r.counted === false) return; if (r && r.pb) toast('LEADERBOARD · ' + pts.toLocaleString() + ' · ' + lapT.toFixed(1) + 's saved', 'good'); else if (r && !r.ok && /update the game/.test(r.why || '')) toast('Reload the page to post laps (new version)', 'bad'); else if (isPb && r && !r.ok && r.why) toast('Lap not posted: ' + r.why, 'bad'); }); }
         score.lapPts = 0; score.zs = [];
-        if (score.lapStart !== null && !wasVoid) { score.lastLap = simTime - score.lapStart; score.laps++; const k = track.def.id, b = S.best[k]; if (!b || score.lastLap < b) { S.best[k] = score.lastLap; save(); toast('BEST LAP ' + score.lastLap.toFixed(2) + 's'); } } score.lapStart = simTime; score.lapN = lp; } else if (lp > score.lapN) score.lapN = lp;
+        if (score.lapStart !== null && !wasVoid) { score.lastLap = simTime - score.lapStart; score.laps++; const k = track.def.id, b = S.best[k]; if (!b || score.lastLap < b) { S.best[k] = score.lastLap; save(); toast('BEST LAP ' + score.lastLap.toFixed(2) + 's'); } } score.lapStart = simTime; score.lapN = lp; score.stall = false; score.mv = []; } else if (lp > score.lapN) score.lapN = lp;
     }
     // ---- skid marks ----
     for (const c of (isCrawl() ? [] : all)) { const s = c.sim, sl = Math.abs(s.slip) > 0.14 || Math.abs((s.w || 0) - (s.u || 0)) > 1.2; c.skidN = (c.skidN + 1) % 2; if (c.skidN) continue;
@@ -4986,7 +4993,8 @@ const ONLINE = (() => {
     hud.score.textContent = Math.round(score.lapPts + score.run).toLocaleString(); hud.run.textContent = score.run > 0 ? '+' + Math.round(score.run).toLocaleString() + ' at risk' : ''; hud.mult.textContent = score.mult > 1 ? 'x' + score.mult : '';
     hud.ang.textContent = Math.round(Math.abs(ang)) + '°'; hud.spd.textContent = Math.round(c.speed * (S.opt.units === 'kmh' ? 36 : 22.37)); if (hud.unit.dataset.u !== S.opt.units) { hud.unit.dataset.u = S.opt.units; hud.unit.textContent = S.opt.units === 'kmh' ? 'SCALE KM/H' : 'SCALE MPH'; } hud.bar.style.transform = `translateX(${clamp(-ang / 70, -1, 1) * 50}%) scaleX(${0.06 + Math.min(1, Math.abs(ang) / 70) * 0.2})`; hud.bar.style.background = Math.abs(ang) > 55 ? '#ff3b3b' : Math.abs(ang) > 12 ? '#ff8a1f' : '#6b7280';
     hud.gyro.textContent = S.tune.gyroGain + '%'; hud.thr.style.height = (c.inp.throttle * 100) + '%'; hud.tand.className = score.tandem ? 'on' : ''; if (score.inZone) { if (c.drifting) { hud.zone.className = 'on'; hud.zone.textContent = 'IN ZONE · ' + Math.round((score.zoneQ || 0) * 100) + '%'; } else { hud.zone.className = 'on warn'; hud.zone.textContent = 'ZONE · GET SIDEWAYS'; } } else hud.zone.className = ''; hud.cam.textContent = CAMS[S.opt.cam];
-    const bp = (S.pb || {})[track.def.id]; hud.lap.textContent = (score.lapStart !== null ? 'LAP ' + (score.laps + 1) + ' · ' + (simTime - score.lapStart).toFixed(1) + 's' : 'OUT LAP') + (score.lastPts != null ? ' · last ' + score.lastPts.toLocaleString() : '') + (bp ? ' · best ' + bp.toLocaleString() : '') + (score.total ? ' · session ' + Math.round(score.total).toLocaleString() : '');
+    const bp = (S.pb || {})[track.def.id]; const lt = score.lapStart !== null ? simTime - score.lapStart : 0, cap = lapCap(); hud.lap.classList.toggle('slow', lt > cap || !!score.stall);
+    hud.lap.textContent = (score.lapStart !== null ? 'LAP ' + (score.laps + 1) + ' · ' + lt.toFixed(1) + 's / ' + cap + 's' + (lt > cap ? ' · TOO SLOW, won\'t count' : score.stall ? ' · STALLED, won\'t count' : '') : 'OUT LAP') + (score.lastPts != null ? ' · last ' + score.lastPts.toLocaleString() : '') + (bp ? ' · best ' + bp.toLocaleString() : '') + (score.total ? ' · session ' + Math.round(score.total).toLocaleString() : '');
     hud.net.textContent = NET.room ? 'ONLINE' + (ONLINE.room ? ' · ' + ONLINE.room.code : '') + ' · ' + (NET.count + 1) + (NET.count ? ' drivers here' : ' driver (waiting for others)') : 'SOLO SESSION'; hud.net.className = NET.room ? 'on' : ''; document.documentElement.classList.toggle('inroom', !!ONLINE.room);
     if (hud.ww) hud.ww.className = mode === 'drive' && score.wrong && !player.sim.inf ? 'on' : '';
     { const ct = document.getElementById('crawlTip'); if (ct) { const P = player.sim, msg = !isCrawl() || mode !== 'drive' ? '' : P.righting ? 'FLIPPING IT BACK OVER…' : P.flip > 0.3 ? (P.turtle ? 'TURTLED · hang on, or press R' : 'ON ITS SIDE · hang on, or press R') : S.hunt.egg === 'carry' ? '🥚 CARRYING THE EGG · take it home' : P.wet ? 'FORDING · keep it steady' : ''; ct.textContent = msg; ct.className = msg ? 'on' : ''; } }
@@ -5016,6 +5024,11 @@ const ONLINE = (() => {
   function goFull() { try { const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen; if (f && !document.fullscreenElement) { const p = f.call(d); if (p && p.then) p.then(() => { try { screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } } catch (e) { } }
   // v49 pit dressing: just inside each track's infield gate, a seeded mix of a scene (fight, trash diggers, family...), a few people, a tree and one big
   // 1/10 rig (limo, garbage truck, dozer, semi, container). Every spot is checked against the track and the venue's own infield colliders.
+  // v76 lap time limit per track: the AI's lap time plus a margin. Every lap is saved with its time; only laps inside the limit count on the boards.
+  const MOVE_WIN = 6, MOVE_MIN = 2.5;   // keep moving: at least 2.5 m of forward progress in any 6 s of a timed lap
+  const LAP_MAX = { warehouse: 24, ptile: 27, britt: 26, touge: 29, prodigy: 37, prodigy_night: 37, prodigy2: 53, diamondback: 43, lot: 36, rooftop: 46, tandem: 64 };   // = track_meta.max_s: average clean lap of all players + 15% (approved Nov 24 2026)
+  const lapCap = () => LAP_MAX[track.def.id] || Math.ceil((track && track.len || 60) / 1.35);
+  const lapS = ms => ms > 0 ? (ms / 1000).toFixed(1) + 's' : '';
   function pitDress(tr) {
     const P = GFX.PROP_SETS; if (!P || !tr.gate || tr.def.noDress) return [];
     let seed = 0; for (const ch of tr.def.id) seed = (seed * 31 + ch.charCodeAt(0)) % 100003; const rr = () => (seed = (seed * 9301 + 49297) % 233280) / 233280, pick = a => a[(rr() * a.length) | 0];
@@ -5116,7 +5129,23 @@ const ONLINE = (() => {
       else { mk(i > 0 ? 'Back' : '', 'ghost', () => { i--; draw(); }); if (i === 1 && installEv) mk('Install app', 'big', async () => { await doInstall(); i++; draw(); }); if (i < steps.length - 1) { mk('Skip', 'ghost', done); mk('Next', 'big', () => { i++; draw(); }); } else mk("Let's drive", 'big', done); } };
     draw();
   }
-  function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) setTimeout(() => tour(0), 600); }
+  function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) { setTimeout(() => tour(0), 600); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } } else setTimeout(announce, 1500); }
+  // v76 one-time announcement for returning players (new players get the tour instead)
+  const ANN_KEY = 'rcdl_ann_v76';
+  function announce() {
+    try { if (localStorage.getItem(ANN_KEY) === '1') return; } catch (e) { return; } if (document.getElementById('tour')) return;
+    const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard synccard'; document.body.appendChild(ov);
+    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'LEADERBOARD UPDATE'));
+    card.appendChild(el('h2', '', 'Lap times count now'));
+    const body = el('div', 'tbody'); card.appendChild(body);
+    for (const t of ['Some laps on the boards were dragged out way longer than a real lap to farm points. That\'s fixed.',
+      'Every track now has a lap time limit, set from the average clean lap of everyone who drives it, plus a little extra. Your lap timer shows it while you drive (for example 12.3s / 40s).',
+      'Every lap you drive is saved with its lap time, and the boards show it. A lap over the limit is still saved, it just doesn\'t count on the boards.',
+      'We re-scored the boards from the lap history. Laps that went over the limit, or that had no lap time to check, came off. If a limit ever changes, laps inside the new one come back on their own.',
+      'Bests saved only on your device don\'t upload anymore. Drive it signed in and it counts. Now go send it.']) body.appendChild(el('p', '', t));
+    const btns = el('div', 'tbtns'); card.appendChild(btns); const ok = el('button', 'big', 'Got it'), lb = el('button', 'ghost', 'See the boards');
+    const done = () => { ov.remove(); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } };
+    ok.onclick = done; lb.onclick = () => { done(); openMenu('pause', 'boards'); }; btns.append(lb, ok); }
   const venmoBtn = (txt, cls) => { const a = el('a', cls || 'ghost venmo', txt || 'Chip in on Venmo · @' + VENMO); a.href = 'https://venmo.com/u/' + VENMO; a.target = '_blank'; a.rel = 'noopener'; return a; };
   // ---------- small helpers for the menus ----------
   const fmt = n => Number(n || 0).toLocaleString();
@@ -5621,14 +5650,14 @@ const ONLINE = (() => {
       if (lbTrack == null || SIM.TRACK_DEFS[lbTrack].hidden) lbTrack = SIM.TRACK_DEFS[S.opt.track].hidden ? SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2') : S.opt.track;
       const myId = O.user && O.user.id;
       const lbRows = (box, rows, emptyTxt) => { box.textContent = ''; if (!rows.length) { box.appendChild(el('p', 'tip', emptyTxt)); return; }
-        for (const r of rows) { const line = el('div', 'lbr click' + (r.user_id === myId ? ' me' : '') + (r.rank === 1 ? ' gold' : r.rank === 2 ? ' silver' : r.rank === 3 ? ' bronze' : '')); line.appendChild(el('span', 'lbn', '#' + r.rank)); const nm = el('span', 'lbd', String(r.driver_name)); if (r.body) nm.appendChild(el('small', '', ' ' + GFX.bodyInfo(r.body).name)); line.appendChild(nm); line.appendChild(el('span', 'lbp', fmt(r.pts))); line.onclick = () => playerCard(r.user_id, String(r.driver_name)); box.appendChild(line); } };
+        for (const r of rows) { const line = el('div', 'lbr click' + (r.user_id === myId ? ' me' : '') + (r.rank === 1 ? ' gold' : r.rank === 2 ? ' silver' : r.rank === 3 ? ' bronze' : '')); line.appendChild(el('span', 'lbn', '#' + r.rank)); const nm = el('span', 'lbd', String(r.driver_name)); if (r.body) nm.appendChild(el('small', '', ' ' + GFX.bodyInfo(r.body).name)); line.appendChild(nm); const pe = el('span', 'lbp', fmt(r.pts)); if (r.ms) pe.appendChild(el('small', 'lbt', ' ' + (r.ms_est ? '~' : '') + lapS(r.ms))); line.appendChild(pe); line.onclick = () => playerCard(r.user_id, String(r.driver_name)); box.appendChild(line); } };
       if (!web || O.status !== 'ready') {
         h('Leaderboards'); msg(!web ? 'Online leaderboards are on the web version: ' + WEB : 'Connecting…');
         h('My bests', 'this device'); for (const d of SIM.TRACK_DEFS.filter(d => !d.hidden)) { const pb = (S.pb || {})[d.id], r = el('div', 'lbr lbr3'); r.appendChild(el('span', '', d.name)); r.appendChild(el('span', 'lbn', pb ? '' : 'no lap yet')); r.appendChild(el('span', 'lbp', pb ? fmt(pb) : '—')); add(r); } return;
       }
       { const s = statStrip(); if (s) add(s); }
       // ---- leaders per track ----
-      h('Track leaders', 'best lap score'); const leadBox = el('div', 'lb'); leadBox.textContent = 'Loading…'; add(leadBox);
+      h('Track leaders', 'best lap score · lap time'); msg('Every lap is saved with its lap time. Only laps inside the track\'s time limit (on your lap timer while driving) count on the boards. ~ = time estimated for laps from before v76.'); const leadBox = el('div', 'lb'); leadBox.textContent = 'Loading…'; add(leadBox);
       // ---- one track's board ----
       const d0 = SIM.TRACK_DEFS[lbTrack]; h('Leaderboard', lbMonth ? new Date().toLocaleString(undefined, { month: 'long', year: 'numeric' }) : 'all time');
       const sel = el('select'); TRK().forEach(([d, i]) => { const o = el('option', '', d.name); o.value = i; if (i === lbTrack) o.selected = true; sel.appendChild(o); }); sel.onchange = () => { lbTrack = +sel.value; renderPanel(); }; add(row('Track', sel));
@@ -5643,11 +5672,11 @@ const ONLINE = (() => {
       const rf = el('button', 'ghost', 'Refresh'); rf.onclick = () => boardsData(true).then(() => renderPanel()); add(rf);
       const fill = () => {
         if (!leadBox.isConnected) return; leadBox.textContent = ''; const L = BC.leaders || [];
-        TRK().forEach(([d, i]) => { const l = L.find(x => x.track === d.id), r = el('div', 'lbr lbr3 click' + (l && l.user_id === myId ? ' me' : '')); r.appendChild(el('span', '', d.name)); const who = el('span', 'lbd', l ? '👑 ' + l.driver_name : 'open, be the first'); if (l) who.appendChild(el('small', '', ' · ' + l.drivers + ' on board')); r.appendChild(who); r.appendChild(el('span', 'lbp', l ? fmt(l.pts) : '—')); r.onclick = () => { lbTrack = i; renderPanel(); }; leadBox.appendChild(r); });
+        TRK().forEach(([d, i]) => { const l = L.find(x => x.track === d.id), r = el('div', 'lbr lbr3 click' + (l && l.user_id === myId ? ' me' : '')); r.appendChild(el('span', '', d.name)); const who = el('span', 'lbd', l ? '👑 ' + l.driver_name : 'open, be the first'); if (l) who.appendChild(el('small', '', ' · ' + l.drivers + ' on board')); r.appendChild(who); const pe = el('span', 'lbp', l ? fmt(l.pts) : '—'); if (l && l.ms) pe.appendChild(el('small', 'lbt', ' ' + lapS(l.ms))); r.appendChild(pe); r.onclick = () => { lbTrack = i; renderPanel(); }; leadBox.appendChild(r); });
         mineBox.textContent = ''; const R = BC.ranks || [];
-        TRK().forEach(([d, i]) => { const pb = (S.pb || {})[d.id], rk = R.find(x => x.track === d.id), r = el('div', 'lbr lbr3 click'); r.appendChild(el('span', '', d.name)); r.appendChild(el('span', 'lbn', rk ? '#' + rk.rank + ' of ' + rk.drivers : pb ? (O.profile ? 'uploading…' : 'not on the board') : 'no lap yet')); r.appendChild(el('span', 'lbp', rk ? fmt(rk.pts) : pb ? fmt(pb) : '—')); r.onclick = () => { lbTrack = i; renderPanel(); }; mineBox.appendChild(r); });
+        TRK().forEach(([d, i]) => { const pb = (S.pb || {})[d.id], rk = R.find(x => x.track === d.id), r = el('div', 'lbr lbr3 click'); r.appendChild(el('span', '', d.name)); r.appendChild(el('span', 'lbn', rk ? '#' + rk.rank + ' of ' + rk.drivers : pb ? (O.profile ? 'uploading…' : 'not on the board') : 'no lap yet')); const pe = el('span', 'lbp', rk ? fmt(rk.pts) : pb ? fmt(pb) : '—'); if (rk && rk.ms) pe.appendChild(el('small', 'lbt', ' ' + lapS(rk.ms))); r.appendChild(pe); r.onclick = () => { lbTrack = i; renderPanel(); }; mineBox.appendChild(r); });
         feed.textContent = ''; const F2 = BC.recent || []; if (!F2.length) feed.appendChild(el('p', 'tip', 'No laps posted yet. Go set the first one.'));
-        for (const f of F2) { const r = el('div', 'lbr lbr3 click'); r.appendChild(el('span', 'lbd', String(f.driver_name))); r.appendChild(el('span', 'lbn', tName(f.track) + ' · ' + ago(f.set_at))); r.appendChild(el('span', 'lbp', fmt(f.pts))); r.onclick = () => playerCard(f.user_id, String(f.driver_name)); feed.appendChild(r); }
+        for (const f of F2) { const r = el('div', 'lbr lbr3 click'); r.appendChild(el('span', 'lbd', String(f.driver_name))); r.appendChild(el('span', 'lbn', tName(f.track) + (f.ms ? ' · ' + lapS(f.ms) + ' lap' : '') + ' · ' + ago(f.set_at))); const pe = el('span', 'lbp', fmt(f.pts)); if (f.ms) pe.appendChild(el('small', 'lbt', ' ' + lapS(f.ms))); r.appendChild(pe); r.onclick = () => playerCard(f.user_id, String(f.driver_name)); feed.appendChild(r); }
         const rk = R.find(x => x.track === d0.id); myLine.textContent = O.profile ? (rk ? 'You: #' + rk.rank + ' of ' + rk.drivers + ' on ' + d0.name + ' with ' + fmt(rk.pts) + '.' : 'You have no lap on ' + d0.name + ' yet.') : '';
       };
       boardsData(false).then(fill); fill();
