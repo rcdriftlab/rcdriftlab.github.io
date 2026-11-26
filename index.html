@@ -47,7 +47,7 @@ button,input{font:inherit;color:inherit}
 #hBL b{color:var(--tx);font-weight:600}
 #hGyro{color:var(--ac2);font-weight:700;font-size:20px}
 #tour{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(5,6,9,.62);backdrop-filter:blur(3px);padding:14px}
-#tour .tcard{width:min(460px,94vw);max-height:90vh;overflow:auto;background:#0f1116;border:1px solid var(--ln);border-top:3px solid var(--ac);border-radius:8px;padding:18px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#tour .tcard .tbtns{position:sticky;bottom:-16px;margin-bottom:-16px;padding:10px 0 16px;background:linear-gradient(rgba(15,17,22,0),#0f1116 30%)}#tour .tcard{width:min(460px,94vw);max-height:90vh;overflow:auto;background:#0f1116;border:1px solid var(--ln);border-top:3px solid var(--ac);border-radius:8px;padding:18px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 #tour h2{margin:4px 0 10px;font-size:22px;font-style:italic;letter-spacing:.02em}#tour .tstep{font-size:11px;letter-spacing:.2em;color:var(--ac2)}
 #tour .tbody{font-size:15px;line-height:1.45;color:#d9dde5}#tour .tbody b{color:#fff}#tour ol,#tour ul{margin:6px 0 8px;padding-left:20px}#tour li{margin:3px 0}#tour .tmut{color:var(--mut);font-size:13px}
 #tour .tkeys{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:4px 0 10px;font-size:13px;color:var(--mut)}#tour kbd{background:#1b1e26;border:1px solid var(--ln);border-radius:4px;padding:2px 7px;color:#fff;font-family:inherit;font-size:12px}
@@ -3308,13 +3308,14 @@ const SCN = (function () {
       { const F = frame(-9.6, -2.55, -0.2); const p = F(0, 0); Bg(BOX, whiteM, p[0], p[1], 0.06, -0.2, 0.12, 0.06, 0.07); Bg(BOX, mc(0xff7ab8, 0.5), p[0], p[1], 0.06, -0.2, 0.122, 0.02, 0.072); for (const b of [-0.04, 0.04]) { const q = F(0.04, b); Bg(WHEEL, tireM, q[0], q[1], 0.02, -0.2, 0.04, 0.04, 0.01); }
         const um = F(0, 0); Bg(CYL, fenceM, um[0], um[1], 0.15, 0, 0.003, 0.18, 0.003); Bg(CONE, mc(0xffd21a, 0.6), um[0], um[1], 0.23, 0, 0.16, 0.04, 0.16); fig(...F(0.12, 0), -0.2 + Math.PI, 0x1c1d22, 'out'); fig(...F(-0.12, 0.02), -0.2, 0x5a3a2a, 'down'); }
       for (let k = 0; k < 7; k++) Bg(CYL, mc(0xd8551c, 0.6), -9.9 + (k % 3) * 0.002, -3.55 + (k % 3) * 0.032 + (k > 2 ? 0.016 : 0), 0.016 + (k > 2 ? 0.026 : 0) + (k > 5 ? 0.026 : 0), 0, 0.03, 0.2, 0.03, Math.PI / 2);
-      drum(-9.25, -3.62, 0x7a4a2a); drum(-9.15, -3.5, 0x4a5a2a); xmas(-10.3, -0.3, 0.38); xmas(-12.6, 4.6, 0.32);
-      for (const [x, y] of [[-11.6, -2.9], [-7.4, -2.45], [-5.2, -3.6], [-10.6, -3.7], [-12.9, 1.0], [-11.6, 6.4]]) cone(x, y, 1.2);
-      stick(-12.0, 2.8, 0, 0x1f5fff); stick(-7.6, -2.0, -0.4, 0x1f5fff); stick(-5.8, -2.4, Math.PI, 0x2fa8e8);
+      const W1 = !!tr.def.hw;   /* v101: V2.1's wider left hairpin: these pieces sat right where the new wall/zone is, so on V2.1 they stand further back */
+      drum(-9.25, -3.62, 0x7a4a2a); drum(-9.15, -3.5, 0x4a5a2a); xmas(W1 ? -10.64 : -10.3, W1 ? -0.47 : -0.3, 0.38); xmas(-12.6, 4.6, 0.32);
+      for (const [x, y] of [[-11.6, -2.9], W1 ? [-7.41, -2.5] : [-7.4, -2.45], [-5.2, -3.6], [-10.6, -3.7], [-12.9, 1.0], [-11.6, 6.4]]) cone(x, y, 1.2);
+      stick(-12.0, 2.8, 0, 0x1f5fff); stick(W1 ? -7.76 : -7.6, W1 ? -2.49 : -2.0, -0.4, 0x1f5fff); stick(-5.8, W1 ? -2.6 : -2.4, Math.PI, 0x2fa8e8);
       { const al = mc(0x7de05a, 0.5); Bg(CYL, al, -12.5, -0.6, 0.07, 0, 0.016, 0.13, 0.016); Bg(SPH, al, -12.5, -0.6, 0.155, 0, 0.05, 0.06, 0.044); for (const b of [-1, 1]) Bg(BOX, al, -12.5 + b * 0.025, -0.6, 0.11, 0, 0.012, 0.07, 0.012, b * 0.4); for (const b of [-1, 1]) Bg(SPH, blackM, -12.5 + b * 0.016, -0.62, 0.16, 0, 0.018, 0.022, 0.006); }
-      lamp(-11.9, 5.6, 0.3, false, 0x1a1a1c); lamp(-8.5, -1.95, 0, true); Bg(BOX, mc(0x9a9ca0, 0.5, 0.5), -10.2, 4.0, 0.12, 0.4, 0.015, 0.24, 0.07); Bg(BOX, mc(0x9a9ca0, 0.5, 0.5), -10.2, 4.0, 0.25, 0.4, 0.13, 0.015, 0.05);
+      lamp(-11.9, 5.6, 0.3, false, 0x1a1a1c); lamp(W1 ? -8.62 : -8.5, W1 ? -2.16 : -1.95, 0, true); { const tx = W1 ? -10.79 : -10.2, ty = W1 ? 4.25 : 4.0; Bg(BOX, mc(0x9a9ca0, 0.5, 0.5), tx, ty, 0.12, 0.4, 0.015, 0.24, 0.07); Bg(BOX, mc(0x9a9ca0, 0.5, 0.5), tx, ty, 0.25, 0.4, 0.13, 0.015, 0.05); }
       Bg(CONE, whiteM, -13.1, 3.4, 0.05, 0, 0.04, 0.1, 0.04); Bg(BOX, blackM, -13.1, 3.4, 0.06, 0, 0.042, 0.02, 0.006);
-      const ft = flagT('#111214', '#5fc8ff', 'DRIFT'); flag(-12.9, 2.2, 0.3, ft); flag(-7.05, -2.25, 0, ft); flag(-6.6, 0.7, 0.5, flagT('#1f3fa8', '#ffffff', 'SEND IT')); }
+      const ft = flagT('#111214', '#5fc8ff', 'DRIFT'); flag(-12.9, 2.2, 0.3, ft); flag(W1 ? -7.12 : -7.05, W1 ? -2.58 : -2.25, 0, ft); flag(-6.6, 0.7, 0.5, flagT('#1f3fa8', '#ffffff', 'SEND IT')); }
     // ---- the slidelines wedge in the middle: the yellow-black track box and a pallet of spare boards ----
     { Bg(BOX, mc(0xe8b818, 0.7), 3.6, 2.7, 0.045, 0.1, 0.18, 0.09, 0.14); Bg(BOX, blackM, 3.6, 2.7, 0.045, 0.1, 0.182, 0.03, 0.142); Bg(BOX, mc(0xc9a26a, 0.85), -2.6, 2.1, 0.012, -0.05, 0.3, 0.024, 0.2); for (let k = 0; k < 5; k++) Bg(BOX, boardM, -2.6, 2.1, 0.03 + k * 0.012, -0.05, 0.6, 0.01, 0.06);
       xmas(-5.0, 2.4, 0.3); cone(1.0, 2.3); cone(7.5, 2.4); }
@@ -5891,7 +5892,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v101', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v102', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -6660,22 +6661,24 @@ const ONLINE = (() => {
     draw();
   }
   function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) { setTimeout(() => tour(0), 600); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } } else setTimeout(announce, 1500); }
-  // v76 one-time announcement for returning players (new players get the tour instead)
-  const ANN_KEY = 'rcdl_ann_v761';
+  // v101 one-time announcement for returning players (new players get the tour instead): thank you + V2.1 is live + what changed
+  const ANN_KEY = 'rcdl_ann_v101';
   function announce() {
     try { if (localStorage.getItem(ANN_KEY) === '1') return; } catch (e) { return; } if (document.getElementById('tour')) return;
     const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard synccard'; document.body.appendChild(ov);
-    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'LEADERBOARD UPDATE'));
-    card.appendChild(el('h2', '', 'Fresh boards · lap times count now'));
+    const card = el('div', 'tcard'); ov.appendChild(card); card.appendChild(el('div', 'tstep', 'THANK YOU FOR PLAYING'));
+    card.appendChild(el('h2', '', 'Prodigy RC V2.1 is live'));
     const body = el('div', 'tbody'); card.appendChild(body);
-    for (const t of ['Some laps were dragged out way longer than a real lap, or wagged side to side in one spot, to farm points. That\'s fixed, and the boards start fresh so it\'s fair for everybody.',
-      'Every track has a lap time limit: the average clean lap of everyone who drives it, plus a little extra. Your lap timer shows it while you drive (for example 18.3s / 24s).',
-      'Keep moving: if your car sits still or barely creeps for a few seconds, that lap is marked stalled. Transitions only pay when you\'re actually driving down the track.',
-      'Every lap you drive is saved with its lap time, and the boards show the time next to the score. Laps over the limit or stalled are saved but don\'t count.',
-      'The monthly board is the main board now and resets on the 1st. Your old laps are still saved. Now go send it.']) body.appendChild(el('p', '', t));
-    const btns = el('div', 'tbtns'); card.appendChild(btns); const ok = el('button', 'big', 'Got it'), lb = el('button', 'ghost', 'See the boards');
+    for (const t of ['Thank you, seriously. So many of you are playing, sharing it and sending feedback, and it is shaping this game every day. It is free and it stays free.',
+      '🏁 Prodigy RC V2.1 is live: flowier walls and big competition-style zones. Tap Prodigy RC V2 in the track list and pick V2.1 or the original V2. Each version has its own boards and open room.',
+      'New zone marks on V2.1: OZ = get your rear in the yellow zone along the wall · IZ = get your nose into the box · yellow line = angle check, cross it with all the angle you can hold · yellow X = drive over it sideways.',
+      '⚡ Smoother everywhere: the game draws far less behind the scenes, with the same detail. Prodigy V2, The Lot and Crawler Canyon should all feel a lot better on phones and PCs.',
+      '🔧 Fixed from your reports: the hydraulics panel is smaller on phones (with a HIDE button) and switches off when you leave The Lot, messages stay up long enough to read, and nobody drives inside the Touge mountain anymore.',
+      'Next up: online competition events, run like a real RC drift comp. Bugs or ideas? Post them in Social → Forum. Now go send it.']) body.appendChild(el('p', '', t));
+    const btns = el('div', 'tbtns'); card.appendChild(btns); const ok = el('button', 'ghost', 'Got it'), go = el('button', 'big', 'Drive V2.1');
     const done = () => { ov.remove(); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } };
-    ok.onclick = done; lb.onclick = () => { done(); openMenu('pause', 'boards'); }; btns.append(lb, ok); }
+    ok.onclick = done; go.onclick = () => { done(); const vi = SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2_1'); if (vi < 0) return; if (locked(vi)) { freeCard('every track'); return; } if (ONLINE.room) leaveLobby(); loadTrack(vi); applyTune(); save(); drive(true); };
+    btns.append(ok, go); }
   // v84: Zelle for people without Venmo. Zelle's own share link (from Shaun's QR) — the page it opens shows who you're paying; nothing is printed in the game.
   // v88: Zelle has no pay link (it only lives inside each bank's app), so the button opens a card with Shaun's Zelle QR code: scan it with
   // your bank app's Zelle scanner. Nothing personal is printed in the game; the bank shows the name when you scan.
@@ -7389,7 +7392,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const L of by.values()) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, L.mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { GFX, camera, openMenu: (k, t) => openMenu(k, t), notify: (a, b) => notify(a, b, () => {}), chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
+  window.__game = { GFX, camera, openMenu: (k, t) => openMenu(k, t), peds: () => peds, pedHit: (pd) => pedHit(pd, player.sim), pedBack: () => { for (const pd of peds) pd.back = 0; }, notify: (a, b) => notify(a, b, () => {}), chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
