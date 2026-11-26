@@ -5853,7 +5853,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
 
   // ---------------- renderer ----------------
   const canvas = $('#c'); let renderer;
-  try { renderer = new T.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); }
+  try { renderer = new T.WebGLRenderer({ canvas, antialias: !(S.opt.quality > 0 && T.EffectComposer), powerPreference: 'high-performance' });   /* v106: with post-processing on, the scene is already multisampled in its own target; a second multisampled screen buffer only cost fill rate */ }
   catch (e) { $('#fatal').style.display = 'flex'; return; }
   renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -5883,7 +5883,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
     // float targets only where the GPU can actually render to them (many phones can't -> garbage frames)
     const halfOK = gl2 ? ext.has('EXT_color_buffer_float') || ext.has('EXT_color_buffer_half_float') : ext.has('OES_texture_half_float') && ext.has('EXT_color_buffer_half_float');
     const type = halfOK ? T.HalfFloatType : T.UnsignedByteType;
-    try { rt = gl2 && T.WebGLMultisampleRenderTarget ? new T.WebGLMultisampleRenderTarget(w * pr, h * pr, { type, format: T.RGBAFormat }) : new T.WebGLRenderTarget(w * pr, h * pr, { type, format: T.RGBAFormat }); if (rt.samples !== undefined) rt.samples = q >= 2 ? 4 : 2; } catch (e) { rt = undefined; }
+    try { rt = gl2 && T.WebGLMultisampleRenderTarget ? new T.WebGLMultisampleRenderTarget(w * pr, h * pr, { type, format: T.RGBAFormat }) : new T.WebGLRenderTarget(w * pr, h * pr, { type, format: T.RGBAFormat }); if (rt.samples !== undefined) rt.samples = q >= 2 && !weakGPU ? 4 : 2; } catch (e) { rt = undefined; }
     composer = new T.EffectComposer(renderer, rt); composer.setPixelRatio(pr); composer.setSize(w, h);
     composer.addPass(new T.RenderPass(scene, camera));
     bloom = new T.UnrealBloomPass(new T.Vector2(w, h), 0.26, 0.4, 0.93); composer.addPass(bloom);
@@ -5891,7 +5891,12 @@ if (typeof module !== 'undefined') module.exports = COMP;
     if (T.FXAAShader && !(rt && rt.samples)) { fxaa = new T.ShaderPass(T.FXAAShader); fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); composer.addPass(fxaa); }
   }
   function tuneSSAO() { if (!ssao) return; const f = camera.far - camera.near; ssao.kernelRadius = 0.022; ssao.minDistance = 0.0006 / f; ssao.maxDistance = 0.045 / f; }
-  let drs = 1, fEma = 1 / 60, drT = 0, fpsEl = null, fpsT = 0; const _v1 = new T.Vector3(), _v2 = new T.Vector3(), _v3 = new T.Vector3();
+  let drs = 1, fEma = 1 / 60, drT = 0, fpsEl = null, fpsT = 0;
+  // v106 smooth first (Shaun's video: 40 fps on an Intel laptop GPU looked jumpy): hold the screen's refresh rate (up to 60) by moving render resolution
+  // both ways. Detail, shadows, bloom and draw distance never change; only how many pixels are drawn. A step that drops the frame rate is remembered for 30 s so it doesn't see-saw.
+  const DRS = { hz: 60, smp: [], lo: matchMedia && matchMedia('(pointer:coarse)').matches ? 0.6 : 0.5, cap: 1, capAt: 0, late: 0, n: 0 };
+  const GPU = (() => { try { const g = renderer.getContext(), d = g.getExtension('WEBGL_debug_renderer_info'); return d ? String(g.getParameter(d.UNMASKED_RENDERER_WEBGL)) : ''; } catch (e) { return ''; } })();
+  const weakGPU = /Intel|UHD|Iris|Mali|Adreno|PowerVR|Radeon\(TM\) Graphics|Vega \d+ Graphics|SwiftShader|Microsoft Basic/i.test(GPU) && !/Apple/i.test(GPU); const _v1 = new T.Vector3(), _v2 = new T.Vector3(), _v3 = new T.Vector3();
   function softResize() { const w = LW(), h = LH(), pr = Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); if (fxaa) fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); } }
   function resize() { const w = LW(), h = LH(); fitBar(w); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
   addEventListener('resize', resize);
@@ -6163,13 +6168,27 @@ if (typeof module !== 'undefined') module.exports = COMP;
     toast: (m, c) => toast(m, c), go: () => { },
     saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec) }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
   });
+  // v107 (Shaun): joining a room puts you OFF the track, just inside the pit opening, nose angled toward the track, so nobody already drifting
+  // slams into a car that appears in their line. Spots are checked against walls/props/people/other cars; your player id picks a different first spot.
+  function roomSpawn() {
+    const g = track.gate; if (!g || track.def.grid) return false; const N = track.N, sd = g.s, P = player.sim, r = 0.27;
+    let h = 0; for (const ch of String(ONLINE.myId ? ONLINE.myId() : Math.random())) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const cols = track.colliders || [], props = (world.props || []).concat(world.pitList || []), others = Array.from(netCars.values()).map(c => c.sim);
+    const offTrack = (x, y) => { for (let i = 0; i < N; i += 2) if (Math.hypot(track.X[i] - x, track.Y[i] - y) < track.HW[i] + 0.3) return false; return true; };
+    const C = []; for (const deep of [0.45, 0.9, 1.35]) for (const al of [0, 0.55, -0.55, 1.1, -1.1]) C.push([al, deep]);
+    for (let k = 0; k < C.length; k++) { const [al, deep] = C[(h + k) % C.length], i = ((g.ic + Math.round(al / track.ds)) % N + N) % N, o = sd * (track.HW[i] + deep), x = track.X[i] - track.TY[i] * o, y = track.Y[i] + track.TX[i] * o;
+      if (!offTrack(x, y) || cols.some(b => x + r > b[0] && x - r < b[2] && y + r > b[1] && y - r < b[3]) || props.some(p => p.x != null && Math.hypot(p.x - x, p.y - y) < r + 0.1) || others.some(c => Math.hypot(c.x - x, c.y - y) < 0.65)) continue;
+      SIM.placeCar(P, track, i, 0); const tx = track.TX[i], ty = track.TY[i], a = 0.6, dx = tx * Math.cos(a) + sd * ty * Math.sin(a), dy = ty * Math.cos(a) - sd * tx * Math.sin(a);
+      P.x = x; P.y = y; P.yaw = Math.atan2(dy, dx); P.inf = true; P.ti = i; P.lap = 0; P.prog = i / N; player.skid = [null, null]; return true; }
+    return false;
+  }
   function resetGrid() {
     if (isCrawl()) { CRAWL.spawn(player.sim); arrive = null; return; }
     const n = cars.length, order = cars.slice(1), pi = S.opt.start === 'front' ? 0 : S.opt.start === 'back' ? n - 1 : Math.floor((n - 1) / 2);
     order.splice(pi, 0, player);
     order.forEach((c, slot) => { SIM.placeCar(c.sim, track, -6 - slot * 9, slot % 2 ? 0.3 : -0.3); c.skid = [null, null]; if (c.ai) c.ai.stuck = 0; });
     // online room: everyone has their own grid box (from their player id) so drivers joining don't spawn inside each other
-    if (ONLINE.room && cars.length === 1) { let h = 0; for (const ch of String(ONLINE.myId ? ONLINE.myId() : Math.random())) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const slot = h % 10; SIM.placeCar(player.sim, track, -6 - slot * 7, slot % 2 ? 0.32 : -0.32); }
+    if (ONLINE.room && cars.length === 1 && !roomSpawn()) { let h = 0; for (const ch of String(ONLINE.myId ? ONLINE.myId() : Math.random())) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const slot = h % 10; SIM.placeCar(player.sim, track, -6 - slot * 7, slot % 2 ? 0.32 : -0.32); }
     // tracks with a launch box (Britt's Garage START chute): the player starts in the infield box and drives out through the gate; online drivers stack up the chute
     if (arrive === 'lot' && isLot()) { const s = player.sim, A = LOWRIDER.SPAWN; s.lvl = 0; s.x = A.x; s.y = A.y; s.yaw = A.a; s.vx = s.vy = s.r = 0; s.inf = true; player.skid = [null, null]; trailerT = -3; }
     if (arrive === 'v2lot' && isV2()) { const s = player.sim; s.x = LR_SPOT.x + 0.35; s.y = LR_SPOT.y - 0.25; s.yaw = 0; s.vx = s.vy = s.r = 0; s.inf = true; s.ti = track.nearest(s.x, s.y, 0); player.skid = [null, null]; trailerT = -3; }
@@ -6302,9 +6321,9 @@ if (typeof module !== 'undefined') module.exports = COMP;
   })();
   function readInput(dt) {
     const L = keys['arrowleft'] || keys['a'], R = keys['arrowright'] || keys['d'], U = keys['arrowup'] || keys['w'], D = keys['arrowdown'] || keys['s'] || keys[' '];
-    const tgt = (L ? 1 : 0) - (R ? 1 : 0); inp.kbS += clamp(tgt - inp.kbS, -dt * (tgt ? 4.2 : 7), dt * (tgt ? 4.2 : 7));
+    const tgt = (L ? 1 : 0) - (R ? 1 : 0), kr = (S.opt.kbSteerSp || 100) / 100; inp.kbS += clamp(tgt - inp.kbS, -dt * (tgt ? 4.2 : 7) * kr, dt * (tgt ? 4.2 : 7) * kr);   /* v106: key steering speed is adjustable (keyboard drifters asked) */
     const tt = U ? (keys['shift'] ? 1 : S.opt.kbThrottle / 100) : 0; inp.kbT += clamp(tt - inp.kbT, -dt * 14, dt * (player && player.sim.speed < 1.2 ? 3 : 14));   // v53: keys roll into the throttle from a stop (a full stab just spins the tires)
-    let st = inp.kbS, th = inp.kbT, br = D ? 1 : 0; inp.src = 'kb';
+    let st = Math.sign(inp.kbS) * Math.pow(Math.abs(inp.kbS), 1 + 1.5 * (S.opt.kbCurve || 0) / 100), th = inp.kbT,   /* v106: key steering curve (0 = straight ramp, 100 = slow start, fast finish) */ br = D ? 1 : 0; inp.src = 'kb';
     const pad = readPad();
     const touching = TCH.sId !== null || TCH.tId !== null;
     if (touching) { st = TCH.steer; th = TCH.thr; br = TCH.brk; inp.src = 'touch'; }
@@ -6324,7 +6343,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v105', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v106', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7497,6 +7516,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
       msg('Steering mode for each input (Angle assist or Direct) is in Tuning → Steering feel.');
       h('Keyboard'); const kb = el('div', 'keys'); [['W / ↑', 'Throttle'], ['Shift', 'Full throttle'], ['S / ↓ / Space', 'Brake, then reverse'], ['A D / ← →', 'Steer'], ['C', 'Camera'], ['Mouse drag / wheel', 'Aim / zoom the view'], ['B', 'Reset the view'], ['R', 'Reset to track'], ['[  ]', 'Gyro gain − / +'], ['T', 'Tuning'], ['Enter', 'Room chat'], ['Esc / P', 'Pause'], ['M', 'Sound'], ['H', 'Hide HUD']].forEach(([k, d]) => { const r = el('div'); r.appendChild(el('kbd', '', k)); r.appendChild(el('span', '', d)); kb.appendChild(r); }); add(kb);
       add(row('Keyboard throttle', slider(40, 100, 5, S.opt.kbThrottle, v => v + '%', v => { S.opt.kbThrottle = v; save(); }), 'A key is all-or-nothing, so this caps it. Hold Shift for 100%.'));
+      add(row('Key steering speed', slider(15, 250, 5, S.opt.kbSteerSp || 100, v => v + '%', v => { S.opt.kbSteerSp = v; save(); }), 'How fast a held A/D key sweeps the steering. 100% = full lock in about a quarter second, 25% = about one second. Lower makes taps tiny corrections; higher = snappier flicks.'));
+      add(row('Key steering curve', slider(0, 100, 5, S.opt.kbCurve || 0, v => v ? v + '%' : 'Linear', v => { S.opt.kbCurve = v; save(); }), 'Shape of that sweep. Linear = steady. Higher = the first part of a press is very soft (fine taps) and it only reaches full lock if you keep holding.'));
       add(row('Steer limiter', onOff(S.opt.kbAssist, v => { S.opt.kbAssist = v; save(); }), 'Direct mode only: stops a held key from shoving the front tires past useful angle. Off = raw.'));
       add(row('Throttle assist', onOff(S.opt.kbThrAssist, v => { S.opt.kbThrAssist = v; save(); }), 'Eases the throttle as your angle passes about 30° so a held key does not spin you. Shift overrides it. Never applies to a gamepad or radio.'));
       h('Phone / touch'); msg('Left half of the screen = steering stick (appears where your thumb lands, slide sideways). Right half = throttle (slide up for gas, down for brake/reverse). Buttons along the top: pause, camera, reset, gyro gain, and chat in online rooms. A Bluetooth controller also works on phones.');
@@ -7716,12 +7737,13 @@ if (typeof module !== 'undefined') module.exports = COMP;
         if (signed && (c.host === myId || d.admin)) { const cx = el('button', 'ghost', 'Cancel event'); cx.onclick = async () => { if (cx.dataset.sure !== '1') { cx.dataset.sure = '1'; cx.textContent = 'Tap again to cancel it'; return; } const e = await ONLINE.compCancel(c.id); if (e) toast(e, 'bad'); else toast('Event cancelled'); await compLoad(true); renderPanel(); }; row2.appendChild(cx); }
         b.appendChild(row2); return b; };
       const up = (d.upcoming || []).slice().sort((a, b) => (b.official - a.official) || (new Date(a.starts_at) - new Date(b.starts_at)));
-      h('Upcoming events', up.length ? up.length + '' : ''); if (!up.length) msg('Nothing scheduled yet. Official events get announced when you open the game. Host a friendly one below.'); for (const c of up) add(card(c));
+      h('Upcoming events', up.length ? up.length + '' : ''); if (!up.length) msg('Nothing scheduled yet. Official events get announced when you open the game.'); for (const c of up) add(card(c));
       msg('Event day: the tower calls drivers up, the robot judges score every run, then bystanders vote on each result. The live event runner is in the next update, so events listed here are taking sign-ups only for now.');
       // ---- host ----
-      h(d.admin ? 'Host an event' : 'Host a friendly event'); 
-      if (!signed) msg('Sign in on the Online tab to host your own friendly comp.');
-      else { const f = el('div', 'hostf'), inp = (lbl, node) => { const r = el('label', 'hrow'); r.appendChild(el('span', '', lbl)); r.appendChild(node); f.appendChild(r); return node; };
+      /* v106 (Shaun): only RC Drift Lab sets up events for now (no board full of everyone's comps); players practice the comp scoring */
+      if (!d.admin) { h('Hosting events'); msg('Events are set up by RC Drift Lab for now. Official events get announced when you open the game. Until then, practice above: the scoring is the same one the events will use.'); }
+      else {
+        h('Host an event'); const f = el('div', 'hostf'), inp = (lbl, node) => { const r = el('label', 'hrow'); r.appendChild(el('span', '', lbl)); r.appendChild(node); f.appendChild(r); return node; };
         const ti = inp('Name', el('input')); ti.maxLength = 48; ti.placeholder = 'Thursday Night Throwdown';
         const tsel = inp('Track', el('select')); for (const [dd] of TRKALL()) { if (!COMP.available({ zones: [1], def: dd })) continue; const o = el('option', '', dd.name + (dd.ver ? '' : '')); o.value = dd.id; if (dd.id === track.def.id) o.selected = true; tsel.appendChild(o); }
         const wh = inp('Starts', el('input')); wh.type = 'datetime-local'; { const t = new Date(Date.now() + 86400000); t.setMinutes(0, 0, 0); const z = n => String(n).padStart(2, '0'); wh.value = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate()) + 'T' + z(t.getHours()) + ':00'; }
@@ -7734,7 +7756,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
         go.onclick = async () => { const when = new Date(wh.value); if (isNaN(when)) { toast('Pick a start time', 'bad'); return; } go.disabled = true;
           const r = await ONLINE.compCreate({ title: ti.value, track: tsel.value, starts_at: when.toISOString(), max: +mx.value, format: fm.value, staging: +sg.value, blurb: bl.value, official: offc ? offc.checked : false });
           go.disabled = false; if (r.err) { toast(r.err, 'bad'); return; } toast((offc && offc.checked ? 'Official event' : 'Friendly event') + ' created · you\'re registered', 'good'); await compLoad(true); renderPanel(); };
-        add(go); msg(d.admin ? 'Official events get the gold card and a full-screen announcement for every player. Untick Official for a friendly one.' : 'Friendly events are open to anyone. You can have 2 upcoming at a time, up to 16 drivers. Official events come from RC Drift Lab.'); }
+        add(go); msg('Official events get the gold card and a full-screen announcement for every player. Untick Official for a small low-key event (plain card, no announcement).'); }
       // ---- results ----
       h('Results', 'past events'); const past = d.past || [];
       if (!past.length) msg('No finished events yet. Podiums and full results land here after each event.');
@@ -7794,6 +7816,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
       add(row('Stand cam zoom', slider(60, 200, 10, Math.round((S.opt.standZoom || 1) * 100), v => v + '%', v => { S.opt.standZoom = v / 100; save(); }), 'How tight the driver-stand camera follows your car.'));
       h('Display');
       add(row('Graphics', chips([{ id: 0, name: 'Low', sub: 'very old phones' }, { id: 1, name: 'Medium', sub: 'older phones' }, { id: 2, name: 'High', sub: 'phones + computers' }], S.opt.quality, v => { S.opt.quality = v; save(); resize(); loadTrack(S.opt.track); applyTune(); })));
+      add(row('Auto resolution', chips([{ id: true, name: 'On', sub: 'smooth first' }, { id: false, name: 'Off', sub: 'always full res' }], S.opt.autoRes !== false, v => { S.opt.autoRes = v; save(); if (!v) { drs = 1; softResize(); } }), 'Keeps the game at your screen\'s frame rate (up to 60) by drawing fewer pixels when your graphics chip is busy. Detail, shadows and effects stay the same. Turn on Show FPS to see it work.'));
       add(row('Blood splats', onOff(S.opt.blood !== false, v => { S.opt.blood = v; save(); }), 'Run over the little 1/10 people and they leave a splat. Off = they just get flattened.'));
       add(row('Driver list', onOff(S.opt.roster !== false, v => { S.opt.roster = v; save(); }), 'Online: the names of everyone in your room, top right while you drive.'));
       add(row('Live screens', onOff(S.opt.liveScr !== false, v => { S.opt.liveScr = v; save(); }), 'Prodigy V2 shows your driving live on the projector, the lounge TV and Bret\'s laptop. Only runs while a screen is in view; turn off if your device struggles.'));
@@ -7868,8 +7891,12 @@ if (typeof module !== 'undefined') module.exports = COMP;
     // dynamic resolution: if a phone can't hold ~40 fps, drop render resolution (one-way per track, no rebuild hitches)
     fEma += (Math.min(dt, 0.1) - fEma) * 0.03; drT += dt;
     perfTick(now, dt);
-    if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + ' fps · res ' + Math.round(drs * 100) + '%'; } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
-    if (mode === 'drive' && drT > 4 && fEma > 1 / 40 && drs > 0.7) { drT = 0; drs = Math.max(0.7, drs - 0.1); softResize(); }
+    if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + '/' + Math.min(60, DRS.hz) + ' fps · res ' + Math.round(drs * 100) + '%' + (DRS.n > 60 ? ' · ' + Math.round(100 * DRS.late / DRS.n) + '% late' : ''); if (DRS.n > 600) { DRS.n = 0; DRS.late = 0; } } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
+    { const ms = Math.min(dt, 0.1) * 1000; if (DRS.smp.length < 240) { DRS.smp.push(ms); if (DRS.smp.length === 240) { const a = DRS.smp.slice().sort((x, y) => x - y), lo = a[Math.floor(a.length * 0.1)]; DRS.hz = lo < 8 ? 144 : lo < 9.5 ? 120 : lo < 12 ? 90 : 60; } }
+      const tgt = 1 / Math.min(60, DRS.hz); if (mode === 'drive') { DRS.n++; if (ms > tgt * 1500) DRS.late++; }
+      if (mode === 'drive' && S.opt.autoRes !== false) { const now = performance.now(); if (now - DRS.capAt > 30000) DRS.cap = 1;
+        if (drT > 2.5 && fEma > tgt * 1.12 && drs > DRS.lo + 1e-3) { drT = 0; DRS.cap = Math.min(DRS.cap, drs - 0.05); DRS.capAt = now; drs = Math.max(DRS.lo, drs - (fEma > tgt * 1.5 ? 0.15 : 0.08)); softResize(); }
+        else if (drT > 8 && fEma < tgt * 1.04 && drs < Math.min(1, DRS.cap) - 1e-3) { drT = 0; drs = Math.min(1, DRS.cap, drs + 0.05); softResize(); } } }
   }
   // menu display order: Prodigy V2 sits right under the original Prodigy (TRACK_DEFS order stays put so saved track indices keep working)
   function TRK() { const a = SIM.TRACK_DEFS.map((d, i) => [d, i]), k = a.findIndex(x => x[0].id === 'prodigy2'), j = a.findIndex(x => x[0].id === 'prodigy'); if (k > j + 1 && j >= 0) { const [x] = a.splice(k, 1); a.splice(j + 1, 0, x); } return a.filter(x => !x[0].hidden && !x[0].base); }
@@ -7917,6 +7944,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const L of by.values()) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, L.mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
+  window.__drs = () => ({ drs, drT, fEma, DRS, mode, auto: S.opt.autoRes });
   window.__game = { comp: { start: () => compStart(), exit: () => compExit(), on: () => compOn, C: COMP, ann: () => { compAnnDone = false; compData = null; return compAnnounce(); } }, GFX, camera, openMenu: (k, t) => openMenu(k, t), peds: () => peds, pedHit: (pd) => pedHit(pd, player.sim), pedBack: () => { for (const pd of peds) pd.back = 0; }, notify: (a, b) => notify(a, b, () => {}), chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
