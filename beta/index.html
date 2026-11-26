@@ -282,6 +282,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 #comp .cbtns{position:sticky;bottom:-16px;background:rgba(12,13,17,.97);padding:10px 0 4px;margin-bottom:-4px}
 #comp .rpcap{position:absolute;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(10,11,14,.86);border-left:4px solid #3ddc6a;color:#fff;font-weight:800;letter-spacing:.06em;padding:8px 14px;border-radius:6px;font-size:16px;opacity:0;transition:opacity .15s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #comp .rpcap.on{opacity:1}#comp .rpcap.bad{border-left-color:#ff3b30;color:#ffd1cd}
+#comp .cw.qres{background:rgba(255,210,63,.08);border-radius:6px;padding:6px}#comp .cw.qres>b{color:#ffd23f}#comp .cw.qres em{font-style:normal;font-weight:900;font-size:18px;color:#ffd23f}
 .comprp #hud,.comprp #touch,.comprp #toast{display:none!important}
 .inmenu #comp{display:none!important}
 .compbtn{background:linear-gradient(90deg,#1b2a6b,#13306b)!important;color:#fff!important;border:1px solid #2f5bff!important}.compbtn small{display:block;font-size:11px;font-style:normal;font-weight:600;letter-spacing:.06em;opacity:.75;margin-top:3px}
@@ -5353,6 +5354,7 @@ const ONLINE = (() => {
   O.compList = async () => (await rpc('comp_list')) || null;
   O.compCreate = async p => { const r = await rpc('comp_create', { p }); return r && r.ok ? { id: r.id } : { err: said(r) }; };
   O.compRegister = async (id, on) => said(await rpc('comp_register', { p_comp: id, p_on: !!on }));
+  O.compSaveRun = async p => !!(await rpc('comp_run_save', { p }));
   O.compCancel = async id => said(await rpc('comp_cancel', { p_comp: id }));
   O.pedBoard = async () => (await rpc('ped_board')) || { top: [] };   // v98
   O.onlineDrivers = async () => (await rpc('online_drivers')) || { drivers: [], guests: 0 };
@@ -5588,15 +5590,15 @@ const COMP = (function () {
       if (Z.samp.length > 8) { const m = Z.samp.reduce((p, q) => p + q, 0) / Z.samp.length, sd = Math.sqrt(Z.samp.reduce((p, q) => p + (q - m) * (q - m), 0) / Z.samp.length); cons += clamp(1 - (sd / Math.max(m, 1)) * 2.5, 0, 1); cn++;
         const lo = Z.minA; if (m > 25 && lo < m * 0.55) out.ded.push({ j: 'angle', pts: 5, why: 'Dropped angle in ' + Z.name + ' (' + Math.round(m) + '° to ' + Math.round(lo) + '°)', t: Z.minT, zone: Z.k }); } }
     // ---- STYLE ----
-    const zSp = zSpN ? zSpS / zSpN : 0, ent = entN ? entS / entN : 0, spd = clamp((zSp - 1.2) / 2.4, 0, 1), commit = clamp((ent - 1.0) / 2.2, 0, 1), link = pairs ? links / pairs : 0, bonus = Math.min(9, trans * 3);
+    const zSp = zSpN ? zSpS / zSpN : 0, ent = entN ? entS / entN : 0, spd = clamp((zSp - 1.5) / 3.0, 0, 1), commit = clamp((ent - 1.5) / 3.0, 0, 1), link = pairs ? links / pairs : 0, bonus = Math.min(5, trans);   /* v105: 4.5 m/s through the zones = full speed credit; +1 per transition, max +5 */
     out.parts = { zoneSp: zSp, entrySp: ent, link, links, pairs, trans, cover: courseD > 0 ? driftD / courseD : 0 };
     const ded = j => out.ded.filter(d => d.j === j).reduce((p, d) => p + d.pts, 0);
     out.line = clamp(wl ? 100 * sl / wl : 0, 0, 100);
     out.angle = clamp(100 * (0.8 * (wa ? sa / wa : 0) + 0.2 * (cn ? cons / cn : 0)) - ded('angle'), 0, 100);
-    out.style = clamp(100 * (0.4 * spd + 0.25 * commit + 0.35 * link) + bonus - ded('style'), 0, 100);
+    out.style = clamp(100 * (0.35 * spd + 0.25 * commit + 0.4 * link) + bonus - ded('style'), 0, 100);
     if (bonus) out.notes.push({ j: 'style', good: 1, why: trans + ' clean transition' + (trans > 1 ? 's' : '') + ' (+' + bonus + ')', w: bonus / 10 });
-    if (zSpN) { if (spd > 0.75) out.notes.push({ j: 'style', good: 1, why: 'Carried speed through the zones (' + zSp.toFixed(1) + ' m/s avg)', w: 0.45 }); else if (spd < 0.4) out.notes.push({ j: 'style', bad: 1, why: 'Slow through the zones (' + zSp.toFixed(1) + ' m/s avg)', w: 0.5 });
-      if (commit < 0.35) out.notes.push({ j: 'style', bad: 1, why: 'Soft zone entries (' + ent.toFixed(1) + ' m/s avg)', w: 0.4 }); }
+    if (zSpN) { if (spd > 0.7) out.notes.push({ j: 'style', good: 1, why: 'Carried speed through the zones (' + zSp.toFixed(1) + ' m/s avg)', w: 0.45 }); else if (spd < 0.35) out.notes.push({ j: 'style', bad: 1, why: 'Slow through the zones (' + zSp.toFixed(1) + ' m/s avg)', w: 0.5 });
+      if (commit < 0.3) out.notes.push({ j: 'style', bad: 1, why: 'Soft zone entries (' + ent.toFixed(1) + ' m/s avg)', w: 0.4 }); }
     if (pairs) { if (link >= 0.8) out.notes.push({ j: 'style', good: 1, why: 'Linked ' + links + ' of ' + pairs + ' zones without straightening', w: 0.45 }); else out.notes.push({ j: 'style', bad: 1, why: 'Linked only ' + links + ' of ' + pairs + ' zones', w: 0.45 }); }
     const bestA = zs.filter(Z => Z.best).sort((p, q) => q.best.ang - p.best.ang)[0]; if (bestA && bestA.best.ang > 45) out.notes.push({ j: 'angle', good: 1, why: 'Held ' + Math.round(bestA.best.ang) + '° through ' + bestA.name, w: 0.5 });
     out.zones = zs.map(Z => ({ k: Z.k, name: Z.name, type: Z.z.type, hit: !!Z.best, pct: Z.best ? Z.best.pct : 0, ang: Z.best ? Z.best.ang : 0, gapCm: Z.best ? Z.best.gapCm : null, t: Z.best ? Z.best.t : null, line: Z.line, angle: Z.angle }));
@@ -5668,7 +5670,7 @@ const COMP = (function () {
 
   // ---- start / stop ----
   function start(o) {
-    tr = o.track; st = stageOf(tr); S.on = true; S.cap = o.cap || 90; S.stageLimit = o.stageLimit || 90; S.who = o.who || 'Driver'; S.trackName = tr.def.name; S.runs = S.track === tr.def.id ? S.runs : []; S.track = tr.def.id;
+    tr = o.track; st = stageOf(tr); S.on = true; S.cap = o.cap || 90; S.stageLimit = o.stageLimit || 90; S.who = o.who || 'Driver'; S.trackName = tr.def.name; S.runs = S.track === tr.def.id ? S.runs : []; S.pair = S.track === tr.def.id && S.pair ? S.pair : []; S.track = tr.def.id;
     if (!tower || tower.tr !== tr) { tower = buildTower(o.group); tower.tr = tr; }
     mkUI(); restage();
   }
@@ -5718,7 +5720,8 @@ const COMP = (function () {
     const n = S.nRun; let R;
     if (o.dns) { R = finish({ zero: { why: 'DNS · ' + o.dns, t: 0 }, ded: [], notes: [], zones: [], events: [] }); }
     else { R = judgeRun(S.rec, tr); if (o.dnf && !R.zero) { R.zero = { why: 'DNF · ' + o.dnf, t: S.rec.t }; finish(R); } }
-    R.n = n; R.when = new Date(); R.fs = S.fs; R.rec = S.rec; S.res = R; S.runs.push(R); S.ph = 'card'; lights(COL.idle, COL.idle, COL.idle);
+    if (S.pair.length >= 2) S.pair = []; S.pair.push(R); R.qn = S.pair.length;   /* v105: qualifying is a pair of runs, the better one counts */
+    R.n = S.runs.length + 1; R.when = new Date(); R.fs = S.fs; R.rec = S.rec; S.res = R; S.runs.push(R); if (ctx.saveRun && R.rec) ctx.saveRun(R, tr); S.ph = 'card'; lights(COL.idle, COL.idle, COL.idle);
     ctx.lock(true); ui.status('', ''); ui.showCard(R); if (!R.zero && ctx.win) ctx.win();
     try { const k = 'rcdl_comp_pb', pb = JSON.parse(localStorage.getItem(k) || '{}'); if (!R.zero && (!pb[tr.def.id] || R.total > pb[tr.def.id].total)) { pb[tr.def.id] = { total: R.total, line: R.line, angle: R.angle, style: R.style, at: Date.now() }; localStorage.setItem(k, JSON.stringify(pb)); R.pb = true; } } catch (e) { }
   }
@@ -5791,20 +5794,21 @@ const COMP = (function () {
     root.style.display = '';
   }
   function fillCard(card, R) {
-    const best = S.runs.filter(r => !r.zero).reduce((a, r) => !a || r.total > a.total ? r : a, null), qn = ((R.n - 1) % 2) + 1;
+    const best = S.runs.filter(r => !r.zero).reduce((a, r) => !a || r.total > a.total ? r : a, null), qn = R.qn || 1, P = S.pair, pb2 = qn === 2 ? (P[0].total >= P[1].total ? 0 : 1) : -1;
     const when = R.when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), bar = (k, v) => '<div class="cj"><b>' + k + '</b><span><i style="width:' + v.toFixed(0) + '%"></i></span><em>' + v.toFixed(1) + '</em></div>';
     const why = whyLines(R), zl = (R.zones || []).map(z => '<span class="cz ' + (z.hit ? 'ok' : 'no') + '" title="' + esc(z.name) + '">' + esc(z.name.replace('Angle check ', 'A')) + '</span>').join('');
     card.innerHTML = '<div class="chd"><small>SOLO QUALIFYING · PRACTICE</small><div class="ctot ' + (R.zero ? 'z' : '') + '">' + R.total.toFixed(1) + '</div>' + (R.pb ? '<div class="cpb">NEW BEST ON THIS TRACK</div>' : '') + '</div>' +
       '<div class="cw"><b>WHO</b><span>' + esc(S.who) + '</span></div>' +
-      '<div class="cw"><b>WHEN</b><span>Qualifying run ' + qn + ' of 2 · practice run #' + R.n + ' · ' + when + '</span></div>' +
+      '<div class="cw"><b>WHEN</b><span>Qualifying run ' + qn + ' of 2 · ' + when + (R.n > 1 ? ' · run #' + R.n + ' today' : '') + '</span></div>' +
       '<div class="cw"><b>WHERE</b><span>' + esc(S.trackName) + '</span></div>' +
       '<div class="cw"><b>WHAT</b><span>' + (R.zero ? '0 · ' + esc(R.zero.why) : R.total.toFixed(1) + ' (average of the three judges)') + (R.fs ? ' · ' + R.fs + ' false start' + (R.fs > 1 ? 's' : '') : '') + '</span></div>' +
       (R.zero && !R.rec ? '' : bar('LINE', R.line) + bar('ANGLE', R.angle) + bar('STYLE', R.style)) +
       (zl ? '<div class="czs">' + zl + '</div>' : '') +
       '<div class="cw why"><b>WHY</b><ul>' + (why.length ? why.map((w, i) => '<li class="' + (w.bad ? 'bad' : 'good') + (i >= 7 ? ' more' : '') + '">' + esc(w.txt) + (w.t != null && R.rec ? ' <a data-t="' + w.t + '">▶ watch</a>' : '') + '</li>').join('') + (why.length > 7 ? '<li class="mtog"><a>+ ' + (why.length - 7) + ' more</a></li>' : '') : '<li>Clean run.</li>') + '</ul></div>' +
-      '<div class="cw"><b>NEXT</b><span>' + (qn === 1 ? 'Qualifying run 2 · the better of your two runs sets your seed' : 'New qualifying pair · best today ' + (best ? best.total.toFixed(1) : '—')) + '</span></div>' +
-      '<div class="cbtns">' + (R.rec && R.rec.f.length > 3 ? '<button class="big rp">▶ INSTANT REPLAY</button>' : '') + '<button class="big again">RUN AGAIN</button><button class="ghost out">Leave comp mode</button></div>' +
-      '<div class="cnote">Practice only for now: the judges, tower and replay are what the online events will use. Scores save on this device.</div>';
+      (qn === 2 ? '<div class="cw qres"><b>QUALIFIED</b><span><em>' + P[pb2].total.toFixed(1) + '</em> · run 1 ' + P[0].total.toFixed(1) + (pb2 === 0 ? ' ✓' : '') + ' · run 2 ' + P[1].total.toFixed(1) + (pb2 === 1 ? ' ✓' : '') + ' · the better run counts</span></div>' : '') +
+      '<div class="cw"><b>NEXT</b><span>' + (qn === 1 ? 'Qualifying run 2 · the better of your two runs counts' : 'Start a new qualifying pair · best single run today ' + (best ? best.total.toFixed(1) : '—')) + '</span></div>' +
+      '<div class="cbtns">' + (R.rec && R.rec.f.length > 3 ? '<button class="ghost rp">▶ REPLAY</button>' : '') + '<button class="big again">' + (qn === 1 ? '▶ QUALIFYING RUN 2' : '↻ NEW QUALIFYING PAIR') + '</button><button class="ghost out">Leave</button></div>' +
+      '<div class="cnote">Practice: same tower, judges and replay the online events will use. Your best is saved on this device; signed-in runs also go to the server so the judges can be tuned on real driving.</div>';
     card.querySelectorAll('a[data-t]').forEach(a => a.onclick = () => replay(Math.max(R.rec.f[0][0], +a.dataset.t - 2)));
     const q = s => card.querySelector(s); if (q('.mtog')) q('.mtog').onclick = () => { card.classList.add('all'); q('.mtog').remove(); }; card.classList.remove('all'); if (q('.rp')) q('.rp').onclick = () => replay(); q('.again').onclick = () => { ctx.lock(false); restage(); }; q('.out').onclick = () => ctx.exit();
   }
@@ -5822,7 +5826,8 @@ const COMP = (function () {
       if (a === 'bk') backToCard(); });
   }
 
-  return { live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
+  function packRec(rec) { const r4 = v => Math.round(v * 1e4) / 1e4, r3 = v => Math.round(v * 1e3) / 1e3; return { v: rec.v, hz: HZ, pa: r4(rec.pa), pb: r4(rec.pb), f: rec.f.map(a => a.map((v, i) => i === 8 || i === 17 ? v : i <= 3 ? r4(v) : r3(v))) }; }
+  return { packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
 })();
 if (typeof module !== 'undefined') module.exports = COMP;
 
@@ -6076,6 +6081,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
   /* v95: compile every material in the new scene up front (during the load fade) instead of the first time each one shows up on screen mid-drive */
   function warmShaders() { for (const ms of [400, 2500]) setTimeout(() => { try { renderer.compile(scene, camera); } catch (e) { } }, ms); }
   function loadTrack(i) { warmShaders(); if (compOn) { compOn = false; COMP.dropWorld(); compCls(false); }
+    /* v105: a room is one track. Loading any other track always leaves the room first, so nobody sits in a room on a different track (Shaun saw "mraga · other track" in V2.1) */
+    { const R = ONLINE.room, L = ONLINE.lobby, d = SIM.TRACK_DEFS[i]; if (R && L && d && L.track && L.track !== d.id) { try { ONLINE.leave(); if (VO.track) { const keep = S.opt.voice; micOff(); S.opt.voice = keep; } } catch (e) { } NET.room = null; NET.status = 'solo'; if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } if (!NET.joining) setTimeout(() => toast('Left room ' + R.code + ' · rooms are one track each'), 300); } }
     if (world) { GFX.disposeTree(world.group); scene.remove(lights.group); lights.envRT.dispose(); if (lights.envRT2) lights.envRT2.dispose(); if (skids) GFX.disposeTree(skids.mesh); }
     cars.forEach(c => GFX.disposeTree(c.mesh)); cars = []; netCars.forEach(c => GFX.disposeTree(c.mesh)); netCars.clear();
     S.opt.track = i; track = SIM.buildTrack(SIM.TRACK_DEFS[i]);
@@ -6153,7 +6160,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     lock: on => { if (on) { const s = player.sim; s.inp.throttle = 0; s.inp.steer = 0; } },
     bodyClass: (c, on) => compCls(on, c),
     beep: (f, d, v, type) => { if (!AC || !S.opt.sound) return; const t0 = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(v || 0.3, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d); o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d + 0.05); },
-    toast: (m, c) => toast(m, c), go: () => { }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
+    toast: (m, c) => toast(m, c), go: () => { },
+    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec) }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
   });
   function resetGrid() {
     if (isCrawl()) { CRAWL.spawn(player.sim); arrive = null; return; }
@@ -6314,9 +6322,9 @@ if (typeof module !== 'undefined') module.exports = COMP;
   }
 
   // ---------------- online (lights up on the shared page) ----------------
-  const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
+  const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v104', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v105', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -6368,12 +6376,13 @@ if (typeof module !== 'undefined') module.exports = COMP;
     S.opt.name = String(p.driver_name); if (player) player.name = S.opt.name; save(); setTimeout(() => socPoll(false), 4000);
   };   // v76: on-device PBs no longer upload (no lap time to check); only laps driven and timed go on the boards
   async function joinLobby(lb, keepPos) {
+    if (compOn) compExit();   /* v105: comp practice is solo; joining a room always ends it */
     const ti = SIM.TRACK_DEFS.findIndex(d => d.id === lb.track); if (ti < 0) return 'That room is on a track this version does not have.';
     if (NET.room && NET.room !== ONLINE.room) NET.room = null;
-    if (S.opt.track !== ti) { S.opt.track = ti; loadTrack(ti); }
+    if (S.opt.track !== ti) { S.opt.track = ti; NET.joining = true; try { loadTrack(ti); } finally { NET.joining = false; } }
     if (NET.aiBefore === undefined) NET.aiBefore = S.opt.ai; S.opt.ai = 0;
     const r = await ONLINE.join(lb, { name: S.opt.name }); if (r.err) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; return r.err; }
-    NET.looks.clear(); NET.firstSeen.clear(); NET.room = r.room; NET.status = 'online'; if (r.spill) setTimeout(() => toast(r.spill), 400); voiceSync(); if (S.opt.voice !== 'off' && !VO.track) micOn().then(ok => { if (!ok) { S.opt.voice = 'off'; save(); } }); r.room.onChat(chatShow); if (r.room.onEv) r.room.onEv(rideEv); r.room.onPeers(() => { }, () => { if (NET.room === r.room) { NET.room = null; NET.status = 'solo'; } if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } });
+    NET.looks.clear(); NET.firstSeen.clear(); NET.ptrk.clear(); NET.pjoin.clear(); NET.room = r.room; NET.status = 'online'; if (r.spill) setTimeout(() => toast(r.spill), 400); voiceSync(); if (S.opt.voice !== 'off' && !VO.track) micOn().then(ok => { if (!ok) { S.opt.voice = 'off'; save(); } }); r.room.onChat(chatShow); if (r.room.onEv) r.room.onEv(rideEv); r.room.onPeers(() => { }, () => { if (NET.room === r.room) { NET.room = null; NET.status = 'solo'; } if (NET.aiBefore !== undefined) { S.opt.ai = NET.aiBefore; NET.aiBefore = undefined; } });
     const P0 = player.sim, keep = keepPos && isCrawl() && P0.q ? { x: P0.x, y: P0.y, yaw: P0.yaw } : null; newSession(); if (keep) CRAWL.makeState(player.sim, keep.x, keep.y, keep.yaw); save(); return '';
   }
   // v93: leaving the Canyon / Lot room on purpose sticks until you go to another track (it used to auto-rejoin you right away)
@@ -6426,7 +6435,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   function netSend(dt) {
     if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.05; NET.seq = (NET.seq || 0) + 1; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
     const lk = JSON.stringify(S.look); NET.lkN = (NET.lkN || 0) + 1; const sendLook = lk !== NET.lkSent || NET.lkN % 30 === 0 || NET.lkN < 15 || (NET.room.oldPeers && NET.room.oldPeers()); if (sendLook) NET.lkSent = lk;
-    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, mo: VO.track && S.opt.voice !== 'off' ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, rd: rideSend(), rp: rideParked(), pk: pedSend(), hy: isLot() && c.hydro ? { z: r3(c.hydro.z), p: r3(c.hydro.p), r: r3(c.hydro.r), th: r3(c.hydro.th || 0), pv: c.hydro.piv || 0, f: c.hydro.flip ? 1 : 0, d: c.hydro.d.map(r3), hg: (c.hydro.hang || [0, 0, 0, 0]).map(r3), sq: (c.hydro.sq || [0, 0, 0, 0]).map(r3) } : undefined, lf: c.lift ? { z: r3(c.lift.z), r: r3(c.lift.r), p: r3(c.lift.p) } : undefined, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
+    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, tid: track.def.id, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, mo: VO.track && S.opt.voice !== 'off' ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, rd: rideSend(), rp: rideParked(), pk: pedSend(), hy: isLot() && c.hydro ? { z: r3(c.hydro.z), p: r3(c.hydro.p), r: r3(c.hydro.r), th: r3(c.hydro.th || 0), pv: c.hydro.piv || 0, f: c.hydro.flip ? 1 : 0, d: c.hydro.d.map(r3), hg: (c.hydro.hang || [0, 0, 0, 0]).map(r3), sq: (c.hydro.sq || [0, 0, 0, 0]).map(r3) } : undefined, lf: c.lift ? { z: r3(c.lift.z), r: r3(c.lift.r), p: r3(c.lift.p) } : undefined, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
   }
   // v82 snapshot playback: estimate the sender's clock (min one-way gap), play back D ms behind it (D adapts to packet spacing + jitter),
   // cubic Hermite between the two samples around that time using their velocities; short extrapolation if the next packet is late
@@ -6446,7 +6455,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
     if (!NET.room) return; let peers = []; try { peers = NET.room.peers(); } catch (e) { return; }
     const seen = new Set(), now = Date.now(); let n = 0, built = 0; rideNet(peers); pedNet(peers);
     for (const p of peers) {
-      if (p.sameTab || p.kind !== 'viewer') continue; let d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
+      if (p.sameTab || p.kind !== 'viewer') continue; let d = p.presence && p.presence.drift; if (d && typeof d === 'object') NET.ptrk.set(p.peer, typeof d.tid === 'string' ? d.tid : (SIM.TRACK_DEFS[d.t] || {}).id); if (!d || typeof d !== 'object' || (typeof d.tid === 'string' ? d.tid !== track.def.id : d.t !== S.opt.track) || n >= 19) continue; n++;   /* v105: match on track id when the sender has it */
       if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
       const l = NET.looks.get(p.peer) || {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
       /* v95: window tint, stickers, race number and driver travel with the look (the uploaded picture never does) */
@@ -6937,7 +6946,9 @@ if (typeof module !== 'undefined') module.exports = COMP;
       else if ((hud.rT = (hud.rT || 0) - 1) <= 0) { hud.rT = 20; el2.style.display = '';
         { const now = Object.keys(R.names), was = hud.rNames; if (was && hud.rCode === R.code) { for (const pid of now) if (!was.includes(pid)) notify('👋', R.names[pid] + ' joined the room'); } hud.rNames = now; hud.rCode = R.code; }
         const here = new Map(); for (const [pid, nc] of netCars) here.set(pid, nc); const rows = [[(VO.track && S.opt.voice !== 'off' ? '🎙 ' : '● ') + (S.opt.name || 'You') + ' (you)', 'me']];
-        for (const [pid, n] of Object.entries(R.names)) { const nc = here.get(pid); rows.push([(nc && nc.vt ? '🔊 ' : nc && nc.mo ? '🎙 ' : '') + n + (nc ? '' : ' · other track'), nc ? (nc.vt ? 'talk' : '') : 'away']);   /* v95: 🎙 = mic on, 🔊 = talking now */ }
+        for (const [pid, n] of Object.entries(R.names)) { const nc = here.get(pid), pt = NET.ptrk.get(pid), j0 = NET.pjoin.get(pid) || NET.pjoin.set(pid, Date.now()).get(pid);
+          const why = nc ? '' : pt && pt !== track.def.id ? ' · on ' + tName(pt) : Date.now() - j0 < 20000 ? ' · connecting…' : ' · can\'t connect';   /* v105: honest status (WebRTC can fail between some networks) */
+          rows.push([(nc && nc.vt ? '🔊 ' : nc && nc.mo ? '🎙 ' : '') + n + why, nc ? (nc.vt ? 'talk' : '') : 'away']);   /* v95: 🎙 = mic on, 🔊 = talking now */ }
         const html = rows.map(([t, c]) => '<div class="' + c + '">' + t.replace(/[<>&]/g, '') + '</div>').join(''); if (el2.innerHTML !== html) el2.innerHTML = html; } }
     if (hud.ww) hud.ww.className = mode === 'drive' && score.wrong && !player.sim.inf ? 'on' : '';
     { const ct = document.getElementById('crawlTip'); if (ct) { const P = player.sim, msg = !isCrawl() || mode !== 'drive' ? '' : P.righting ? 'FLIPPING IT BACK OVER…' : P.flip > 0.3 ? (P.turtle ? 'TURTLED · hang on, or press R' : 'ON ITS SIDE · hang on, or press R') : S.hunt.egg === 'carry' ? '🥚 CARRYING THE EGG · take it home' : P.wet ? 'FORDING · keep it steady' : ''; ct.textContent = msg; ct.className = msg ? 'on' : ''; } }
@@ -7194,7 +7205,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
       const tx = el('div'), nm = el('div', '', d.name); if (d.isNew) { const nb = el('span', 'newb', 'NEW'); nm.appendChild(nb); } tx.appendChild(nm); const sm = el('small'), pb = (S.pb || {})[d.id]; if (pb && !opt.noPb) { sm.appendChild(el('span', 'pb', 'PB ' + fmt(pb))); sm.appendChild(document.createTextNode(' · ')); } sm.appendChild(document.createTextNode(d.sub)); tx.appendChild(sm); b.appendChild(tx);
       if (locked(i) && !opt.noLock) { b.classList.add('lockd'); sm.textContent = '🔒 free account · ' + d.sub; }
       const vs = VERS(d.id); if (vs.length > 1) { if (vs.some(([, j]) => j === cur)) b.classList.add('act'); const vt = el('span', 'newb', vs.length + ' VERSIONS'); vt.style.background = '#2a6cff'; nm.appendChild(vt); }
-      b.onclick = () => { if (b.disabled) return; if (locked(i) && !opt.noLock) { freeCard('every track'); return; }
+      b.onclick = () => { if (b.disabled) return; if (opt.disabled !== undefined && ONLINE.room && !opt.two) { toast('Leave the room to switch tracks', 'bad'); renderPanel(); return; } if (locked(i) && !opt.noLock) { freeCard('every track'); return; }
         if (vs.length > 1) {   // v101: versions sub-menu: pick the original or the updated layout (each keeps its own boards)
           const open = w.querySelector('.verRow'); if (open) { const was = open.dataset.base === d.id; open.remove(); if (was) return; }
           const row = el('div', 'verRow'); row.dataset.base = d.id; row.appendChild(el('div', 'verH', d.name.replace(/ V\d.*$/, '') + ' · pick a version'));
@@ -7361,11 +7372,9 @@ if (typeof module !== 'undefined') module.exports = COMP;
       if (mode === 'pause') {
         const b = el('button', 'big', 'RESUME'); b.onclick = () => drive(false); add(b);
         if (compOn) { const br = el('div', 'btnrow'), r1 = el('button', 'ghost', 'Restage'), r2 = el('button', 'ghost', 'Leave comp mode'); r1.onclick = () => { drive(false); COMP.restage(); }; r2.onclick = () => { compExit(); drive(false); }; br.append(r1, r2); add(br); }
-        else { const br = el('div', 'btnrow'), r1 = el('button', 'ghost', 'Restart session'), r2 = el('button', 'ghost', 'Main menu'); r1.onclick = () => drive(true); r2.onclick = () => { newSession(); openMenu('main', 'drive'); }; br.append(r1, r2); add(br);
-          if (!inRoom && COMP.available(track)) { const cb = el('button', 'big compbtn', '🏁 COMP RUN'); cb.onclick = compStart; add(cb); } }
+        else { const br = el('div', 'btnrow'), r1 = el('button', 'ghost', 'Restart session'), r2 = el('button', 'ghost', 'Main menu'); r1.onclick = () => drive(true); r2.onclick = () => { newSession(); openMenu('main', 'drive'); }; br.append(r1, r2); add(br); }
       } else {
         const b = el('button', 'big', inRoom ? 'DRIVE · ROOM ' + O.room.code : 'DRIVE'); b.onclick = () => { if (isTouchDev()) goFull(); compExit(); drive(true); }; add(b);
-        if (!inRoom && COMP.available(track)) { const cb = el('button', 'big compbtn'); cb.innerHTML = '🏁 COMP RUN<small>solo qualifying · tower start · robot judges · replay</small>'; cb.onclick = compStart; add(cb); }
         const br = el('div', 'btnrow'), tb = el('button', 'ghost', 'How to play'), fbk = el('button', 'ghost', 'Leave feedback'); tb.onclick = () => tour(1); fbk.onclick = openFeedback; br.appendChild(tb); if (!inClaude) br.appendChild(fbk);
         if (web) { const ob = el('button', 'ghost', 'Drive online'); ob.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; br.appendChild(ob); }
         if (isTouchDev()) { const fb = el('button', 'ghost', 'Fullscreen'); fb.onclick = goFull; br.appendChild(fb); } add(br);
@@ -7597,7 +7606,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
       if (O.status !== 'ready') { h('Community'); msg('Connecting…'); return; }
       const cv = F.cv || 'people';
       add(chips([{ id: 'people', name: 'Online now' }, { id: 'friends', name: 'Friends' + (SOC.f && SOC.f.incoming && SOC.f.incoming.length ? ' · ' + SOC.f.incoming.length : '') }, { id: 'team', name: 'Team' + (SOC.t && SOC.t.invites && SOC.t.invites.length ? ' · ' + SOC.t.invites.length : '') }, { id: 'messages', name: 'Messages' + (O.unread ? ' · ' + O.unread : '') }, { id: 'forum', name: 'Forum' }], cv, v => { F.cv = v; if (v !== 'messages') thread = null; }, 'subtabs'));
-      const where = d => d.track === 'lowrider' ? 'In The Lot' : d.track === 'crawl' ? 'In Crawler Canyon' : d.room ? 'In room ' + (d.room_name || d.room) + (d.track ? ' · ' + tName(d.track) : '') : d.in_room ? 'In a private room' : d.track ? 'Driving ' + tName(d.track) : 'In the menus';
+      const where = d => d.track === 'lowrider' ? 'In The Lot' : d.track === 'crawl' ? 'In Crawler Canyon' : d.room ? 'In room ' + (d.room_name || d.room) + (d.room_track && d.track && d.track !== d.room_track ? ' · driving ' + tName(d.track) : '') : d.in_room ? 'In a private room' : d.track ? 'Driving ' + tName(d.track) : 'In the menus';
       const dot = c => { const x = el('span', 'cdot'); x.style.background = /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#888'; return x; };
       const badges = (n, d) => { if (d.dev) n.appendChild(el('em', 'tagdev', 'DEV')); if (d.supporter) n.appendChild(el('em', 'tagsup', '★')); return n; };
       // ---- who's online ----
