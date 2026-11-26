@@ -348,11 +348,12 @@ const SIM = (function () {
   function derive(tune, surfKey, Kset) {
     const K0 = Kset || SIM_K, t = Object.assign({}, DEF_TUNE, tune), mu = (SURFACES[surfKey] || SURFACES.concrete).mu * K0.grip;
     const wr = clamp(t.weightRear, 40, 70) / 100, p = {};
-    p.a = WB * wr; p.b = WB * (1 - wr);          // CG -> front / rear axle
+    const wb = t.wb ? clamp(t.wb, 0.2, 1.0) : WB;   /* v96: rides (limo, trucks) run their real wheelbase */
+    p.a = wb * wr; p.b = wb * (1 - wr);          // CG -> front / rear axle
     p.h = 0.020 + t.rideHeight * 0.0016;         // CG height
     p.m = clamp(t.weight || 1450, 1100, 2100) / 1000;   // v46: all-up weight (ballast). Heavier = more momentum, slower to bite and to rotate;
     const mr = p.m / MASS, ls = Math.pow(mr, -0.14);       // lighter = snappier. Tires are load-sensitive: grip per kg drops as weight goes up.
-    p.Iz = (K0.Iz0 + Math.abs(wr - 0.5) * 0.012) * mr;   // a touch more yaw inertia: calmer, less twitchy rotation
+    p.Iz = (K0.Iz0 + Math.abs(wr - 0.5) * 0.012) * mr * (wb === WB ? 1 : Math.pow(wb / WB, 1.6));   // a touch more yaw inertia: calmer, less twitchy rotation
     const camF = 1 - 0.0025 * Math.pow(t.camberF + 8, 2);
     const K = K0; p.K = K0; p.gTr = K0.gTr ? clamp(t.gyroSpeed == null ? 78 : t.gyroSpeed, 0, 95) / 100 : 0;   // gyro back-off on flicks (tunable; Classic has none)
     p.muF = mu * K.muF * TIRES[t.tireF].k * camF * (1 + (t.caster - 8) * 0.006) * (1 + (50 - t.springF) * 0.0022) * (1 + t.ackermann * 0.0008);
@@ -4049,7 +4050,7 @@ const GFX = (function () {
     const idx = hdr.i32 ? new Uint32Array(buf.slice(o, o + nf * 12)) : new Uint16Array(buf.slice(o, o + nf * 6));
     const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3);
     for (let i = 0; i < nv; i++) for (let k = 0; k < 3; k++) { pos[i * 3 + k] = hdr.lo[k] + q[i * 3 + k] / 65535 * (hdr.hi[k] - hdr.lo[k]); nor[i * 3 + k] = n8[i * 3 + k] / 127; }
-    if (/^(crowd|lady|homie|person|limo|trash|taco)$/.test(hdr.kind)) return crispBands({ hdr, pos, nor, band, idx });
+    if (!hdr.mat && /^(crowd|lady|homie|person|limo|trash|taco)$/.test(hdr.kind)) return crispBands({ hdr, pos, nor, band, idx });
     return { hdr, pos, nor, band, idx };
   }
   // v85: people paint used to smear across the triangles where two colours meet (jagged, muddy edges). Split those faces off with the face's
@@ -4383,10 +4384,35 @@ const GFX = (function () {
       else if (L.o.userData.shock) { L.o.scale.set(hydro ? 1.5 : 1, len, hydro ? 1.5 : 1); const sm = hydro ? CM.chrome : (L.o.userData.ano || CM.shock); if (L.o.material !== sm) L.o.material = sm; }
       else L.o.scale.set(1, len, 1); } }
   // v93 secret rides: one prop as its own drivable group. inner holds the mesh (+ spinning wheels from hdr.wheels), turned so the vehicle's nose is +x.
-  function buildRide(p, front) { return buildProps([Object.assign({}, p, { x: 0, y: 0, z: 0, ry: 0 })]).then(m => { if (!m) return null; const g = new T.Group(), inner = new T.Group(); inner.rotation.y = front || 0; g.add(inner); inner.add(m); m.userData.items = null;
-      const d = PROP[pidOf(p)], s = p.s || 1, spin = []; for (const [wx, wy, wz, r, wd, z0] of (d && d.hdr.wheels) || []) for (const sd of [1, -1]) {   // v95: measured wheels: x, y, |z| centre, radius, width, z offset
-        const w = buildWheel(p.id === 'limo' ? 'five' : 'steelie', p.id === 'limo' ? '#cfd3d8' : '#d8dadc'), k = r * s / 0.031; w.scale.set(k, k, sd * (wd || 0.42) * s / 0.026); w.position.set(wx * s, wy * s, sd * wz * s);   /* z0 not needed: the prop mesh is already centred */ w.userData.r = r * s; inner.add(w); spin.push(w); }
-      g.userData = { inner, spin }; return g; }); }
+  // v96 rides are built like car bodies: every part has its own material (clear-coated paint, glass, chrome, lenses, trim),
+  // the molded wheels are gone and real wheels sit on knuckles (fronts steer, all spin). Band = material slot (see tools/rides/build3.py).
+  const RIDE_M = {};
+  function rideMats(hdr) { const key = hdr.id + (hdr.paint || []).join(); if (RIDE_M[key]) return RIDE_M[key]; const pc = hdr.paint || ['#c8202a', '#f2efe4'];
+    const paint = c => new T.MeshPhysicalMaterial({ color: new T.Color(c), metalness: 0.3, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.15 });
+    const L = [new T.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.6, metalness: 0.1 }), paint(pc[0]), paint(pc[1] || pc[0]),
+      new T.MeshPhysicalMaterial({ color: 0x07090c, roughness: 0.08, metalness: 0.35, clearcoat: 1, envMapIntensity: 1.1 }),
+      new T.MeshStandardMaterial({ color: 0xe6e8ec, roughness: 0.12, metalness: 1, envMapIntensity: 1.3 }),
+      new T.MeshStandardMaterial({ color: 0xffd9a0, roughness: 0.5, emissive: 0xffb060, emissiveIntensity: 0.7 }),
+      new T.MeshPhysicalMaterial({ color: 0xd8dfe8, metalness: 0.6, roughness: 0.1, clearcoat: 1, emissive: 0xfff4dc, emissiveIntensity: 0.3, envMapIntensity: 1.4 }),
+      new T.MeshPhysicalMaterial({ color: 0x5a0006, metalness: 0.1, roughness: 0.12, clearcoat: 1, emissive: 0xff1408, emissiveIntensity: 0.45 }),
+      new T.MeshPhysicalMaterial({ color: 0x8a4a00, roughness: 0.15, clearcoat: 1, emissive: 0xff8a10, emissiveIntensity: 0.35 }),
+      new T.MeshStandardMaterial({ color: 0x2c2e33, roughness: 0.45, metalness: 0.6, envMapIntensity: 0.8 })];
+    return (RIDE_M[key] = L); }
+  function rideGeo(d) { if (d._geo) return d._geo; const { pos, nor, band, idx } = d, nf = idx.length / 3, cnt = new Array(16).fill(0);
+    for (let f = 0; f < nf; f++) cnt[band[idx[f * 3]]]++; const st = [], I = new Uint32Array(idx.length); let o = 0; for (let b = 0; b < 16; b++) { st[b] = o; o += cnt[b]; } const at = st.slice();
+    for (let f = 0; f < nf; f++) { const b = band[idx[f * 3]], k = at[b]++; I[k * 3] = idx[f * 3]; I[k * 3 + 1] = idx[f * 3 + 1]; I[k * 3 + 2] = idx[f * 3 + 2]; }
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('normal', new T.BufferAttribute(nor, 3)); g.setIndex(new T.BufferAttribute(I, 1));
+    for (let b = 0; b < 16; b++) if (cnt[b]) g.addGroup(st[b] * 3, cnt[b] * 3, Math.min(b, 9)); g.computeBoundingSphere(); return (d._geo = g); }
+  function buildRide(p, front) { return ensureProp(pidOf(p)).then(() => { const d = PROP[pidOf(p)]; if (!d) return null; const s = p.s || 1, g = new T.Group(), inner = new T.Group(); g.add(inner); inner.position.z = -(d.hdr.z0 || 0) * s;   /* taco body sits off-centre in its file */
+      if (d.hdr.mat) { const m = new T.Mesh(rideGeo(d), rideMats(d.hdr)); m.scale.setScalar(s); m.castShadow = true; m.receiveShadow = true; inner.add(m); }
+      else return buildProps([Object.assign({}, p, { x: 0, y: 0, z: 0, ry: 0 })]).then(m => { if (m) { m.userData.items = null; inner.add(m); } return finish(); });
+      return finish();
+      function finish() { const spin = [], steer = [], ws = d.hdr.wheels || [], xs = ws.map(w => w[0]), xF = Math.max(...xs), fwd = front ? -1 : 1;
+        for (const [wx, wy, wz, r, wd] of ws) for (const sd of [1, -1]) {
+          const w = buildWheel(d.hdr.wheel || (p.id === 'limo' ? 'five' : 'steelie'), d.hdr.wcol || (p.id === 'limo' ? '#cfd3d8' : '#d8dadc')), k = r * s / 0.031, kn = new T.Group();
+          w.scale.set(k, k, sd * (wd || 0.42) * s / 0.026); kn.position.set(wx * s, wy * s, ((d.hdr.z0 || 0) + sd * wz) * s); kn.add(w); inner.add(kn); w.userData.r = r * s; spin.push(w);
+          if (wx * fwd > 0 && Math.abs(wx - (front ? Math.min(...xs) : xF)) < 0.05 * Math.abs(xF - Math.min(...xs))) steer.push(kn); }
+        g.userData = { inner, spin, steer, fwd }; return g; } }); }
   // v91: RC bodies are hollow lexan shells. Our STL bodies came with a closed floor (a flat 'platform' under every car that hid the chassis).
   // Drop the downward-facing triangles in the bottom 22% of the body so the chassis shows from below and through the arches. Cached per geometry.
   const OPENB = new WeakMap(); function openBottom(geo) { if (OPENB.has(geo)) return OPENB.get(geo); try {
@@ -5653,7 +5679,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v95', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v96', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -6041,7 +6067,10 @@ const ONLINE = (() => {
       r.cols = (track.colliders || []).filter(b => p.x > b[0] && p.x < b[2] && p.y > b[1] && p.y < b[3]); rides.push(r);
       GFX.buildRide(p, R0.front).then(g => { if (!g || world.group !== wg) return; r.g = g; ridePose(r); if (r.net) g.visible = false; wg.add(g); }, () => { }); }); }
   // v95: line the ride's rear axle up with the car's rear axle (the sim pivots like an RC car); off = vehicle centre ahead of the sim centre
-  function rideOff(id) { const d = GFX.PROP[id], R0 = RIDES[id], rq = rides.find(q => q.id === id), s = (rq && rq.p && rq.p.s) || (id === 'taco_truck' ? 1 : 0.1); if (!d || !d.hdr.wheels || !d.hdr.wheels.length) return 0; const xs = d.hdr.wheels.map(w => w[0] * s);   /* the ride group nets out to the heading, so prop +x is forward for every ride */ return -SIM.WB / 2 - Math.min(...xs); }
+  /* v96: rides drive on their real wheelbase; the sim's rear axle (50/50 weight, so wb/2 behind centre) sits on the ride's rear wheels, fronts steer */
+  function rideGeom(id) { const d = GFX.PROP[id], R0 = RIDES[id], rq = rides.find(q => q.id === id), s = (rq && rq.p && rq.p.s) || (id === 'taco_truck' ? 1 : 0.1); if (!d || !d.hdr.wheels || !d.hdr.wheels.length) return { off: 0, wb: SIM.WB };
+    const fw = R0.front ? -1 : 1, xs = d.hdr.wheels.map(w => w[0] * s * fw), rear = Math.min(...xs), wb = Math.max(0.2, Math.max(...xs) - rear); return { off: -wb / 2 - rear, wb }; }
+  function rideOff(id) { return rideGeom(id).off; }
   function ridePose(r) { if (!r.g) return; r.g.position.set(r.x, 0, -r.y); r.g.rotation.y = r.yaw - RIDES[r.id].front; }
   function rideCols(r, on) { const C = track.colliders || (track.colliders = []); for (const b of r.cols) { const i = C.indexOf(b); if (i >= 0) C.splice(i, 1); } r.cols = [];
     if (on) { const R0 = RIDES[r.id], c = Math.abs(Math.cos(r.yaw)), sn = Math.abs(Math.sin(r.yaw)), hx = (R0.len * c + R0.wid * sn) / 2 * 0.8, hy = (R0.len * sn + R0.wid * c) / 2 * 0.8, b = [r.x - hx, r.y - hy, r.x + hx, r.y + hy]; C.push(b); r.cols = [b]; } }
@@ -6050,13 +6079,14 @@ const ONLINE = (() => {
       a.onclick = e => { e.stopPropagation(); toast(R0.jokes[(Math.random() * R0.jokes.length) | 0], 'good'); rideT = -12; rideUI(false); }; b.onclick = e => { e.stopPropagation(); rideStart(r); }; el2.append(a, b); }
     let out = document.getElementById('rideOut'); if (!out) { out = el('button', 'big', 'HOP OUT'); out.id = 'rideOut'; out.onclick = e => { e.stopPropagation(); rideExit(); }; document.body.appendChild(out); } out.classList.toggle('on', !!RD); }
   function rideStart(r) { if (RD || r.net) return; const P = player.sim; RD = r; rideCols(r, false); const o = rideOff(r.id); P.yaw = r.yaw; P.x = r.x - Math.cos(r.yaw) * o; P.y = r.y - Math.sin(r.yaw) * o; P.vx = P.vy = P.r = 0; player.skid = [null, null];
-    P.p = SIM.derive(Object.assign({}, S.tune, RIDES[r.id].tune), track.surface, physK()); player.mesh.visible = false; rideUI(false); rideNear = null; rideT = 0; toast('👊 You took the ' + RIDES[r.id].nm.toLowerCase() + '! · E or HOP OUT to park it', 'good'); }
+    P.p = SIM.derive(Object.assign({}, S.tune, RIDES[r.id].tune, { wb: rideGeom(r.id).wb, weightRear: 50 }), track.surface, physK()); player.mesh.visible = false; rideUI(false); rideNear = null; rideT = 0; toast('👊 You took the ' + RIDES[r.id].nm.toLowerCase() + '! · E or HOP OUT to park it', 'good'); }
   function rideExit(why) { const r = RD; if (!r) return; RD = null; const P = player.sim, R0 = RIDES[r.id], o = rideOff(r.id); r.x = P.x + Math.cos(P.yaw) * o; r.y = P.y + Math.sin(P.yaw) * o; r.yaw = P.yaw; r.moved = true; ridePose(r); rideCols(r, true);
     const off = R0.wid / 2 + 0.16; P.x = r.x - Math.sin(P.yaw) * off; P.y = r.y + Math.cos(P.yaw) * off; P.vx = P.vy = P.r = 0; player.skid = [null, null]; applyTune(); player.mesh.visible = true; rideT = -3; rideNear = null; rideUI(false); if (why) toast(why, 'bad'); }
-  function rideTick(dt) { document.documentElement.classList.toggle('inroom', !!ONLINE.room); if (ONLINE.room && !rideTick.mu) { rideTick.mu = 1; micUI(); } if (!ONLINE.room) rideTick.mu = 0; for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; const o = rideOff(nc.rideId); nc.rideG.position.set(nc.sim.x + Math.cos(nc.sim.yaw) * o, 0, -(nc.sim.y + Math.sin(nc.sim.yaw) * o)); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; }
+  function rideWheels(g, v, delta, dt) { const u = g.userData; for (const w of u.spin || []) w.rotation.z -= v * dt / (w.userData.r || 0.05); for (const k of u.steer || []) k.rotation.y += (delta - k.rotation.y) * Math.min(1, dt * 20); }
+  function rideTick(dt) { document.documentElement.classList.toggle('inroom', !!ONLINE.room); if (ONLINE.room && !rideTick.mu) { rideTick.mu = 1; micUI(); } if (!ONLINE.room) rideTick.mu = 0; for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; const o = rideOff(nc.rideId); nc.rideG.position.set(nc.sim.x + Math.cos(nc.sim.yaw) * o, 0, -(nc.sim.y + Math.sin(nc.sim.yaw) * o)); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; const S2 = nc.sim; rideWheels(nc.rideG, S2.vx * Math.cos(S2.yaw) + S2.vy * Math.sin(S2.yaw), S2.delta || 0, dt); }
     if (!rides.length || !player) return; const P = player.sim;
     if (RD) { if (!RD.g) return; const o = rideOff(RD.id); RD.x = P.x + Math.cos(P.yaw) * o; RD.y = P.y + Math.sin(P.yaw) * o; RD.yaw = P.yaw; ridePose(RD); player.mesh.visible = false; const fwd = P.vx * Math.cos(P.yaw) + P.vy * Math.sin(P.yaw);
-      for (const w of RD.g.userData.spin || []) w.rotation.z -= fwd * dt / (w.userData.r || 0.05); return; }
+      rideWheels(RD.g, fwd, P.delta || 0, dt); return; }
     if (mode !== 'drive') return; let best = null, bd = 1e9;
     for (const r of rides) { if (r.net || !r.g) continue; const R0 = RIDES[r.id], dx = P.x - r.x, dy = P.y - r.y, c = Math.cos(-r.yaw), sn = Math.sin(-r.yaw), lx = dx * c - dy * sn, ly = dx * sn + dy * c, d0 = Math.hypot(Math.max(0, Math.abs(lx) - R0.len / 2), Math.max(0, Math.abs(ly) - R0.wid / 2)), b = r.cols[0];
       // v94.1: a ride parked at an angle gets a square collider that holds your car further off its sides; being pressed against that box counts too
@@ -6814,7 +6844,7 @@ const ONLINE = (() => {
       if (O.status !== 'ready') { h('Community'); msg('Connecting…'); return; }
       const cv = F.cv || 'people';
       add(chips([{ id: 'people', name: 'Online now' }, { id: 'friends', name: 'Friends' + (SOC.f && SOC.f.incoming && SOC.f.incoming.length ? ' · ' + SOC.f.incoming.length : '') }, { id: 'team', name: 'Team' + (SOC.t && SOC.t.invites && SOC.t.invites.length ? ' · ' + SOC.t.invites.length : '') }, { id: 'messages', name: 'Messages' + (O.unread ? ' · ' + O.unread : '') }, { id: 'forum', name: 'Forum' }], cv, v => { F.cv = v; if (v !== 'messages') thread = null; }, 'subtabs'));
-      const where = d => d.room ? 'In room ' + (d.room_name || d.room) + (d.track ? ' · ' + tName(d.track) : '') : d.in_room ? 'In a private room' : d.track ? 'Driving ' + tName(d.track) : 'In the menus';
+      const where = d => d.track === 'lowrider' ? 'In The Lot' : d.track === 'crawl' ? 'In Crawler Canyon' : d.room ? 'In room ' + (d.room_name || d.room) + (d.track ? ' · ' + tName(d.track) : '') : d.in_room ? 'In a private room' : d.track ? 'Driving ' + tName(d.track) : 'In the menus';
       const dot = c => { const x = el('span', 'cdot'); x.style.background = /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#888'; return x; };
       const badges = (n, d) => { if (d.dev) n.appendChild(el('em', 'tagdev', 'DEV')); if (d.supporter) n.appendChild(el('em', 'tagsup', '★')); return n; };
       // ---- who's online ----
