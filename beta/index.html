@@ -224,6 +224,8 @@ textarea{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px
 .flink:hover{color:var(--tx)}
 .conv i{position:absolute;right:10px;bottom:9px;font-style:normal;font-size:10px;font-weight:700;background:var(--ac);color:#140a04;border-radius:8px;padding:0 5px;line-height:16px}
 .pcard .tcard{border-top-color:var(--ac2)}.pcard .lbr{font-size:13px}
+#srUI{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9;display:flex;flex-direction:column;align-items:center;gap:8px}#srUI .srt{font-weight:900;letter-spacing:.14em;font-size:14px;color:#fff;background:rgba(10,11,15,.7);padding:6px 14px;border-radius:6px}#srUI .srr{display:flex;gap:8px;align-items:center}#srUI button{width:auto;min-width:56px}.showroom #menu,.showroom #hud,.showroom #mini,.showroom #chat,.showroom #touch,.showroom #logB,.showroom #micB{display:none!important}
+#notif{position:fixed;right:16px;top:46%;z-index:9;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}#notif .nc{display:flex;gap:8px;align-items:center;max-width:min(300px,60vw);padding:7px 12px;border-radius:8px;background:rgba(10,11,15,.82);border:1px solid rgba(53,224,255,.45);color:#fff;font-size:12.5px;font-weight:700;transition:opacity .45s,transform .45s;animation:nin .25s ease-out}#notif .nc.tap{pointer-events:auto;cursor:pointer}#notif .nc.out{opacity:0;transform:translateX(30px)}#notif .ni{font-size:16px}@keyframes nin{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}.inmenu #notif,.showroom #notif{display:none}html.rot #notif{top:40%}
 #chat{position:fixed;left:18px;bottom:128px;width:min(400px,62vw);z-index:4;pointer-events:none}.inmenu #chat{display:none}
 #chatLog div{background:rgba(8,9,12,.62);padding:4px 10px;border-radius:4px;margin-top:3px;font-size:13px;transition:opacity .6s;text-shadow:none;width:fit-content;max-width:100%}#chatLog b{color:var(--ac2)}
 #chatLog div.old{opacity:.7}#chatLog.fade div{opacity:0}#chatLog small.ct,#chatHist small.ct{color:#8a8f99;font-size:11px}
@@ -3292,6 +3294,7 @@ const SCN = (function () {
         for (const a of [-0.45, 0.45]) { Bg(BOX, colM, gx + a, gy - 0.12, 0.2, 0, 0.035, 0.4, 0.035); Bg(BOX, mc(0x2a7ad8, 0.5), gx + a - 0.12, gy - 0.12, 0.08, 0, 0.06, 0.16, 0.05); Bg(BOX, mc(0xe8e8e8, 0.4), gx + a + 0.12, gy - 0.12, 0.07, 0, 0.05, 0.14, 0.05); Bg(BOX, mc(0x8f9296, 0.6), gx + a, gy - 0.12, 0.008, 0, 0.38, 0.016, 0.1); }
         fig(gx + 0.1, gy - 0.35, -Math.PI / 2, 0x111111, 'down', 1, 'w_skirt'); fig(gx - 0.3, gy - 0.32, -Math.PI / 2 + 0.4, 0, 'down', 1, 'w_skirt'); fig(gx + 0.42, gy - 0.4, -Math.PI / 2 - 0.5, 0, 'down', 1, 'w_skirt'); const mb = frame(gx - 0.2, gy - 0.4, 0.4); Bg(BOX, blackM, ...mb(0, 0), 0.04, 0.4, 0.13, 0.03, 0.02); for (const a of [-0.06, 0.06]) { const p = mb(a, 0); Bg(WHEEL, tireM, p[0], p[1], 0.03, 0.4, 0.06, 0.06, 0.02); } fig(...mb(-0.01, 0), 0.4 - Math.PI / 2, 0x1c1d22, 'out', 0.85); }
       (info.props || (info.props = [])).push({ id: 'w_skirt', x: -16.72, y: 11.74, z: 0, ry: -1.05, s: 0.1, seed: 786, noHit: true });
+      for (const [id, x, y, ry] of [['hydrant', -15.0, 10.35, 0.4], ['trashcan', -16.25, 10.05, 0], ['mailbox', -14.85, 9.9, 1.2], ['adsign', -15.15, 10.75, 0.9], ['elecbox', -17.25, 12.05, 1.57], ['acunit', -17.3, 11.45, 1.57]]) info.props.push({ id, x, y, z: 0, ry, s: 0.1, seed: 900 + Math.round(x * 10) });   // v98 street props round the station
       info.props.push({ id: 'limo', x: -16.95, y: 6.9, z: 0, ry: Math.PI / 2, s: 0.1, seed: 4242 }); (info.colliders || (info.colliders = [])).push([-16.95 - 0.07, 6.9 - 0.2, -16.95 + 0.07, 6.9 + 0.2]);   // v94: a limo pulled up by the 7-Eleven (secret ride)
       { // v93: a little neon sign next to her so whoever finds her gets the hint (1/10 scale, on a post, arrow at the spot)
         const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const g = cv.getContext('2d');
@@ -3951,6 +3954,13 @@ const GFX = (function () {
     { id: 'malibu', name: 'Malibru', tag: '81 G-body coupe', cls: 'drift', reg: 'us', ds: 1 },
     { id: 'malwagon', name: 'Malibru Wagon', tag: '80 two-door wagon', cls: 'drift', reg: 'us', ds: 1 },
     { id: 'bel55', name: 'Chebby 150', tag: '55 utility sedan', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'impala', name: 'Impaler 60', tag: 'Batwing-fin hardtop, full interior', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'daytona', name: 'Chargin Daytone', tag: 'Modern muscle fastback', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'transam', name: 'Firebyrd T/A 79', tag: 'Shaker scoop, screaming bird', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'police', name: 'Chargin Patrol', tag: 'Police cruiser with a light bar', cls: 'drift', reg: 'us', ds: 1 },
+    { id: 'prelude', name: 'Prelood', tag: 'Chibi 90s sport coupe', cls: 'chibi', reg: 'jdm', ds: 1 },
+    { id: 'fairlady', name: 'Fairmaid Z', tag: 'Chibi modern Z', cls: 'chibi', reg: 'jdm', ds: 1 },
+    { id: 'gasser', name: 'Gassed Up 41', tag: 'Nose-up hot rod, blower out the hood', cls: 'chibi', reg: 'us', ds: 1 },
     { id: 'cyber', egg: 1, name: 'Cyber Wedge', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
     { id: 'ecto', name: 'Ghost Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
     { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie', ds: 1 },
@@ -4030,9 +4040,12 @@ const GFX = (function () {
     groups: ['ep_pair', 'ep_duo', 'p_family', 'p_hug', 'ep8'],
     scenes: ['p_brawl', 'p_street', 'p_trash', 'p_kneel'],
     trees: ['tree1', 'tree2', 'tree3'],
-    rigs: ['limo', 'trash', 'dozer', 'semi', 'box20', 'box40', 'box10'],
+    rigs: ['limo', 'trash', 'dozer', 'semi', 'box20', 'box40', 'box10', 'camper', 'camper2'],
+    street: ['hydrant', 'trashcan', 'mailbox', 'elecbox', 'acunit', 'adsign'], tires: ['tires3', 'tires3', 'tires_row', 'tires5'],   // v98 wave-1 props
     lounge: ['w_chair1', 'w_chair2', 'w_sit', 'w_lay'] };   // v75: girls on chairs / a cooler / a beach towel (tools/pit2)
   const PROP_PAL = {
+    camper: [[0x222222], [0xf2f2ee, 0xe8e2d0, 0xdfe6ea], [0x1f6fb8, 0xc8141c, 0x2a7a3a, 0xd8661c]], hydrant: [[0x333333], [0xc8141c, 0xf2c500, 0xd8661c], [0xe8e8e8, 0xc8141c]], can: [[0x222222], [0x2a5a3a, 0x3a3d44, 0x1f4fa8], [0x2a2b2e]],
+    mailbox: [[0x111111], [0x1f4fa8, 0x2a5aa8]], panel: [[0x222222], [0x9aa0a8, 0xb8bcc2, 0x7a8088]], adsign: [[0x222222], [0xf4f4f0, 0xffcf3a, 0x111111]], tires: [[0x111111], [0x161618, 0x1c1c1e]],
     person: [[0x1c2333, 0x2a3a5a, 0x111214, 0x4a4a40, 0x6b5a40, 0x3a3f47, 0x23324f], [0xc8202a, 0xf2f2f2, 0x111214, 0x2a4dd4, 0x0f5a3a, 0xc8a050, 0x7a1f1f, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0x1f8a8a, 0xe8c840], [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d]],
     tree: [[0x5a3c22, 0x6a4a2a, 0x4a3018], [0x3f7a2c, 0x2f6a2a, 0x5a8a30, 0x4a7a3a, 0x6a9a3a]],
     vehicle: [[0x16171a], [0xf2f2f0, 0x111214, 0xc8141c, 0x2a4dd4, 0x9aa0a8, 0x1f6a3a]],
@@ -4543,6 +4556,12 @@ const GFX = (function () {
     const BS = (FIT[h.id] || {}).bs || 1; body.scale.setScalar(BS);   // v59: tuned 'chibi' bodies are shrunk so full-size wheels fill the flares
     if (bodyInfo(h.id).ds) [paint, trim].forEach(mm => mm.side = T.DoubleSide);
     const shell = new T.Mesh(openBottom(bd.geo), [paint, glass, trim, head, tail, plate, amber]); shell.castShadow = true; shell.receiveShadow = true; body.add(shell);
+    if (h.id === 'police') {   // v98: light bar on the roof, red / blue, flashes in poseCar
+      const xm = (h.rg[1] + h.ws[0]) / 2, lb = new T.Group(); lb.position.set(xm, h.top - 0.001, 0); body.add(lb);
+      lb.add(new T.Mesh(new T.BoxGeometry(0.018, 0.006, 0.09), new T.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 })));
+      const lr = new T.MeshStandardMaterial({ color: 0x550000, emissive: 0xff1010, emissiveIntensity: 1 }), lbm = new T.MeshStandardMaterial({ color: 0x000055, emissive: 0x1a40ff, emissiveIntensity: 1 });
+      for (const [z, m2] of [[-0.024, lr], [0.024, lbm]]) { const o = new T.Mesh(new T.BoxGeometry(0.016, 0.009, 0.036), m2); o.position.set(0, 0.006, z); lb.add(o); }
+      car.userData.lightbar = car._lb = [lr, lbm]; }
     if (see) { const put = () => { if (car.userData.gone) return; const dm = driverMesh(look.driver, h, look.dseed); if (dm) body.add(dm); }; if (PROP[look.driver]) put(); else ensureProp(look.driver).then(put, () => { }); }
     const box2 = (w, hh, d, mat, x, y, z) => { const o = box(w, hh, d, mat, x, y, z); body.add(o); return o; };
     // optional add-on wing
@@ -4632,7 +4651,7 @@ const GFX = (function () {
     const beam = new T.Mesh(new T.PlaneGeometry(0.9, 0.55), new T.MeshBasicMaterial({ map: m.beamTex, color: 0xfff1d0, transparent: true, opacity: 0.0, blending: T.AdditiveBlending, depthWrite: false }));
     beam.rotation.x = -Math.PI / 2; beam.position.set(h.xf * BS + 0.45, 0.004, 0); car.add(beam); fx.beam = beam; beam.visible = false;
     if (look.glow) { const ug = new T.Mesh(new T.PlaneGeometry(0.62, 0.36), new T.MeshBasicMaterial({ map: m.glowTex, color: new T.Color(look.glow), transparent: true, opacity: 0.85, blending: T.AdditiveBlending, depthWrite: false })); ug.rotation.x = -Math.PI / 2; ug.position.y = 0.003; car.add(ug); fx.under = ug; }
-    fx.scan = scan; fx.bar = bar; car.userData = { plate: null, axles, links, cg, cshadow: cs, fitDy: (FIT[h.id] || {}).dy || 0, body, wheels, fx, B: { roofH: h.top * BS, cowlX: h.ws[1] * BS }, xf: h.xf * BS, xr: h.xr * BS, sus: { p: 0, pv: 0, r: 0, rv: 0, hv: 0, h: 0 } };
+    fx.scan = scan; fx.bar = bar; car.userData = { lightbar: car._lb || null, plate: null, axles, links, cg, cshadow: cs, fitDy: (FIT[h.id] || {}).dy || 0, body, wheels, fx, B: { roofH: h.top * BS, cowlX: h.ws[1] * BS }, xf: h.xf * BS, xr: h.xr * BS, sus: { p: 0, pv: 0, r: 0, rv: 0, hv: 0, h: 0 } };
     if (car.userData._knuckle) car.userData._knuckle(); poseLinks(car.userData, false);
     return car;
   }
@@ -4671,6 +4690,7 @@ const GFX = (function () {
         u.body.position.x += vx - _wv.x; u.body.position.y += vy - _wv.y;
         if (u.hull) { let lo = 1e9; for (const q of u.hull) { _wv.set(q[0], q[1], 0).applyEuler(u.body.rotation); lo = Math.min(lo, _wv.y); }
           const g = 0.004 - (u.body.position.y + lo); u.bchk = g > 0.006 && !hy.flip; if (g > 0) u.body.position.y += g; } } else u.bchk = false; }
+    if (u.lightbar) { const t = performance.now() / 1000, ph = Math.floor(t * 6) % 4; u.lightbar[0].emissiveIntensity = ph < 2 ? (ph === 0 ? 2.2 : 0.2) : 0.6; u.lightbar[1].emissiveIntensity = ph >= 2 ? (ph === 2 ? 2.2 : 0.2) : 0.6; }
     if (u.cshadow) u.cshadow.material.opacity = 0.72 * (hy ? Math.max(0.25, 1 - Math.max(0, hy.z) * 12) : 1);   // v86 hydraulics: body on the cylinders, wheels hang when they leave the ground
     for (const w of u.wheels) {
       w.k.rotation.y = w.front ? c.delta * w.sd * w.sd : 0;
@@ -5121,6 +5141,7 @@ const ONLINE = (() => {
   O.setEmailUpdates = async on => { const r = await rpc('set_email_updates', { p_on: !!on }); if (r !== null && O.profile) O.profile.email_updates = !!r; fire(); return r; };
   O.adminEmailList = async () => (await rpc('admin_email_list')) || [];
   O.searchDrivers = async (q, n) => (await rpc('search_drivers', { p_q: String(q || '').slice(0, 24), p_limit: n || 30 })) || [];
+  O.pedBoard = async () => (await rpc('ped_board')) || { top: [] };   // v98
   O.onlineDrivers = async () => (await rpc('online_drivers')) || { drivers: [], guests: 0 };
   O.FORUM_CATS = [['feedback', 'Game feedback'], ['howto', 'How to play'], ['tuning', 'Tuning help'], ['bugs', 'Bugs & problems'], ['ideas', 'Ideas & upgrades'], ['general', 'General']];
   O.forum = {
@@ -5707,7 +5728,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v97.2', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v98', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5716,7 +5737,7 @@ const ONLINE = (() => {
     if (invite && !inviteTried && ONLINE.status === 'ready' && player) { inviteTried = true; try { history.replaceState(null, '', location.pathname); } catch (e) { }
       ONLINE.findLobby(invite).then(async lb => { if (!lb) { toast('Room ' + invite + ' is closed', 'bad'); return; } const e = await joinLobby(lb); if (e) toast(e, 'bad'); else { toast('Joined room ' + lb.code, 'good'); tab = 'online'; if (mode !== 'drive') { renderNav(); renderPanel(); } } }); }
     if (mode !== 'drive' && nav) renderNav(); const a = document.activeElement; if (mode === 'drive' || (tab !== 'online' && tab !== 'boards' && tab !== 'drive') || (a && a.tagName === 'INPUT' && a.type === 'text' && panel.contains(a))) return; renderPanel(); };
-  ONLINE.onUnread = n => { toast('NEW MESSAGE · ' + (ONLINE.unread) + ' unread (Social tab)', 'good'); if (mode !== 'drive' && tab === 'community' && F.cv === 'messages' && !thread) { const a = document.activeElement; if (!(a && panel.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) renderPanel(); } };
+  ONLINE.onUnread = n => { notify('✉️', 'New message · ' + ONLINE.unread + ' unread', () => { openMenu('pause', 'community'); F.cv = 'messages'; renderPanel(); }); if (mode !== 'drive' && tab === 'community' && F.cv === 'messages' && !thread) { const a = document.activeElement; if (!(a && panel.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) renderPanel(); } };
   // merge the account's garage into this device. Car / tune / setups: newest edit wins. PBs: best of both. Hunt: newer reset wins, else furthest progress.
   function applyGarage(g, first, skipCar) { if (!g || typeof g !== 'object') return false; let carChanged = false;
     if (g.pb && typeof g.pb === 'object') for (const k of Object.keys(g.pb)) if (+g.pb[k] > 0 && !(S.pb[k] >= g.pb[k])) S.pb[k] = +g.pb[k];
@@ -6157,7 +6178,40 @@ const ONLINE = (() => {
       else if (!c && !r.moved) { const pk = park.get(r.key); if (pk && Math.hypot(pk[0] - r.x, pk[1] - r.y) > 0.05) { r.x = pk[0]; r.y = pk[1]; r.yaw = pk[2]; ridePose(r); rideCols(r, true); } } } }
   const rideSend = () => RD && rides.includes(RD) && RD.key.startsWith(track.def.id + ':') ? { k: RD.key, i: RD.id, tk: RIDE_TOK } : undefined;
   const rideParked = () => { const o = {}; let n = 0; for (const r of rides) if (r.moved && r !== RD && !r.net && n++ < 4) o[r.key] = [Math.round(r.x * 1000) / 1000, Math.round(r.y * 1000) / 1000, Math.round(r.yaw * 1000) / 1000]; return n ? o : undefined; };
-  function updateCam(dt) {
+  // ===================== v98 walk-in garage: your 3 saved cars parked in bays; walk along them and pick one =====================
+  let SR = null;
+  function srOpen() { if (SR) return; const CARS = (S.slots && S.slots.cars) || {}, g = new T.Group(), BW = 0.78, N = 3;
+    const mat = (c, r, m, e) => new T.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0, emissive: e || 0 }), box = (w, h, d, m, x, y, z) => { const o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.receiveShadow = true; g.add(o); return o; };
+    const W = BW * N + 0.5, D = 1.5, H = 0.95; { const fc = document.createElement('canvas'); fc.width = fc.height = 256; const f2 = fc.getContext('2d'); for (let a = 0; a < 8; a++) for (let b2 = 0; b2 < 8; b2++) { f2.fillStyle = (a + b2) % 2 ? '#15161a' : '#3c3f46'; f2.fillRect(a * 32, b2 * 32, 32, 32); } const ft = new T.CanvasTexture(fc); ft.wrapS = ft.wrapT = T.RepeatWrapping; ft.repeat.set(W / 0.24, D / 0.24); ft.encoding = T.sRGBEncoding;
+      const fm = new T.MeshStandardMaterial({ map: ft, roughness: 0.28, metalness: 0.1 }); box(W, 0.02, D, fm, 0, -0.01, 0); }   // checker garage floor
+    box(W, H, 0.03, mat(0x1d1f24, 0.85), 0, H / 2, -D / 2); box(0.03, H, D, mat(0x191b20, 0.85), -W / 2, H / 2, 0); box(0.03, H, D, mat(0x191b20, 0.85), W / 2, H / 2, 0); box(W, 0.12, 0.035, mat(0xff5a1f, 0.5), 0, 0.06, -D / 2 + 0.01); box(W, 0.02, D, mat(0x1a1b1e, 0.9), 0, H, 0);
+    const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 160; const q = cv.getContext('2d'); q.fillStyle = '#111215'; q.fillRect(0, 0, 1024, 160); q.font = '900 88px Arial'; q.textAlign = 'center'; q.fillStyle = '#ff5a1f'; q.fillText((String(S.opt.name || 'MY').toUpperCase() + "'S GARAGE").slice(0, 22), 512, 104); q.fillStyle = '#35e0ff'; q.fillRect(140, 128, 744, 6);
+    const st = new T.CanvasTexture(cv); st.encoding = T.sRGBEncoding; const sign = new T.Mesh(new T.PlaneGeometry(1.4, 0.22), new T.MeshStandardMaterial({ map: st, emissive: 0xffffff, emissiveMap: st, emissiveIntensity: 0.6 })); sign.position.set(0, 0.5, -D / 2 + 0.02); g.add(sign);
+    const lineM = mat(0xf2f2ee, 0.6), cars = [];
+    for (let i = 0; i < N; i++) { const x = (i - (N - 1) / 2) * BW; for (const e of [-1, 1]) box(0.012, 0.003, 0.95, lineM, x + e * BW / 2, 0.002, -0.1);
+      box(0.5, 0.012, 0.03, mat(0xffffff, 0.3, 0, 0xffffff), x, H - 0.02, -0.1); const pl = new T.PointLight(0xfff2e0, 0.9, 1.6); pl.position.set(x, H - 0.12, 0.05); g.add(pl);
+      const num = document.createElement('canvas'); num.width = num.height = 128; const nq = num.getContext('2d'); nq.font = '900 96px Arial'; nq.textAlign = 'center'; nq.fillStyle = '#f2f2ee'; nq.fillText(String(i + 1), 64, 100);
+      const nt = new T.CanvasTexture(num), nm = new T.Mesh(new T.PlaneGeometry(0.18, 0.18), new T.MeshBasicMaterial({ map: nt, transparent: true, opacity: 0.8 })); nm.rotation.x = -Math.PI / 2; nm.position.set(x, 0.003, 0.36); g.add(nm);
+      const c = CARS[i + 1]; cars.push({ x, c, mesh: null });
+      if (c) GFX.ensureBody(c.look.body).then(() => { if (!SR || SR.g !== g) return; const L = lotWheels(Object.assign({}, c.look)), m = GFX.buildCar(L, !isTouchDev()), sim = SIM.makeCar(0); sim.x = x; sim.y = 0.05; sim.yaw = -Math.PI / 2 + 0.25;
+        GFX.poseCar(m, sim, Object.assign({}, SIM.DEF_TUNE, S.tune), 0, false); m.position.set(x, 0, -0.05); g.add(m); cars[i].mesh = m; }, () => { });
+      else { const ec = document.createElement('canvas'); ec.width = 512; ec.height = 160; const e2 = ec.getContext('2d'); e2.fillStyle = 'rgba(0,0,0,0)'; e2.clearRect(0, 0, 512, 160); e2.font = '800 52px Arial'; e2.textAlign = 'center'; e2.fillStyle = '#8a8f99'; e2.fillText('EMPTY BAY', 256, 70); e2.font = '600 30px Arial'; e2.fillText('save a build here', 256, 120);
+        const et = new T.CanvasTexture(ec), em = new T.Mesh(new T.PlaneGeometry(0.5, 0.156), new T.MeshBasicMaterial({ map: et, transparent: true })); em.rotation.x = -Math.PI / 2; em.position.set(x, 0.004, -0.08); g.add(em); } }
+    g.add(new T.HemisphereLight(0xdfe6ff, 0x2a2420, 0.55)); g.position.set(0, -60, 0);   // the bays sit far under the track so nothing of the venue shows
+    scene.add(g); if (world && world.group) world.group.visible = false; if (player && player.mesh) player.mesh.visible = false;
+    SR = { g, cars, i: Math.max(0, cars.findIndex(c => c.c)), yaw: 0, t: 0 }; document.body.classList.add('showroom'); srUI(); }
+  function srClose() { if (!SR) return; scene.remove(SR.g); GFX.disposeTree(SR.g); SR = null; if (world && world.group) world.group.visible = true; if (player && player.mesh) player.mesh.visible = true; document.body.classList.remove('showroom'); const u = document.getElementById('srUI'); if (u) u.remove(); OV.enter = true; renderPanel(); }
+  function srUI() { let u = document.getElementById('srUI'); if (!u) { u = el('div'); u.id = 'srUI'; document.body.appendChild(u); } u.innerHTML = ''; const c = SR.cars[SR.i];
+    u.appendChild(el('div', 'srt', 'BAY ' + (SR.i + 1) + ' · ' + (c.c ? c.c.name : 'empty')));
+    const row = el('div', 'srr'), pv = el('button', 'ghost', '◀'), nx = el('button', 'ghost', '▶'), go = el('button', 'big', c.c ? 'Drive this one' : 'Park my current car here'), bk = el('button', 'ghost', 'Back');
+    pv.onclick = () => { SR.i = (SR.i + SR.cars.length - 1) % SR.cars.length; srUI(); }; nx.onclick = () => { SR.i = (SR.i + 1) % SR.cars.length; srUI(); };
+    go.onclick = () => { const n = SR.i + 1, CARS = S.slots.cars = (S.slots.cars && typeof S.slots.cars === 'object') ? S.slots.cars : {};
+      if (c.c) { const keepEgg = S.look.egg; S.look = Object.assign({}, c.c.look); if (keepEgg) S.look.egg = 1; else delete S.look.egg; GFX.ensureBody(S.look.body).then(() => { srClose(); rebuildPlayer(); toast('Rolling out ' + c.c.name, 'good'); }, () => toast('Could not load that body', 'bad')); }
+      else { const L = Object.assign({}, S.look); delete L.egg; CARS[n] = { name: (GFX.bodyInfo(L.body).name || 'Car') + ' #' + n, look: L, at: Date.now() }; save(); toast('Parked in bay ' + n, 'good'); const i = SR.i; srClose(); srOpen(); SR.i = i; srUI(); } };
+    bk.onclick = () => srClose(); row.append(pv, go, nx); u.append(row, bk); }
+  function srCam(dt) { SR.t += dt; const c = SR.cars[SR.i], gx = SR.g.position; SR.cx = SR.cx == null ? c.x : SR.cx + (c.x - SR.cx) * Math.min(1, dt * 4); const a = 0.35 * Math.sin(SR.t * 0.35);
+    camera.fov = 46; camera.near = 0.02; camera.updateProjectionMatrix(); camera.up.set(0, 1, 0); camera.position.set(gx.x + SR.cx + Math.sin(a) * 0.6, gx.y + 0.32, gx.z + 0.62 + Math.cos(a) * 0.3); camera.lookAt(gx.x + SR.cx, gx.y + 0.1, gx.z - 0.08); }
+  function updateCam(dt) { if (SR) { srCam(dt); return; }
     if (CT.on) ctTick(dt); pedTick(dt); rideTick(dt); const c = player.sim, px = c.x, pz = -c.y, cam = CT.on === 'stand' ? 4 : mode !== 'drive' ? -1 : S.opt.cam; let fov = 58, near = 0.02, k = 1, roll = 0; camera.up.set(0, 1, 0);
     const vdir = c.speed > 0.8 ? Math.atan2(c.vy, c.vx) : c.yaw, want = c.yaw + wrap(vdir - c.yaw) * 0.6; camYaw += wrap(want - camYaw) * (1 - Math.exp(-dt * 5));
     const fx = Math.cos(camYaw), fz = -Math.sin(camYaw), cx = Math.cos(c.yaw), cz = -Math.sin(c.yaw);
@@ -6264,6 +6318,10 @@ const ONLINE = (() => {
     g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i <= track.N; i += 3) { const j = i % track.N; g.lineTo(mOx + track.X[j] * mS, mOy - track.Y[j] * mS); } g.closePath(); g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = track.width * mS; g.stroke(); g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1; g.stroke(); miniBase = c; }
   function drawMini() { mg.clearRect(0, 0, mini.width, mini.height); mg.drawImage(miniBase, 0, 0); const dot = (s, col, r) => { mg.fillStyle = col; mg.beginPath(); mg.arc(mOx + s.x * mS, mOy - s.y * mS, r, 0, 6.3); mg.fill(); };
     for (const c of cars) if (c !== player) dot(c.sim, '#9aa3b2', 3); for (const c of netCars.values()) dot(c.sim, '#35e0ff', 4); dot(player.sim, '#ff5a1f', 4.5); }
+  // v98: notifications while driving: small cards top-right under the minimap, stay ~7 s, tap to open; never cover the middle of the screen
+  function notify(icon, text, onTap) { let box = document.getElementById('notif'); if (!box) { box = el('div'); box.id = 'notif'; document.body.appendChild(box); }
+    const c = el('div', 'nc'); c.appendChild(el('span', 'ni', icon)); c.appendChild(el('span', 'nt', text)); if (onTap) { c.classList.add('tap'); c.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); c.remove(); onTap(); }); }
+    box.appendChild(c); while (box.children.length > 3) box.firstChild.remove(); setTimeout(() => { c.classList.add('out'); setTimeout(() => c.remove(), 500); }, 7000); try { if (S.opt.sound && AC) { const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.08, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + 0.2); } } catch (e) { } }
   let toastT = 0; function toast(msg, cls) { const t = $('#toast'); t.textContent = msg; t.className = 'show ' + (cls || ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = '', 1500); }
   function updateHud() {
     const c = player.sim, ang = c.slip * 57.3;
@@ -6277,6 +6335,7 @@ const ONLINE = (() => {
     { const R = ONLINE.room, el2 = hud.roster || (hud.roster = (() => { const d = document.createElement('div'); d.id = 'hRoster'; $('#hTR').appendChild(d); return d; })());
       if (!R || !R.names || S.opt.roster === false) { if (el2.childNodes.length) el2.textContent = ''; el2.style.display = 'none'; }
       else if ((hud.rT = (hud.rT || 0) - 1) <= 0) { hud.rT = 20; el2.style.display = '';
+        { const now = Object.keys(R.names), was = hud.rNames; if (was && hud.rCode === R.code) { for (const pid of now) if (!was.includes(pid)) notify('👋', R.names[pid] + ' joined the room'); } hud.rNames = now; hud.rCode = R.code; }
         const here = new Map(); for (const [pid, nc] of netCars) here.set(pid, nc); const rows = [[(VO.track && S.opt.voice !== 'off' ? '🎙 ' : '● ') + (S.opt.name || 'You') + ' (you)', 'me']];
         for (const [pid, n] of Object.entries(R.names)) { const nc = here.get(pid); rows.push([(nc && nc.vt ? '🔊 ' : nc && nc.mo ? '🎙 ' : '') + n + (nc ? '' : ' · other track'), nc ? (nc.vt ? 'talk' : '') : 'away']);   /* v95: 🎙 = mic on, 🔊 = talking now */ }
         const html = rows.map(([t, c]) => '<div class="' + c + '">' + t.replace(/[<>&]/g, '') + '</div>').join(''); if (el2.innerHTML !== html) el2.innerHTML = html; } }
@@ -6327,7 +6386,9 @@ const ONLINE = (() => {
     let q = spot(0.0, 0.9, 0.2); if (q) put(pick(P.scenes), q, 0.2, 0.1, true);
     for (let k = 0; k < 3; k++) { q = spot((k - 1) * 0.9 + (rr() - 0.5) * 0.3, 0.45 + rr() * 0.6, 0.06); if (q) put(pick(k === 1 ? P.groups : P.people), q, k === 1 ? 0.12 : 0.06, 0.1, false); }
     q = spot(-1.4, 1.6, 0.25); if (q) put(pick(P.trees), q, 0.25, 0.07 + rr() * 0.03, true);
-    const rig = pick(P.rigs), rl = { limo: 0.46, trash: 0.48, dozer: 0.42, semi: 0.36, box20: 0.31, box40: 0.61, box10: 0.16 }[rig] || 0.4;
+    const rig = pick(P.rigs), rl = { limo: 0.46, trash: 0.48, dozer: 0.42, semi: 0.36, box20: 0.31, box40: 0.61, box10: 0.16, camper: 0.34, camper2: 0.29 }[rig] || 0.4;
+    if (P.tires) for (let k = 0; k < 2; k++) { q = spot((rr() - 0.5) * 2.4, 0.35 + rr() * 0.5, 0.05); if (q) put(pick(P.tires), q, 0.05, 0.1, true); }   /* v98: tire stacks + a street prop or two in the pits */
+    if (P.street) for (let k = 0; k < 2; k++) { q = spot((rr() - 0.5) * 3, 1.0 + rr() * 0.8, 0.05); if (q) put(pick(P.street), q, 0.05, 0.1, true); }
     q = spot(1.6, 1.4 + rl * 0.5, rl); if (q) { put(rig, q, rl, 0.1, true); if (rig === 'semi' && rr() < 0.7) { const a = out[out.length - 1].ry, b = [q[0] - Math.cos(a) * 0.95, q[1] - Math.sin(a) * 0.95]; if (free(b[0], b[1], 0.5)) { put('trailer', b, 0.5, 0.1, true); out[out.length - 1].ry = a; } } }
     // v75 hangout: the wrecked Accord with the homie on the hood and a girl leaning on the side; two girls lounging; the Stranger Kreations plate
     const grp = (id, cq, ry, lx, lz, lift, rot) => { const c = Math.cos(ry), sn = Math.sin(ry); out.push({ id, x: cq[0] + (lx * c + lz * sn) * 0.1, y: cq[1] + (lx * sn - lz * c) * 0.1, z: lift * 0.1, ry: ry + rot, s: 0.1, seed: 1 + ((rr() * 1e6) | 0) }); };
@@ -6506,7 +6567,7 @@ const ONLINE = (() => {
       b.onclick = () => { if (b.disabled) return; if (locked(i) && !opt.noLock) { freeCard('every track'); return; } fn(i); }; w.appendChild(b); }); return w; };
   const statStrip = () => { const L = ONLINE.live || ONLINE.stats; if (!L) return null; const w = el('div', 'stats');
     const it = (n, lab, live) => { const d = el('div', 'st' + (live ? ' live' : '')); d.appendChild(el('b', '', fmt(n))); d.appendChild(el('span', '', lab)); w.appendChild(d); };
-    it(L.online || 0, 'online now', true); it(L.today || 0, 'played today'); it(L.drivers || 0, 'signed up'); it(L.laps || 0, 'laps posted');
+    it(L.online || 0, 'online now', true); it(L.today || 0, 'played today'); it(L.all_time || 0, 'played all time'); it(L.drivers || 0, 'signed up'); it(L.laps_today || 0, 'laps today'); it(L.laps || 0, 'laps all time'); if (L.eggs != null) it(L.eggs, '🥚 egg finders'); if (L.peds != null) it(L.peds, 'pedestrians flattened');   /* v98 */
     // where they are: most people drive solo, so say so instead of leaving the room list looking empty
     if (L.online) { const T = L.tracks || {}, parts = Object.keys(T).sort((a, b) => T[b] - T[a]).map(k => tName(k) + ' ' + T[k]), inR = L.in_rooms || 0, solo = Math.max(0, L.online - inR);
       const p = el('p', 'tip stwhere'); p.textContent = (parts.length ? 'Driving now: ' + parts.join(' · ') + '. ' : '') + (solo ? solo + ' solo' : '') + (solo && inR ? ', ' : '') + (inR ? inR + ' in rooms' : '') + (!inR ? '. Host or join a room on the Online tab to drive together.' : '.');
@@ -6635,8 +6696,8 @@ const ONLINE = (() => {
   const SOC = { n: 0, seen: new Set(), f: null, t: null };
   async function socPoll(quiet) { if (!ONLINE.profile) { SOC.n = 0; return; } const [f, t] = await Promise.all([ONLINE.myFriends(), ONLINE.myTeam()]); SOC.f = f; SOC.t = t;
     const inc = (f && f.incoming) || [], inv = (t && t.invites) || []; SOC.n = inc.length + inv.length;
-    for (const r of inc) { const k = 'f' + r.id; if (!SOC.seen.has(k)) { SOC.seen.add(k); if (!quiet) toast('FRIEND REQUEST from ' + r.name + ' · Social → Friends', 'good'); } }
-    for (const r of inv) { const k = 't' + r.team; if (!SOC.seen.has(k)) { SOC.seen.add(k); if (!quiet) toast('TEAM INVITE · ' + r.name + ' [' + r.tag + '] · Social → Team', 'good'); } }
+    for (const r of inc) { const k = 'f' + r.id; if (!SOC.seen.has(k)) { SOC.seen.add(k); if (!quiet) notify('🤝', 'Friend request from ' + r.name, () => { openMenu('pause', 'community'); F.cv = 'friends'; renderPanel(); }); } }
+    for (const r of inv) { const k = 't' + r.team; if (!SOC.seen.has(k)) { SOC.seen.add(k); if (!quiet) notify('🏁', 'Team invite · ' + r.name + ' [' + r.tag + ']', () => { openMenu('pause', 'community'); F.cv = 'team'; renderPanel(); }); } }
     if (mode !== 'drive' && nav) renderNav(); }
   setInterval(() => { if (document.visibilityState === 'visible' && ONLINE.profile) socPoll(false); }, 90000);
   async function openThread(id, name, request) { thread = { id, name, msgs: null, request: !!request }; tab = 'community'; F.cv = 'messages'; if (mode === 'drive') openMenu('pause', 'community'); else { renderNav(); renderPanel(); } thread.msgs = await ONLINE.thread(id); if (tab === 'community' && mode !== 'drive') renderPanel(); }
@@ -6705,7 +6766,8 @@ const ONLINE = (() => {
           const ld = el('button', 'ghost', 'Drive it'); ld.disabled = !c; ld.onclick = () => { const keepEgg = S.look.egg; S.look = Object.assign({}, c.look); if (keepEgg) S.look.egg = 1; else delete S.look.egg; GFX.ensureBody(S.look.body).then(() => { rebuildPlayer(); renderPanel(); toast('Rolling out ' + c.name, 'good'); }, () => toast('Could not load that body', 'bad')); };
           const sv = el('button', 'ghost', c ? 'Overwrite' : 'Save'); let armed = false;
           sv.onclick = () => { if (c && !armed) { armed = true; sv.textContent = 'Tap again'; setTimeout(() => { armed = false; sv.textContent = 'Overwrite'; }, 2500); return; } const L = Object.assign({}, S.look); delete L.egg; CARS[n] = { name: (GFX.bodyInfo(L.body).name || 'Car') + ' #' + n, look: L, at: Date.now() }; save(); renderPanel(); toast('Car saved to slot ' + n, 'good'); };
-          r.append(ld, sv); add(r); } }
+          r.append(ld, sv); add(r); }
+        { const wb = el('button', 'big', '🚗 Walk into my garage'); wb.onclick = () => srOpen(); add(wb); } }
       const pickBody = v => { const was = GFX.bodyInfo(S.look.body).cls, now = GFX.bodyInfo(v).cls;
         if (now === 'movie') { if (was !== 'movie') S.driftLook = Object.assign({}, S.look); Object.assign(S.look, GFX.MOVIE[v] || {}); }
         else { delete S.look.chrome; if (was === 'movie' && S.driftLook) { const d = S.driftLook; Object.assign(S.look, { color: d.color, color2: d.color2, finish: d.finish, livery: d.livery, wheel: d.wheel, wheelColor: d.wheelColor, wing: d.wing }); } }
@@ -7015,6 +7077,10 @@ const ONLINE = (() => {
         const rk = R.find(x => x.track === d0.id); myLine.textContent = O.profile ? (rk ? 'You: #' + rk.rank + ' of ' + rk.drivers + ' on ' + d0.name + ' with ' + fmt(rk.pts) + '.' : 'You have no lap on ' + d0.name + ' yet.') : '';
       };
       boardsData(false).then(fill); fill();
+      { h('Pedestrian kills', 'all time'); const pb = el('div', 'lb'); pb.textContent = 'Loading…'; add(pb); const pm = el('p', 'tip'); add(pm);   // v98: the splat board
+        ONLINE.pedBoard().then(r => { if (!pb.isConnected) return; pb.textContent = ''; const T2 = (r && r.top) || []; if (!T2.length) pb.appendChild(el('p', 'tip', 'Nobody has flattened anyone yet.'));
+          for (const q of T2) { const row2 = el('div', 'lbr lbr3 click' + (q.id === myId ? ' me' : '')); row2.appendChild(el('span', 'lbn', '#' + q.rank)); row2.appendChild(el('span', 'lbd', String(q.name))); row2.appendChild(el('span', 'lbp', fmt(q.peds))); row2.onclick = () => playerCard(q.id, String(q.name)); pb.appendChild(row2); }
+          pm.textContent = r && r.me ? 'You: #' + r.me.rank + ' of ' + r.me.of + ' with ' + fmt(r.me.peds) + ' flattened.' : O.profile ? 'Run somebody over to get on the board.' : ''; }); }
       boardFor(d0.id, lbMonth).then(rows => { if (boardBox.isConnected) lbRows(boardBox, rows, lbMonth ? 'Nobody has posted a lap on ' + d0.name + ' this month. Take the top spot.' : 'No laps on ' + d0.name + ' yet. Be the first.'); });
     }
 
@@ -7033,6 +7099,7 @@ const ONLINE = (() => {
       add(row('HUD', onOff(S.opt.hud !== false, v => { S.opt.hud = v; save(); }), 'H toggles it while driving. Handy for clean screenshots and videos.'));
       add(row('Speed', chips([{ id: 'mph', name: 'Scale mph' }, { id: 'kmh', name: 'Scale km/h' }], S.opt.units || 'mph', v => { S.opt.units = v; save(); }), 'Scale speed: what the car would be doing at full size.'));
       add(row('FPS counter', onOff(!!S.opt.showFps, v => { S.opt.showFps = v; save(); })));
+      add(row('Performance check', onOff(!!S.opt.perfChk, v => { S.opt.perfChk = v; save(); }), 'Shows what each frame spends its time on (worst of the last 10 s). Drive for a minute where it lags, then screenshot it and send it to the dev.'));
       h('Sound'); add(row('Sound', onOff(S.opt.sound, v => { S.opt.sound = v; save(); }), 'M toggles it while driving.'));
       add(row('Volume', slider(0, 100, 5, S.opt.vol ?? 100, v => v + '%', v => { S.opt.vol = v; if (A.master) A.master.gain.value = 0.5 * v / 100; save(); })));
       add(row('Sound mode', chips(Object.keys(SND_MODES).map(k => ({ id: k, name: SND_MODES[k].name, sub: SND_MODES[k].sub })), S.opt.sndMode === 'real' ? 'real' : 'smooth', v => { S.opt.sndMode = v; save(); renderPanel(); }), 'Authentic = the real brushless scream. Smooth = same motor and the same rise and fall (you still hear boost and turbo), with the shrill top end taken off.'));
@@ -7069,9 +7136,25 @@ const ONLINE = (() => {
     huntKeep(); loadTrack(clamp(S.opt.track | 0, 0, SIM.TRACK_DEFS.length - 1)); applyTune(); openMenu('main', 'drive'); netInit(); booted = true; maybeTour(); if (ld) ld.style.display = 'none';
     last = performance.now(); requestAnimationFrame(frame);
   }).catch(e => { if (!ld) return; const d = ld.querySelector('div'); d.textContent = 'Couldn\'t download the cars. Your connection may have dropped. '; const b = document.createElement('button'); b.textContent = 'Try again'; b.style.cssText = 'margin-left:6px;padding:6px 14px;border-radius:8px;border:0;background:#ff6a00;color:#fff;font:inherit;cursor:pointer'; b.onclick = () => location.reload(); d.appendChild(b); });
+  // v98: performance check overlay (Settings). Per-phase cost, hitches, draw calls; rolls over every 10 s and shows the last full window.
+  let perfEl = null, perfW = null, perfLast = null, perfPrev = 0;
+  function perfTick(now, dt) { if (!S.opt.perfChk) { if (perfEl) perfEl.style.display = 'none'; window.__perf = null; return; }
+    const raw = perfPrev ? now - perfPrev : 16; perfPrev = now; if (!window.__perf) window.__perf = {}; if (!perfW) perfW = { t0: now, n: 0, sum: 0, max: 0, hitch: 0 };
+    perfW.n++; perfW.sum += raw; if (raw > perfW.max) perfW.max = raw; if (raw > 50) perfW.hitch++; perfW.calls = Math.max(perfW.calls || 0, renderer.info.render.calls); perfW.tris = Math.max(perfW.tris || 0, renderer.info.render.triangles);
+    if (now - perfW.t0 > 10000) { const ph = window.__perf, info = renderer.info; perfLast = { fps: Math.round(perfW.n / ((now - perfW.t0) / 1000)), avg: perfW.sum / perfW.n, max: perfW.max, hitch: perfW.hitch,
+        ph: Object.entries(ph).map(([k, q]) => [k, q.sum / Math.max(1, q.n), q.max, q.spikes]), calls: perfW.calls || 0, tris: perfW.tris || 0, geo: info.memory.geometries, tex: info.memory.textures, prog: (info.programs || []).length,
+        heap: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null, net: netCars.size, res: Math.round(drs * 100), pr: renderer.getPixelRatio().toFixed(2), q: ['Low', 'Medium', 'High'][S.opt.quality] || S.opt.quality };
+      window.__perf = {}; perfW = { t0: now, n: 0, sum: 0, max: 0, hitch: 0 }; }
+    if (!perfEl) { perfEl = document.createElement('div'); perfEl.style.cssText = 'position:fixed;top:44px;left:50%;transform:translateX(-50%);z-index:50;font:600 11px/1.35 monospace;color:#d8ffd0;background:rgba(0,0,0,.72);padding:6px 10px;border-radius:6px;pointer-events:none;white-space:pre;max-width:94vw'; document.body.appendChild(perfEl); }
+    perfEl.style.display = 'block'; if ((perfTick.t = (perfTick.t || 0) + dt) < 0.5) return; perfTick.t = 0;
+    const L = perfLast; perfEl.textContent = 'PERFORMANCE CHECK · ' + VERSION + (L ? '\nlast 10 s: ' + L.fps + ' fps · avg ' + L.avg.toFixed(1) + ' ms · worst ' + L.max.toFixed(0) + ' ms · hitches ' + L.hitch +
+      '\n' + L.ph.map(([k, a, m, sp]) => k.padEnd(10) + a.toFixed(2).padStart(6) + ' avg ' + m.toFixed(1).padStart(6) + ' max ' + String(sp).padStart(4) + ' >6ms').join('\n') +
+      '\ndraws ' + L.calls + ' · tris ' + Math.round(L.tris / 1000) + 'k · tex ' + L.tex + ' · geo ' + L.geo + ' · shaders ' + L.prog + (L.heap != null ? ' · heap ' + L.heap + 'MB' : '') +
+      '\nres ' + L.res + '% · pixel ratio ' + L.pr + ' · quality ' + L.q + ' · other cars ' + L.net + ' · ' + (isTouch ? 'touch' : 'desktop') : '\nmeasuring… drive for 10 s'); }
   function frame(now) {
     requestAnimationFrame(frame); const dt = Math.min(0.05, (now - last) / 1000); last = now; if (dt <= 0) return;
     const PF = window.__perf, pt = PF ? performance.now() : 0, pm = PF ? (k, t0) => { const d = performance.now() - t0; const q = PF[k] || (PF[k] = { n: 0, sum: 0, max: 0, spikes: 0 }); q.n++; q.sum += d; if (d > q.max) q.max = d; if (d > 6) q.spikes++; return performance.now(); } : null;   /* v95: window.__perf = {} logs per-phase frame cost */
+    if (S.opt.perfChk) { renderer.info.autoReset = false; renderer.info.reset(); } else renderer.info.autoReset = true;
     let tq = pt; readInput(dt); hydroTick(dt); netRecv(dt); if (PF) tq = pm('in+net', tq);
     if (mode !== 'pause') simulate(dt); if (PF) tq = pm('sim', tq); netSend(dt); huntTick(dt); if (PF) tq = pm('send+hunt', tq);
     if (mode !== 'drive') { const P0 = player.sim; if (OV.focus && OV.focus.steer) P0.delta += (P0.p.lock * P0.p.dual - P0.delta) * Math.min(1, dt * 10); else if (mode === 'pause' && Math.abs(P0.delta) > 0.001) P0.delta *= Math.exp(-dt * 6); }
@@ -7083,6 +7166,7 @@ const ONLINE = (() => {
     { const F = world && world.liveFeed; if (F && mode === 'drive' && S.opt.liveScr !== false) { F.n++; const every = isTouch ? 600 : fEma > 1 / 50 ? 90 : 24;   /* v95: the TV readback stalls the GPU; ~2.5 fps is plenty for a screen in the background */ if ((F.n === 120 || (F.n > 120 && F.n % every === 0)) && feedSeen(F)) { try { F.g.drawImage(renderer.domElement, 0, 0, F.cv.width, F.cv.height); F.t.needsUpdate = true; } catch (e) { } } } }
     // dynamic resolution: if a phone can't hold ~40 fps, drop render resolution (one-way per track, no rebuild hitches)
     fEma += (Math.min(dt, 0.1) - fEma) * 0.03; drT += dt;
+    perfTick(now, dt);
     if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + ' fps · res ' + Math.round(drs * 100) + '%'; } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
     if (mode === 'drive' && drT > 4 && fEma > 1 / 40 && drs > 0.7) { drT = 0; drs = Math.max(0.7, drs - 0.1); softResize(); }
   }
@@ -7129,7 +7213,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { GFX, chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
+  window.__game = { GFX, notify: (a, b) => notify(a, b, () => {}), chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
