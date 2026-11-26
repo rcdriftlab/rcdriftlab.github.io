@@ -406,6 +406,7 @@ const SIM = (function () {
     'Easy / stable': { gyroGain: 80, steerLock: 58, ackermann: 45, toeR: 2.5, weightRear: 60, springR: 35, motor: 1, punch: 50, steerExpo: 30 },
     'Comp / fast flow': { gyroGain: 55, steerLock: 68, ackermann: 8, camberF: -8, toeR: 1, weightRear: 55, motor: 3, punch: 85, fdr: 9.6 },
     'Boost + turbo ESC': { boost: 20, boostStart: 5000, boostEnd: 25000, turbo: 12, turboStart: 95, turboDelay: 0.05, turboUp: 0.2, turboDown: 0.15, punch: 90, throttleExpo: 20 },
+    'Creator tune': { fdr: 9.1, toeF: 1.5, toeR: 1, boost: 0, brake: 50, motor: 2, punch: 100, tireF: 2, tireR: 1, turbo: 35, caster: 6, offset: 8, weight: 1540, camberF: -8, camberR: -2, springF: 50, springR: 75, turboUp: 0.1, boostEnd: 25000, dualRate: 100, gyroGain: 84, topSpeed: 130, ackermann: 32, dragBrake: 20, gyroSpeed: 45, steerExpo: 0, steerLock: 90, turboDown: 0.1, boostStart: 5000, rideHeight: 6, servoSpeed: 0.04, turboDelay: 0, turboStart: 85, weightRear: 60, throttleExpo: 35 },   // v107: a complete setup (every value set, so picking it always gives exactly this)
     'Loose / big angle': { gyroGain: 48, steerLock: 72, ackermann: 15, camberF: -9, caster: 10, toeR: 0, weightRear: 52, springR: 65, tireR: 1, punch: 90 },
   };
 
@@ -6153,9 +6154,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
   const compCls = (on, c) => document.documentElement.classList.toggle(c || 'comp', !!on);
   function compStart() {
     if (ONLINE.room || !COMP.available(track)) return; if (isTouchDev()) goFull();
-    const wasC = physOf(devOf()) === 'classic'; compOn = true; newSession(); applyTune(); drive(false);
+    compOn = true; newSession(); drive(false);
     COMP.start({ track, group: world.group, who: (S.opt.name || 'You').trim() || 'You', cap: Math.max(60, Math.round(lapCap() * 1.5)), stageLimit: 90 });
-    if (wasC) toast('Comp runs use New physics for everyone (event rule)', 'good');
   }
   function compExit() { if (!compOn) return; compOn = false; COMP.stop(); compCls(false); compCls(false, 'comprp'); newSession(); applyTune(); }
   COMP.init({
@@ -6343,7 +6343,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v106', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v107', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7041,7 +7041,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // v49: physics follow the device you're driving with (phone = Classic, controller/keyboard = New by default); sticky, only flips on real input
   let devNow = null; const devOf = () => devNow || (isTouchDev() ? 'touch' : 'kb');
   const physOf = d => (d === 'touch' ? S.opt.physTouch : d === 'pad' ? S.opt.physPad : S.opt.physKb) || 'new';
-  function physK() { return !compOn && physOf(devOf()) === 'classic' ? SIM.K_CLASSIC : undefined; }   /* v103: comp runs are New physics for everyone (event rule) */
+  function physK() { return physOf(devOf()) === 'classic' ? SIM.K_CLASSIC : undefined; }   /* v107 (Shaun): comp runs use whichever physics you already drive (no forced New) */
   function applyTune() { player.sim.p = SIM.derive(S.tune, track.surface, physK()); player.tune = S.tune; }
   // guests drive the one standard car: the stock S15 in the Stranger Kreations sticker kit (their own garage comes back when they sign in)
   const GUEST_LOOK = Object.assign({}, GFX.DEF_LOOK, { body: 's15', color: '#ff5a1f', color2: '#101114', livery: 'sponsor', finish: 'gloss', wheel: 'five', wheelColor: '#e8e8ea', wing: 'none', glow: '' });
