@@ -307,6 +307,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 .hostf input:not([type=checkbox]),.hostf select,.hostf textarea{flex:1;min-width:0;background:#15171d;color:#fff;border:1px solid var(--ln);border-radius:6px;padding:8px;font:inherit;font-size:14px}
 .hostf input[type=checkbox]{width:20px;height:20px}
 #tour .tcard.compann{border-top:3px solid #ffd23f!important;background:linear-gradient(160deg,#2a2208,#121317 55%)}#tour .tcard.compann .tstep{color:#ffd23f!important}#tour .tcard.compann h2{color:#fff4cf}
+#tday{margin:6px 0 10px;padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,#7a3b12,#b8641d 50%,#7a3b12);color:#fff4dc;font-weight:800;letter-spacing:.03em;text-align:center;box-shadow:0 4px 14px rgba(184,100,29,.35)}
 </style>
 </head>
 <body class="inmenu">
@@ -361,7 +362,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <rect x="34" y="64" width="338" height="3" fill="#ff5a1f"/><rect x="380" y="64" width="22" height="3" fill="#ff5a1f" opacity=".6"/><rect x="408" y="64" width="10" height="3" fill="#ff5a1f" opacity=".3"/>
 </g>
 <text x="22" y="94" font-size="14.5" font-weight="600" letter-spacing="4.2" fill="#a3abb8" font-family="Chakra Petch,system-ui,sans-serif">BY <tspan fill="#35e0ff" font-weight="700">STRANGER KREATIONS</tspan></text>
-</svg></h1><div class="sub">1/10 scale · RWD · gyro</div><div id="nav"></div><div id="panel"></div></div>
+</svg></h1><div class="sub">1/10 scale · RWD · gyro</div><div id="tday" style="display:none">🦃 Happy Thanksgiving from RC Drift Lab! Thank you for driving with us. 🍂</div><div id="nav"></div><div id="panel"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -6378,7 +6379,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v110', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v111', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7196,6 +7197,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     const done = () => { ov.remove(); try { localStorage.setItem('rcdl_compann_' + c.id, '1'); } catch (e) { } };
     btns.append(holdBtn('Hold to close', 'ghost', done), holdBtn(c.mine ? 'Hold · open Comps' : 'Hold · register', 'big', () => { done(); tab = 'comps'; openMenu('main', 'comps'); }));
   }
+  // Thanksgiving 2026 (Shaun): today only, by the player's own calendar. Menu ribbon + one greeting toast per visit.
+  { const d = new Date(); if (d.getFullYear() === 2026 && d.getMonth() === 10 && d.getDate() === 26) { const e = document.getElementById('tday'); if (e) e.style.display = ''; setTimeout(() => toast('🦃 Happy Thanksgiving from RC Drift Lab!', 'good'), 2500); } }
   // v101 one-time announcement for returning players (new players get the tour instead): thank you + V2.1 is live + what changed
   const ANN_KEY = 'rcdl_ann_v101';
   function announce() {
