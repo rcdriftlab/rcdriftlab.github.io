@@ -5707,7 +5707,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v97.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v97.2', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7110,7 +7110,7 @@ const ONLINE = (() => {
   function micOff() { if (VO.stream) VO.stream.getTracks().forEach(t => t.stop()); VO.stream = VO.track = VO.an = null; VO.talk = false; voiceSync(); }
   async function setVoiceMode(v) { S.opt.voice = v; save(); if (v === 'off') { micOff(); return; } const ok = await micOn(); if (!ok) { S.opt.voice = 'off'; save(); micOff(); } else { VO.track.enabled = v === 'open'; voiceSync(); toast(v === 'ptt' ? 'Push-to-talk: hold TALK (or V on a keyboard)' : 'Open mic: the room hears you when you speak'); } if (mode !== 'drive') renderPanel(); }
   // v94: one-tap open mic toggle (the MIC button in rooms, Shift+V): off -> open mic, open mic -> off. Push-to-talk users get switched to open mic.
-  async function micQuick() { if (S.opt.voice === 'open') { await setVoiceMode('off'); toast('🔇 Mic off'); } else { await setVoiceMode('open'); } micUI(); }
+  async function micQuick() { if (VO.busy) return; VO.busy = true; try { if (S.opt.voice === 'open' && VO.track) { await setVoiceMode('off'); toast('🔇 Mic off'); } else { const b = document.getElementById('micB'); if (b) b.innerHTML = '🎙<small>OPENING…</small>'; await setVoiceMode('open'); } } finally { VO.busy = false; micUI(); } }   /* v97.2: ignore taps while the mic is still opening */
   function micUI() { const b = document.getElementById('micB'); if (b) { const on = S.opt.voice === 'open' && !!VO.track; b.classList.toggle('on', on); b.innerHTML = on ? '🎙<small>MIC ON</small>' : '🔇<small>MIC OFF</small>'; } }
   { const b = document.getElementById('micB'); if (b) { b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); micQuick(); }); b.addEventListener('click', e => e.stopPropagation()); } }
   function talk(on) { if (!VO.track || S.opt.voice !== 'ptt') return; VO.track.enabled = !!on; VO.talk = !!on; const b = document.querySelector('#talkB'); if (b) b.classList.toggle('on', !!on); }
