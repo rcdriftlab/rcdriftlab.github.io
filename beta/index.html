@@ -226,6 +226,10 @@ textarea{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px
 .pcard .tcard{border-top-color:var(--ac2)}.pcard .lbr{font-size:13px}
 #chat{position:fixed;left:18px;bottom:128px;width:min(400px,62vw);z-index:4;pointer-events:none}.inmenu #chat{display:none}
 #chatLog div{background:rgba(8,9,12,.62);padding:4px 10px;border-radius:4px;margin-top:3px;font-size:13px;transition:opacity .6s;text-shadow:none;width:fit-content;max-width:100%}#chatLog b{color:var(--ac2)}
+#chatLog div.old{opacity:.7}#chatLog.fade div{opacity:0}#chatLog small.ct,#chatHist small.ct{color:#8a8f99;font-size:11px}
+#logB{position:fixed;left:14px;top:calc(26% + 66px);z-index:7;display:none;width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(10,11,15,.65);color:#fff;font-size:20px;line-height:1;touch-action:none;-webkit-user-select:none;user-select:none}#logB small{display:block;font-size:7px;font-weight:800;letter-spacing:.04em;margin-top:2px}#logB.on{border-color:#35e0ff}#logB.new{border-color:#ffb21f;box-shadow:0 0 12px rgba(255,178,31,.6)}.inroom #logB{display:block}.inmenu #logB,.inmenu #chatHist{display:none!important}body.phototool #logB{display:none!important}
+#chatHist{position:fixed;left:84px;top:18%;width:min(380px,70vw);max-height:56vh;z-index:8;display:none;flex-direction:column;background:rgba(8,9,12,.9);border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:13px}#chatHist.on{display:flex}#chatHist .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-weight:800;letter-spacing:.08em;font-size:11px;border-bottom:1px solid rgba(255,255,255,.1)}#chatHist .x{background:none;border:0;color:#fff;font-size:16px;padding:2px 6px;min-height:0;width:auto}#chatHist .lst{overflow-y:auto;padding:6px 12px 10px;-webkit-overflow-scrolling:touch}#chatHist .lst div{padding:3px 0}#chatHist b{color:#ff9a5c}
+#hRoster .talk{color:#35e0ff}
 #chatIn{display:none;pointer-events:auto;margin-top:6px;background:rgba(8,9,12,.85)}#chat.typing #chatIn{display:block}
 #tbtns [data-a=chat]{display:none}.inroomOnly{display:none}.inroom .inroomOnly{display:inline}.inroom #tbtns [data-a=chat]{display:inline-block}
 #menu{width:min(600px,100vw);padding-right:34px}#nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}.nav{flex:0 0 auto}
@@ -257,11 +261,12 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
   <div id="hTL"><div class="lbl">LAP SCORE</div><div id="hScore">0</div><div id="hRunRow"><span id="hRun"></span><span id="hMult"></span></div><div id="hTand">TANDEM</div><div id="hZone">IN ZONE</div><div id="hLap"></div></div>
   <div id="hTR"><canvas id="mini" width="210" height="140"></canvas><span id="hNet"></span><span id="hCam"></span></div>
   <div id="hB"><div id="hAng">0°</div><div id="hAngL">DRIFT ANGLE</div><div id="track"><div id="hBar"></div></div></div>
-  <div id="hBL">GYRO <span id="hGyro"></span> <b>[ ]</b><br><b>C</b> camera · <b>drag</b> look · <b>B</b> reset view · <b>R</b> reset · <b>T</b> tune · <b>Esc</b> menu<span class="inroomOnly"> · <b>Enter</b> chat · <b>1-8</b> quick chat · <b>V</b> talk</span><br><span id="hSrc"></span></div>
+  <div id="hBL">GYRO <span id="hGyro"></span> <b>[ ]</b><br><b>C</b> camera · <b>drag</b> look · <b>B</b> reset view · <b>R</b> reset · <b>T</b> tune · <b>Esc</b> menu<span class="inroomOnly"> · <b>Enter</b> chat · <b>1-8</b> quick chat · <b>V</b> talk · <b>O</b> log</span><br><span id="hSrc"></span></div>
   <div id="hBR"><div><div id="hSpd">0</div><div class="unit" id="hUnit">SCALE MPH</div></div><div id="thrBox"><div id="hThr"></div></div></div>
 </div>
 <div id="hydro"><div class="hrow"><button data-h="FL">FL</button><button data-h="FRONT">FRONT</button><button data-h="FR">FR</button><button data-h="HOP" class="hop">HOP</button></div><div class="hrow"><button data-h="LEFT">LEFT</button><button data-h="LOCK" class="lk">LOCK</button><button data-h="RIGHT">RIGHT</button><button data-h="DUMP" class="dump">DUMP</button></div><div class="hrow"><button data-h="RL">RL</button><button data-h="BACK">BACK</button><button data-h="RR">RR</button><button data-h="BHOP" class="hop">B·HOP</button></div><button data-h="BUNNY" class="mode hop">BUNNY HOP</button><button data-h="MODE" class="mode">HYDRO</button></div>
 <button id="camRst" title="Reset the camera view (B)">⟲ VIEW</button>
+<button id="logB" title="Room chat log (O)">💬<small>CHAT LOG</small></button><div id="chatHist"><div class="hd">ROOM CHAT <button class="x">✕</button></div><div class="lst"></div></div>
 <div id="touch"><div class="tz" id="tzL"></div><div class="tz" id="tzR"></div>
   <div class="stick" id="tsteer"><div class="lbl">STEER</div><div class="knob"></div></div>
   <div class="stick" id="tthr"><div class="lbl">THROTTLE</div><div class="knob"></div></div>
@@ -4034,7 +4039,7 @@ const GFX = (function () {
       [0x111214, 0xf2f2f2, 0xc8202a, 0x2a4dd4, 0x0f5a3a, 0x6b6b6b, 0xff7a1a, 0x5a3a8a, 0xe8c840, 0x7a1f1f, 0x1f8a8a, 0x3a3a40, 0xd8b89a, 0x111214, 0xf2f2f2],   // shirts
       [0xc68642, 0x8d5524, 0xe0ac69, 0x5c3a1e, 0xf1c27d, 0xd9a47a],                                                             // skin
       [0x1a1210, 0x2b1d14, 0x3b2314, 0x6b4423, 0xd9b26a, 0x8a3a1c, 0x0f0f10, 0x1a1210]],                                        // hair
-    limo: [[0x101012], [0x0b0b0d, 0xf4f4f2, 0x0b0b0d, 0x1a1a1e], [0xcfd2d6], [0x05070a], [0xdfe3e8]],   // v93 rides: tires/under, body, trim, glass, chrome
+    limo: [[0x101012], [0x0b0b0d, 0x16171a, 0x0b0b0d, 0x2a0b12], [0xcfd2d6], [0x05070a], [0xdfe3e8]],   // v93 rides: tires/under, body, trim, glass, chrome
     trash: [[0x141416], [0x2a7a3a, 0x1f6a3a, 0x2a5aa8], [0xf2f2f0], [0x0b0f14], [0xc9cdd2]],
     taco: [[0x141416], [0xc8202a], [0xf2efe4], [0x0b0f14], [0xc9cdd2], [0xffe2a8]],   // v91 taco truck: tires, red, cream, glass, stainless, lit kitchen
     solid: [[0x222222], [0xb3261e, 0x1f4fa8, 0x2a7a3a, 0xd8661c, 0x8a8f98, 0xe8e8e2, 0x6a2a7a]] };
@@ -4044,7 +4049,7 @@ const GFX = (function () {
     const idx = hdr.i32 ? new Uint32Array(buf.slice(o, o + nf * 12)) : new Uint16Array(buf.slice(o, o + nf * 6));
     const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3);
     for (let i = 0; i < nv; i++) for (let k = 0; k < 3; k++) { pos[i * 3 + k] = hdr.lo[k] + q[i * 3 + k] / 65535 * (hdr.hi[k] - hdr.lo[k]); nor[i * 3 + k] = n8[i * 3 + k] / 127; }
-    if (/^(crowd|lady|homie|person)$/.test(hdr.kind)) return crispBands({ hdr, pos, nor, band, idx });
+    if (/^(crowd|lady|homie|person|limo|trash|taco)$/.test(hdr.kind)) return crispBands({ hdr, pos, nor, band, idx });
     return { hdr, pos, nor, band, idx };
   }
   // v85: people paint used to smear across the triangles where two colours meet (jagged, muddy edges). Split those faces off with the face's
@@ -4134,8 +4139,12 @@ const GFX = (function () {
   const FINISHES = [
     { id: 'gloss', name: 'Gloss', m: 0.05, r: 0.35, cc: 1 }, { id: 'metal', name: 'Metallic', m: 0.65, r: 0.38, cc: 1 },
     { id: 'matte', name: 'Matte', m: 0.0, r: 0.85, cc: 0 }, { id: 'candy', name: 'Candy', m: 0.9, r: 0.22, cc: 1 }, { id: 'chrome', name: 'Chrome', m: 1, r: 0.06, cc: 0.3 }, { id: 'brushed', name: 'Brushed steel', m: 1, r: 0.3, cc: 0, brushed: 1 }];
-  const LIVERIES = [{ id: 'solid', name: 'Solid' }, { id: 'stripes', name: 'Twin stripes' }, { id: 'twotone', name: 'Two-tone' }, { id: 'roof', name: 'Contrast roof' }, { id: 'hood', name: 'Carbon hood' }, { id: 'team', name: 'Team livery' }, { id: 'sponsor', name: 'Sticker kit' }, { id: 'ecto', name: 'Ambulance' }, { id: 'fury', name: 'Side spear' }, { id: 'van', name: 'Van stripe' }];
+  const LIVERIES = [{ id: 'solid', name: 'Solid' }, { id: 'stripes', name: 'Twin stripes' }, { id: 'twotone', name: 'Two-tone' }, { id: 'roof', name: 'Contrast roof' }, { id: 'hood', name: 'Carbon hood' }, { id: 'team', name: 'Team livery' }, { id: 'sponsor', name: 'Sticker kit' }, { id: 'ecto', name: 'Ambulance' }, { id: 'fury', name: 'Side spear' }, { id: 'van', name: 'Van stripe' }, { id: 'flames', name: 'Flames' }, { id: 'checker', name: 'Checker band' }, { id: 'fade', name: 'Colour fade' }, { id: 'pin', name: 'Pinstripe' }];
+  // v95: stickers (drawn here, original designs) and slots on the body. 'img' = the player's uploaded picture (stays on their own screen)
+  const STICKERS = [{ id: 'num', name: 'Race number', a: 1.2 }, { id: 'rcdl', name: 'RC DRIFT LAB', a: 4.2 }, { id: 'jdm', name: 'JDM', a: 2.2 }, { id: 'drift', name: 'ドリフト', a: 3.2 }, { id: 'sk', name: 'Stranger Kreations', a: 5.4 }, { id: 'sincity', name: 'SIN CITY', a: 3.4 }, { id: 'wakaba', name: 'Wakaba leaf', a: 0.8 }, { id: 'flag', name: 'Checker flag', a: 1.4 }, { id: 'star', name: 'Star', a: 1 }, { id: 'bolt', name: 'Bolt', a: 0.6 }, { id: 'skull', name: 'Skull', a: 0.9 }, { id: 'img', name: 'My picture', a: 0 }];
+  const STK_SLOTS = [{ id: 'door', name: 'Doors' }, { id: 'front', name: 'Front fenders' }, { id: 'rear', name: 'Rear quarters' }, { id: 'hood', name: 'Hood' }, { id: 'roof', name: 'Roof' }, { id: 'trunk', name: 'Trunk' }];
   const WINGS = [{ id: 'none', name: 'Stock' }, { id: 'gt', name: 'GT wing' }, { id: 'big', name: 'Chassis-mount' }];
+  const TINTS = [{ id: 'limo', name: 'Limo', sub: '5% · near black', cov: 0.75, op: 0.8 }, { id: 'dark', name: 'Dark', sub: '20%', cov: 0.5, op: 0.6 }, { id: 'light', name: 'Light', sub: '35%', cov: 0.25, op: 0.42 }, { id: 'clear', name: 'Clear', sub: 'no tint', cov: 0, op: 0.07 }];
   const DEF_LOOK = { body: 's15', color: '#ff5a1f', color2: '#101114', finish: 'gloss', livery: 'solid', wheel: 'five', wheelColor: '#e8e8ea', wing: 'none', glow: '', };
 
   const M = {}; // shared materials
@@ -4303,8 +4312,45 @@ const GFX = (function () {
       for (const sd of [-1, 1]) { poly([P.side(h.xr - 0.01, yc, sd), P.side(h.xf + 0.01, yc, sd), P.side(h.xf + 0.01, Hh, sd), P.side(h.xr - 0.01, Hh, sd)], c2);
         poly([P.side(h.xf + 0.01, yc - 0.006, sd), P.side(h.xr + len * 0.3, yc - 0.006, sd), P.side(h.xr + len * 0.12, yc + 0.03, sd), P.side(h.xr + len * 0.07, yc + 0.03, sd), P.side(h.xr + len * 0.25, yc, sd), P.side(h.xf + 0.01, yc, sd)], red); }
       topBand(h.xr - 0.01, h.xf + 0.01, -Wz, Wz, c2); }
+    // ---- v95 liveries ----
+    if (L === 'flames') for (const sd of [-1, 1]) { const span = h.belt - yb;
+      for (let i = 0; i < 4; i++) { const yc = yb + span * (0.22 + i * 0.19), dh = span * 0.13, Li = len * [0.42, 0.62, 0.55, 0.36][i];
+        const tongue = (k, col) => poly([P.side(h.xf + 0.01, yc - dh * k, sd), P.side(h.xf - Li * 0.55 * k, yc - dh * 0.7 * k, sd), P.side(h.xf - Li * k, yc + dh * 0.25, sd), P.side(h.xf - Li * 0.6 * k, yc + dh * 0.45 * k, sd), P.side(h.xf - Li * 0.3 * k, yc + dh * 0.9 * k, sd), P.side(h.xf + 0.01, yc + dh * k, sd)], col);
+        tongue(1, c2); tongue(0.55, '#ffc21a'); } }
+    if (L === 'checker') { const q = 0.0055, y0 = (yb + h.belt) / 2 - q;
+      for (const sd of [-1, 1]) { poly([P.side(h.xr - 0.01, y0 - 0.002, sd), P.side(h.xf + 0.01, y0 - 0.002, sd), P.side(h.xf + 0.01, y0 + q * 2 + 0.002, sd), P.side(h.xr - 0.01, y0 + q * 2 + 0.002, sd)], '#f4f4f0');
+        for (let x = h.xr - 0.01, i = 0; x < h.xf + 0.01; x += q, i++) for (let r = 0; r < 2; r++) if ((i + r) % 2) poly([P.side(x, y0 + r * q, sd), P.side(x + q, y0 + r * q, sd), P.side(x + q, y0 + r * q + q, sd), P.side(x, y0 + r * q + q, sd)], c2 === look.color ? '#111' : c2); } }
+    if (L === 'fade') { g2.save(); const xa = X(h.xf) * 0.5 * R, xb = X(h.xr) * 0.5 * R; let gr = g2.createLinearGradient(xa, 0, xb, 0); gr.addColorStop(0, look.color); gr.addColorStop(0.35, look.color); gr.addColorStop(1, c2); g2.fillStyle = gr; g2.fillRect(0, 0, R * 0.5, R);
+      gr = g2.createLinearGradient(R * 0.5 + xa, 0, R * 0.5 + xb, 0); gr.addColorStop(0, look.color); gr.addColorStop(0.35, look.color); gr.addColorStop(1, c2); g2.fillStyle = gr; g2.fillRect(R * 0.5, 0, R * 0.5, R * 0.5); g2.fillStyle = c2; g2.fillRect(R * 0.75, R * 0.5, R * 0.25, R * 0.5); g2.restore(); }
+    if (L === 'pin') { for (const sd of [-1, 1]) poly([P.side(h.xr - 0.01, h.belt - 0.011, sd), P.side(h.xf + 0.01, h.belt - 0.011, sd), P.side(h.xf + 0.01, h.belt - 0.0095, sd), P.side(h.xr - 0.01, h.belt - 0.0095, sd)], c2);
+      topBand(h.ws[1] + 0.004, h.xf + 0.01, -0.0009, 0.0009, c2); topBand(h.xr - 0.01, h.rg[0] - 0.004, -0.0009, 0.0009, c2); }
+    // ---- v95 stickers ----
+    if (look.stk && look.stk.length) { const Fz = FIT[h.id] || {}, wsz = Fz.ws || 1, bsz = Fz.bs || 1, wcy = (0.031 * wsz - (Fz.dy || 0)) / bsz, ahz = Math.max((0.031 * wsz + 0.008) / bsz, Fz.ah || 0),
+        xfc = (SIM.WB / 2 + (Fz.fx || 0)) / bsz - ahz, xrc = (-SIM.WB / 2 + (Fz.rx || 0)) / bsz + ahz, yMid = Math.min(Math.max(yb + 0.02, (h.belt + wcy) / 2), h.belt - 0.016);
+      const box = { door: [(xfc + xrc) / 2, yMid, Math.max(0.02, xfc - xrc - 0.02), Math.max(0.012, (h.belt - yb) * 0.55)], front: [Math.min(xfc + ahz * 0.2, h.xf - 0.03) - 0.016, yMid, 0.036, Math.max(0.01, (h.belt - yb) * 0.4)], rear: [xrc + 0.018, yMid, 0.036, Math.max(0.01, (h.belt - yb) * 0.4)],
+        hood: [(h.ws[1] + h.xf) / 2, 0, Math.max(0.02, (h.xf - h.ws[1]) * 0.7), Wz * 1.2], roof: [(h.rg[1] + h.ws[0]) / 2, 0, Math.max(0.02, (h.ws[0] - h.rg[1]) * 0.75), Wz * 1.1], trunk: [(h.xr + h.rg[0]) / 2, 0, Math.max(0.015, (h.rg[0] - h.xr) * 0.7), Wz * 1.1] };
+      for (const sk of look.stk.slice(0, 8)) { const S0 = STICKERS.find(q => q.id === sk.k), B = box[sk.at]; if (!S0 || !B) continue; const img = sk.k === 'img' ? look._img : null; if (sk.k === 'img' && !img) continue;
+        const a = img ? img.width / img.height : S0.a, sc = Math.max(0.3, Math.min(1.6, sk.s || 1)); let w = B[2], hh = w / a; if (hh > B[3]) { hh = B[3]; w = hh * a; } w *= sc * 0.85; hh *= sc * 0.85;
+        const fn = (W, HH) => drawSticker(g2, sk.k, W, HH, look, img);
+        if (sk.at === 'hood' || sk.at === 'roof' || sk.at === 'trunk') { const x0 = B[0] - hh / 2, x1 = B[0] + hh / 2; decal(P.top(x0, w / 2), P.top(x0, -w / 2), P.top(x1, w / 2), 400, 400 / a, fn); }
+        else sideDecal(B[0] - w / 2, B[1] - hh / 2, w, hh, fn); } }
     const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 8; return t;
   }
+  function drawSticker(g, k, w, hh, look, img) { g.save(); const txt = (s2, bg, fg, wt, f) => { if (bg) { g.fillStyle = bg; g.fillRect(0, 0, w, hh); } g.fillStyle = fg; g.font = `${wt || 800} ${hh * (f || 0.7)}px "Chakra Petch", Arial, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; const m = g.measureText(s2).width; if (m > w * 0.9) { g.translate(w / 2, 0); g.scale(w * 0.9 / m, 1); g.translate(-w / 2, 0); } g.fillText(s2, w / 2, hh * 0.54); };
+    const star = (cx, cy, r, n, ir) => { g.beginPath(); for (let i = 0; i < n * 2; i++) { const a = -Math.PI / 2 + i * Math.PI / n, rr = i % 2 ? r * ir : r; g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } g.closePath(); };
+    if (k === 'img' && img) g.drawImage(img, 0, 0, w, hh);
+    else if (k === 'num') { g.fillStyle = '#f4f4f0'; g.beginPath(); g.ellipse(w / 2, hh / 2, w / 2, hh / 2, 0, 0, 6.3); g.fill(); g.lineWidth = hh * 0.06; g.strokeStyle = '#111'; g.stroke(); txt(String(look.num || 86), null, '#111', 900, 0.62); }
+    else if (k === 'rcdl') { txt('RC DRIFT LAB', '#0d0e11', '#ff5a1f', 800); g.fillStyle = '#ff5a1f'; g.fillRect(0, hh * 0.9, w, hh * 0.1); }
+    else if (k === 'jdm') { g.fillStyle = '#111'; g.fillRect(0, 0, w, hh); g.strokeStyle = '#f4f4f0'; g.lineWidth = hh * 0.08; g.strokeRect(hh * 0.1, hh * 0.1, w - hh * 0.2, hh * 0.8); txt('JDM', null, '#f4f4f0', 900, 0.6); }
+    else if (k === 'drift') txt('ドリフト', '#f4f4f0', '#c8102e', 900, 0.66);
+    else if (k === 'sk') txt('STRANGER KREATIONS', '#111', '#35e0ff', 700, 0.6);
+    else if (k === 'sincity') { const gr = g.createLinearGradient(0, 0, 0, hh); gr.addColorStop(0, '#ffe27a'); gr.addColorStop(1, '#c98a00'); txt('SIN CITY', '#111', gr, 900, 0.7); }
+    else if (k === 'wakaba') { g.beginPath(); g.moveTo(w / 2, hh); g.lineTo(0, hh * 0.38); g.lineTo(0, 0); g.lineTo(w / 2, hh * 0.55); g.closePath(); g.fillStyle = '#f2c500'; g.fill(); g.beginPath(); g.moveTo(w / 2, hh); g.lineTo(w, hh * 0.38); g.lineTo(w, 0); g.lineTo(w / 2, hh * 0.55); g.closePath(); g.fillStyle = '#119a3c'; g.fill(); }
+    else if (k === 'flag') { const n = 6, m = 4, cw = w / n, ch = hh / m; for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) { g.fillStyle = (i + j) % 2 ? '#111' : '#f4f4f0'; g.fillRect(i * cw, j * ch, cw + 0.5, ch + 0.5); } }
+    else if (k === 'star') { star(w / 2, hh / 2, Math.min(w, hh) / 2, 5, 0.45); g.fillStyle = look.color2 && look.color2 !== '#101114' ? look.color2 : '#ffc21a'; g.fill(); g.lineWidth = hh * 0.04; g.strokeStyle = '#111'; g.stroke(); }
+    else if (k === 'bolt') { g.beginPath(); [[0.62, 0], [0.12, 0.56], [0.46, 0.56], [0.3, 1], [0.88, 0.4], [0.54, 0.4], [0.78, 0]].forEach(([x, y], i) => i ? g.lineTo(x * w, y * hh) : g.moveTo(x * w, y * hh)); g.closePath(); g.fillStyle = '#ffd400'; g.fill(); g.lineWidth = hh * 0.03; g.strokeStyle = '#111'; g.stroke(); }
+    else if (k === 'skull') { g.fillStyle = '#f4f1e8'; g.beginPath(); g.ellipse(w / 2, hh * 0.42, w * 0.46, hh * 0.4, 0, 0, 6.3); g.fill(); g.fillRect(w * 0.26, hh * 0.6, w * 0.48, hh * 0.32); g.fillStyle = '#111'; g.beginPath(); g.ellipse(w * 0.32, hh * 0.45, w * 0.12, hh * 0.11, 0, 0, 6.3); g.ellipse(w * 0.68, hh * 0.45, w * 0.12, hh * 0.11, 0, 0, 6.3); g.fill(); g.beginPath(); g.moveTo(w / 2, hh * 0.56); g.lineTo(w * 0.44, hh * 0.68); g.lineTo(w * 0.56, hh * 0.68); g.closePath(); g.fill(); for (let i = 0; i < 4; i++) g.fillRect(w * (0.31 + i * 0.11), hh * 0.78, w * 0.04, hh * 0.14); }
+    g.restore(); }
   const STATIC_M = {};
   // v89 chassis materials (shared) + per-frame link solver
   // v92: lowest point of the shell's top surface over a chassis-wide strip at body-local x (the hood / deck lid line). Cached per geometry.
@@ -4338,8 +4384,8 @@ const GFX = (function () {
       else L.o.scale.set(1, len, 1); } }
   // v93 secret rides: one prop as its own drivable group. inner holds the mesh (+ spinning wheels from hdr.wheels), turned so the vehicle's nose is +x.
   function buildRide(p, front) { return buildProps([Object.assign({}, p, { x: 0, y: 0, z: 0, ry: 0 })]).then(m => { if (!m) return null; const g = new T.Group(), inner = new T.Group(); inner.rotation.y = front || 0; g.add(inner); inner.add(m); m.userData.items = null;
-      const d = PROP[pidOf(p)], s = p.s || 1, spin = []; for (const [wx, wy, wz, r] of (d && d.hdr.wheels) || []) for (const sd of [1, -1]) {
-        const w = buildWheel(p.id === 'limo' ? 'five' : 'steelie', p.id === 'limo' ? '#cfd3d8' : '#d8dadc'), k = r * s / 0.031; w.scale.set(k, k, sd * 0.042 / 0.026); w.position.set(wx * s, wy * s, sd * wz * s); w.userData.r = r * s; inner.add(w); spin.push(w); }
+      const d = PROP[pidOf(p)], s = p.s || 1, spin = []; for (const [wx, wy, wz, r, wd, z0] of (d && d.hdr.wheels) || []) for (const sd of [1, -1]) {   // v95: measured wheels: x, y, |z| centre, radius, width, z offset
+        const w = buildWheel(p.id === 'limo' ? 'five' : 'steelie', p.id === 'limo' ? '#cfd3d8' : '#d8dadc'), k = r * s / 0.031; w.scale.set(k, k, sd * (wd || 0.42) * s / 0.026); w.position.set(wx * s, wy * s, sd * wz * s);   /* z0 not needed: the prop mesh is already centred */ w.userData.r = r * s; inner.add(w); spin.push(w); }
       g.userData = { inner, spin }; return g; }); }
   // v91: RC bodies are hollow lexan shells. Our STL bodies came with a closed floor (a flat 'platform' under every car that hid the chassis).
   // Drop the downward-facing triangles in the bottom 22% of the body so the chassis shows from below and through the arches. Cached per geometry.
@@ -4386,7 +4432,7 @@ const GFX = (function () {
     for (let i = 0; i < 12; i++) { const p = side[i % Math.max(1, n)] || [0, 0], q = side[(i + 1) % Math.max(1, n)] || [0, 0]; A.push(new T.Vector2(p[0], p[1])); B.push(new T.Vector2(q[0], q[1])); }
     mat.onBeforeCompile = sh => {
       const mt = maskTex(h); if (mt) Object.assign(sh.uniforms, { glMask: { value: mt }, mLo: { value: new T.Vector3(...h.lo) }, mSz: { value: new T.Vector3(h.hi[0] - h.lo[0], h.hi[1] - h.lo[1], h.hi[2] - h.lo[2]) }, uHeadI: { get value() { return lights ? lights.head.emissiveIntensity : 0.3; } }, uTailI: { get value() { return lights ? lights.tail.emissiveIntensity : 0.4; } }, uSG: { value: (FIT[h.id] && FIT[h.id].sg !== undefined) ? FIT[h.id].sg : 1 } });
-      Object.assign(sh.uniforms, { uSee: { value: see ? 1 : 0 }, lvX0: { value: h.x0 }, lvLen: { value: h.len }, lvH: { value: h.H }, lvWz: { value: h.Wz }, glWs: { value: new T.Vector2(h.ws[0], h.ws[1]) }, glRg: { value: new T.Vector2(h.rg[0], h.rg[1]) }, glBelt: { value: h.belt }, glBan: { value: noLivery ? 0 : (ban || 0) }, glA: { value: A }, glB: { value: B }, glN: { value: n } });
+      Object.assign(sh.uniforms, { uSee: { value: see == null || see === false ? 1 : see === true ? 0.25 : see }, lvX0: { value: h.x0 }, lvLen: { value: h.len }, lvH: { value: h.H }, lvWz: { value: h.Wz }, glWs: { value: new T.Vector2(h.ws[0], h.ws[1]) }, glRg: { value: new T.Vector2(h.rg[0], h.rg[1]) }, glBelt: { value: h.belt }, glBan: { value: noLivery ? 0 : (ban || 0) }, glA: { value: A }, glB: { value: B }, glN: { value: n } });
       sh.vertexShader = 'varying vec3 vLP; varying vec3 vLN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vLP = position; vLN = normal;');
       const liv = noLivery ? '' : `
         vec3 an = abs(gn); vec3 wt = pow(an, vec3(6.0)); wt /= (wt.x + wt.y + wt.z + 1e-5);
@@ -4418,7 +4464,7 @@ const GFX = (function () {
           hm = mH * smoothstep(0.25, 0.45, gn.x) * step(0.0, vLP.x); tm = mR * smoothstep(0.25, 0.45, -gn.x) * step(vLP.x, 0.0); }
         #endif
         gm *= 1.0 - inWs * step(gx, glWs.x + (glWs.y - glWs.x) * glBan) * step(0.001, glBan);
-        if (uSee > 0.5 && gm > 0.5) { vec2 fq = mod(floor(gl_FragCoord.xy), 2.0); if (fq.x + fq.y > 0.5) discard; }   // v73: driver on board, tinted see-through glass (screen-door, no sorting)
+        if (uSee < 0.99 && gm > 0.5) { vec2 fq = mod(floor(gl_FragCoord.xy), 4.0); int bi = int(fq.x) + int(fq.y) * 4; float bt = bi == 0 ? 0. : bi == 1 ? 8. : bi == 2 ? 2. : bi == 3 ? 10. : bi == 4 ? 12. : bi == 5 ? 4. : bi == 6 ? 14. : bi == 7 ? 6. : bi == 8 ? 3. : bi == 9 ? 11. : bi == 10 ? 1. : bi == 11 ? 9. : bi == 12 ? 15. : bi == 13 ? 7. : bi == 14 ? 13. : 5.; if ((bt + 0.5) / 16.0 > uSee) discard; }   // v95: window tint = screen-door coverage (Bayer 4x4, no sorting): 1 solid, 0 clear
         ${liv}
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.004, 0.005, 0.007), gm); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.65, 0.7), hm); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.32, 0.0, 0.01), tm);`)
         .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n #ifdef BODY_MASK\n totalEmissiveRadiance += vec3(1.0, 0.95, 0.86) * hm * uHeadI + vec3(1.0, 0.07, 0.03) * tm * uTailI;\n #endif');
@@ -4430,12 +4476,12 @@ const GFX = (function () {
     const m = mats(), bd = BODY[look.body] || BODY[BODIES[0].id], h = bd.hdr, fin = FINISHES.find(f => f.id === look.finish) || FINISHES[0];
     const livery = paintLivery(h, look, hq ? 2048 : 1024);
     const paint = new T.MeshPhysicalMaterial({ map: livery, metalness: fin.m, roughness: Math.max(0.1, fin.r * 0.75), clearcoat: fin.cc, clearcoatRoughness: 0.03, envMapIntensity: 1.15 });
-    const see = !!(look.driver && DRIVERS.some(d => d.id === look.driver));
-    triplanarLivery(paint, h, false, look.livery === 'sponsor' ? 0.3 : 0, { get head() { return head; }, get tail() { return tail; } }, see);
+    const see = !!(look.driver && DRIVERS.some(d => d.id === look.driver)), TN = TINTS.find(t => t.id === look.tint), cov = TN ? TN.cov : see ? 0.25 : 1;   // v95: window tint, with or without a driver
+    triplanarLivery(paint, h, false, look.livery === 'sponsor' ? 0.3 : 0, { get head() { return head; }, get tail() { return tail; } }, cov);
     const paintSolid = new T.MeshPhysicalMaterial({ color: new T.Color(look.color), metalness: fin.m, roughness: fin.r, clearcoat: fin.cc, envMapIntensity: 1.0 });
     const paint2 = new T.MeshPhysicalMaterial({ color: new T.Color(look.color2), metalness: fin.m, roughness: fin.r, clearcoat: fin.cc, envMapIntensity: 1.0 });
     const glass = new T.MeshPhysicalMaterial({ color: 0x010203, metalness: 0.0, roughness: 0.06, clearcoat: 0.6, clearcoatRoughness: 0.03, envMapIntensity: 0.55, side: T.DoubleSide });
-    if (see) { glass.transparent = true; glass.opacity = 0.42; glass.depthWrite = false; }
+    if (cov < 0.99) { glass.transparent = true; glass.opacity = TN ? TN.op : 0.42; glass.depthWrite = false; }
     const trim = look.chrome ? new T.MeshStandardMaterial({ color: 0xe6e8ec, roughness: 0.12, metalness: 1, envMapIntensity: 1.3 }) : new T.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.55, metalness: 0.1 });
     const head = new T.MeshPhysicalMaterial({ color: 0xd8dfe8, metalness: 0.6, roughness: 0.1, clearcoat: 1, emissive: 0xfff4dc, emissiveIntensity: 0.25, envMapIntensity: 1.4 });
     const tail = new T.MeshPhysicalMaterial({ color: 0x5a0006, metalness: 0.1, roughness: 0.12, clearcoat: 1, emissive: 0xff1408, emissiveIntensity: 0.45 });
@@ -4913,7 +4959,7 @@ const GFX = (function () {
     cols.forEach((col, i) => { const k = huntKey(col); k.scale.setScalar(0.8); const a = i / cols.length * Math.PI * 2; k.position.set(Math.cos(a) * 0.17, 0.2, Math.sin(a) * 0.17); k.rotation.y = -a; g.add(k); });
     return g; }
   let _glowT = null; function glowTex() { if (_glowT) return _glowT; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return (_glowT = new T.CanvasTexture(c)); }
-  return { DRIVERS, huntKey, huntEgg, huntAltar, huntBeacon, PROP_SETS, PROP, ensureProp, buildProps, buildRide, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, FIT, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
+  return { DRIVERS, TINTS, STICKERS, STK_SLOTS, huntKey, huntEgg, huntAltar, huntBeacon, PROP_SETS, PROP, ensureProp, buildProps, buildRide, TEX, BODIES, BODY, MOVIE, loadBodies, ensureBody, loadedBodies, bodyInfo, captureEnv, buildStaticCar, FIT, WHEELS, PAINTS, FINISHES, LIVERIES, WINGS, DEF_LOOK, buildCar, poseCar, buildWorld, buildLights, makeSkids, disposeTree };
 })();
 
 </script>
@@ -5395,7 +5441,9 @@ const ONLINE = (() => {
     if (h.kind === 'key' && d < 0.22) { S.hunt.keys[h.key.id] = 1; save(); world.group.remove(h.g); huntObj = null; const n = huntKeys(); toast('🗝️ ' + h.key.name + ' · ' + n + '/3' + (n === 3 ? ' · the trailer on Prodigy V2 will move now…' : ''), 'good'); sfxWin(); }
     else if (h.kind === 'egg' && d < 0.2 && dz < 0.12) { S.hunt.egg = 'carry'; save(); world.group.remove(h.g); huntObj = null; toast('🥚 YOU GOT THE EGG! Now take it home… where it all began.', 'good'); sfxWin(); huntSpawn(); }
     else if (h.kind === 'altar' && d < 0.32) { S.hunt.egg = 'done'; S.look.egg = 1; save(); world.group.remove(h.g); huntObj = null; huntWin(); } }
-  function loadTrack(i) {
+  /* v95: compile every material in the new scene up front (during the load fade) instead of the first time each one shows up on screen mid-drive */
+  function warmShaders() { for (const ms of [400, 2500]) setTimeout(() => { try { renderer.compile(scene, camera); } catch (e) { } }, ms); }
+  function loadTrack(i) { warmShaders();
     if (world) { GFX.disposeTree(world.group); scene.remove(lights.group); lights.envRT.dispose(); if (lights.envRT2) lights.envRT2.dispose(); if (skids) GFX.disposeTree(skids.mesh); }
     cars.forEach(c => GFX.disposeTree(c.mesh)); cars = []; netCars.forEach(c => GFX.disposeTree(c.mesh)); netCars.clear();
     S.opt.track = i; track = SIM.buildTrack(SIM.TRACK_DEFS[i]);
@@ -5470,7 +5518,7 @@ const ONLINE = (() => {
     if (keys[k]) return; keys[k] = true; audioStart();
     if (CT.on) { if (k === 'escape') ctClose(); if (k === ' ' && CT.on === 'photo') snapPhoto(); return; }
     if (ONLINE.room && mode === 'drive' && /^[1-8]$/.test(k)) { qSend('q' + (+k - 1)); return; }
-    if (k === 'v' && keys['shift']) { micQuick(); return; }   // v94: Shift+V flips open mic on / off
+    if (k === 'v' && keys['shift']) { micQuick(); return; } if (k === 'o' && ONLINE.room) { chatHist(); return; }   /* v95: O = room chat log */   // v94: Shift+V flips open mic on / off
     if (k === 'v' && ONLINE.room) { talk(true); return; }
     if (k === 'escape' || k === 'p') { mode === 'drive' ? openMenu('pause') : mode === 'pause' ? drive(false) : 0; }
     if (mode !== 'drive') return;
@@ -5605,7 +5653,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v94.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v95', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -5670,7 +5718,22 @@ const ONLINE = (() => {
   function leaveLobby() { ONLINE.leave(); if (VO.track) { const keep = S.opt.voice; micOff(); S.opt.voice = keep; } newSession(); }
   // ---------------- room chat while driving (Enter to talk) ----------------
   const chatBox = $('#chat'), chatLog = $('#chatLog'), chatIn = $('#chatIn');
-  function chatShow(m) { if (!chatLog) return; const d = el('div'); if (!m.me) d.appendChild(el('b', '', m.n + ': ')); d.appendChild(document.createTextNode(m.t)); chatLog.appendChild(d); while (chatLog.children.length > 6) chatLog.firstChild.remove(); setTimeout(() => { d.style.opacity = '0'; setTimeout(() => d.remove(), 700); }, 9000); if (!m.me && mode !== 'drive' && tab === 'online') renderPanel(); }
+  // v95: every new message brings the last few back up with it (up to 4), and the 💬 log shows the whole room history without leaving
+  const micOnFor = m => { if (m.me) return !!(VO.track && S.opt.voice !== 'off'); const nc = netCars.get(m.from); return !!(nc && nc.mo); };
+  function chatLine(m, full) { const d = el('div'); if (full) d.appendChild(el('small', 'ct', new Date(m.at || Date.now()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' '));
+    if (!m.me || full) { const b = el('b', '', (micOnFor(m) ? '🎙 ' : '') + (m.me ? 'You' : m.n) + ': '); d.appendChild(b); } d.appendChild(document.createTextNode(m.t)); return d; }
+  let chatFadeT = 0;
+  function chatShow(m) { if (!chatLog) return; const L = (ONLINE.room && ONLINE.room.log) || [m], last = L.slice(-4); if (!last.includes(m)) { last.push(m); last.splice(0, last.length - 4); }
+    chatLog.textContent = ''; last.forEach((q, i) => { const d = chatLine(q); if (i < last.length - 1) d.classList.add('old'); chatLog.appendChild(d); }); chatLog.classList.remove('fade');
+    clearTimeout(chatFadeT); chatFadeT = setTimeout(() => chatLog.classList.add('fade'), 12000); chatHistDraw(); if (!m.me) { const lb = document.getElementById('logB'); if (lb && !chatHistOn) lb.classList.add('new'); }
+    if (!m.me && mode !== 'drive' && tab === 'online') renderPanel(); }
+  let chatHistOn = false;
+  function chatHistDraw() { const h = document.getElementById('chatHist'); if (!h || !chatHistOn) return; const box = h.querySelector('.lst'); box.textContent = ''; const L = (ONLINE.room && ONLINE.room.log) || [];
+    if (!L.length) box.appendChild(el('p', 'tip', 'No messages in this room yet.')); L.forEach(q => box.appendChild(chatLine(q, true))); box.scrollTop = box.scrollHeight; }
+  function chatHist(on) { const h = document.getElementById('chatHist'); if (!h) return; chatHistOn = on == null ? !chatHistOn : !!on; if (!ONLINE.room) chatHistOn = false; h.classList.toggle('on', chatHistOn); const lb = document.getElementById('logB'); if (lb) { lb.classList.toggle('on', chatHistOn); if (chatHistOn) lb.classList.remove('new'); } chatHistDraw(); }
+  { const lb = document.getElementById('logB'); if (lb) { lb.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); chatHist(); }); lb.addEventListener('click', e => e.stopPropagation()); }
+    const hx = document.querySelector('#chatHist .x'); if (hx) hx.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); chatHist(false); });
+    const hs = document.querySelector('#chatHist .lst'); if (hs) ['pointerdown', 'touchstart', 'wheel'].forEach(ev => hs.addEventListener(ev, e => e.stopPropagation(), { passive: true })); }
   // quick chat: the CHAT button (phones) opens one-tap phrases; keys 1-8 send them on a keyboard; "Type..." opens the text box (signed-in)
   const qPanel = $('#qchat');
   function qOpen() { if (!ONLINE.room || !qPanel) return; qPanel.classList.toggle('on'); }
@@ -5700,7 +5763,7 @@ const ONLINE = (() => {
   function netSend(dt) {
     if (!NET.room) return; NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = 0.05; NET.seq = (NET.seq || 0) + 1; const c = player.sim, r3 = v => Math.round(v * 1000) / 1000;
     const lk = JSON.stringify(S.look); NET.lkN = (NET.lkN || 0) + 1; const sendLook = lk !== NET.lkSent || NET.lkN % 30 === 0 || NET.lkN < 15 || (NET.room.oldPeers && NET.room.oldPeers()); if (sendLook) NET.lkSent = lk;
-    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, rd: rideSend(), rp: rideParked(), pk: pedSend(), hy: isLot() && c.hydro ? { z: r3(c.hydro.z), p: r3(c.hydro.p), r: r3(c.hydro.r), th: r3(c.hydro.th || 0), pv: c.hydro.piv || 0, f: c.hydro.flip ? 1 : 0, d: c.hydro.d.map(r3), hg: (c.hydro.hang || [0, 0, 0, 0]).map(r3), sq: (c.hydro.sq || [0, 0, 0, 0]).map(r3) } : undefined, lf: c.lift ? { z: r3(c.lift.z), r: r3(c.lift.r), p: r3(c.lift.p) } : undefined, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
+    try { NET.room.presence({ drift: { q: NET.seq, ts: Math.round(performance.now()), t: S.opt.track, n: String(S.opt.name).slice(0, 16), x: r3(c.x), y: r3(c.y), yw: r3(c.yaw), vx: r3(c.vx), vy: r3(c.vy), r: r3(c.r), d: r3(c.delta), w: r3(c.w), sl: r3(c.slip), br: c.inp.brake > 0.05 ? 1 : 0, pf: c.inf ? 1 : 0, sc: Math.round(score.lapPts + score.run), vt: voiceTalking() ? 1 : 0, mo: VO.track && S.opt.voice !== 'off' ? 1 : 0, l: sendLook ? S.look : undefined, cf: S.tune.camberF, cr: S.tune.camberR, of: S.tune.offset, rh: S.tune.rideHeight, rd: rideSend(), rp: rideParked(), pk: pedSend(), hy: isLot() && c.hydro ? { z: r3(c.hydro.z), p: r3(c.hydro.p), r: r3(c.hydro.r), th: r3(c.hydro.th || 0), pv: c.hydro.piv || 0, f: c.hydro.flip ? 1 : 0, d: c.hydro.d.map(r3), hg: (c.hydro.hang || [0, 0, 0, 0]).map(r3), sq: (c.hydro.sq || [0, 0, 0, 0]).map(r3) } : undefined, lf: c.lift ? { z: r3(c.lift.z), r: r3(c.lift.r), p: r3(c.lift.p) } : undefined, cz: c.crawl && c.q ? { z: r3(c.z), q: c.q.map(r3), ws: c.ws.map(r3), dr: r3(c.deltaR || 0) } : undefined } }).catch(() => { }); } catch (e) { }
   }
   // v82 snapshot playback: estimate the sender's clock (min one-way gap), play back D ms behind it (D adapts to packet spacing + jitter),
   // cubic Hermite between the two samples around that time using their velocities; short extrapolation if the next packet is late
@@ -5718,13 +5781,17 @@ const ONLINE = (() => {
     return { x, y, vx: A[2] + (B[2] - A[2]) * t, vy: A[3] + (B[3] - A[3]) * t, yaw: A[4] + wrap(B[4] - A[4]) * t, r: A[5] + (B[5] - A[5]) * t, d: t < 0.5 ? buf[i - 1].d : buf[i].d }; }
   function netRecv(dt) {
     if (!NET.room) return; let peers = []; try { peers = NET.room.peers(); } catch (e) { return; }
-    const seen = new Set(), now = Date.now(); let n = 0; rideNet(peers); pedNet(peers);
+    const seen = new Set(), now = Date.now(); let n = 0, built = 0; rideNet(peers); pedNet(peers);
     for (const p of peers) {
       if (p.sameTab || p.kind !== 'viewer') continue; let d = p.presence && p.presence.drift; if (!d || typeof d !== 'object' || d.t !== S.opt.track || n >= 19) continue; n++;
       if (d.l && typeof d.l === 'object') NET.looks.set(p.peer, d.l); else if (!NET.looks.has(p.peer)) { const f = NET.firstSeen.get(p.peer) || NET.firstSeen.set(p.peer, now).get(p.peer); if (now - f < 2500) { seen.add(p.peer); continue; } }
       const l = NET.looks.get(p.peer) || {}, look = { body: okId(GFX.BODIES, l.body, 'ronin'), color: HEX.test(l.color) ? l.color : '#888888', color2: HEX.test(l.color2) ? l.color2 : '#111111', finish: okId(GFX.FINISHES, l.finish, 'gloss'), livery: okId(GFX.LIVERIES, l.livery, 'solid'), wheel: okId(GFX.WHEELS, l.wheel, 'five'), wheelColor: HEX.test(l.wheelColor) ? l.wheelColor : '#dddddd', wing: okId(GFX.WINGS, l.wing, 'none'), glow: HEX.test(l.glow) ? l.glow : '' };
+      /* v95: window tint, stickers, race number and driver travel with the look (the uploaded picture never does) */
+      if (GFX.TINTS.some(t => t.id === l.tint)) look.tint = l.tint; if (Number.isInteger(l.num) && l.num >= 0 && l.num <= 999) look.num = l.num; if (GFX.DRIVERS.some(q => q.id === l.driver)) { look.driver = l.driver; look.dseed = Number.isInteger(l.dseed) ? l.dseed % 10000 : 1; }
+      if (Array.isArray(l.stk)) { const st = l.stk.slice(0, 6).filter(q => q && GFX.STICKERS.some(o => o.id === q.k && o.id !== 'img') && GFX.STK_SLOTS.some(o => o.id === q.at)).map(q => ({ k: q.k, at: q.at, s: num(q.s, 0.4, 1.5) || 1 })); if (st.length) look.stk = st; }
       const sig = JSON.stringify(look), name = String(d.n || 'Driver').slice(0, 16); let nc = netCars.get(p.peer);
-      if (!nc || nc.sig !== sig || nc.name !== name) { if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(isCrawl() ? Object.assign({}, look, { tires: 'crawl' }) : lotWheels(look)); scene.add(mesh);
+      const need = !nc || nc.sig !== sig || nc.name !== name; if (need && !nc && built >= 1) { seen.add(p.peer); continue; }   /* v95: build at most one net car per frame so a full room joining doesn't freeze the game */
+      if (need && (built < 1 || !nc)) { built++; if (nc) GFX.disposeTree(nc.mesh); const mesh = GFX.buildCar(isCrawl() ? Object.assign({}, look, { tires: 'crawl' }) : lotWheels(look)); scene.add(mesh);
         const sp = new T.Sprite(new T.SpriteMaterial({ map: GFX.TEX.label(name), depthTest: false, transparent: true })); sp.scale.set(0.17, 0.0425, 1); sp.position.y = 0.17; sp.material.opacity = 0.85; sp.userData.tag = 1; mesh.add(sp); const mic = new T.Sprite(new T.SpriteMaterial({ map: micTex(), depthTest: false, transparent: true })); mic.scale.set(0.05, 0.05, 1); mic.position.y = 0.215; mic.visible = false; mic.userData.tag = 1; mic.userData.mic = 1; mesh.add(mic);
         const sim = SIM.makeCar(99); sim.x = num(d.x, -50, 50); sim.y = num(d.y, -50, 50); sim.yaw = num(d.yw, -1e4, 1e4); nc = { kind: 'net', mesh, sig, name, sim, tune: {}, peer: p.peer, skid: [null, null], skidN: 0 }; netCars.set(p.peer, nc); }
       { const ri = d.rd && RIDES[d.rd.i] ? d.rd.i : null; if (ri !== (nc.rideId || null)) { if (nc.rideG) { scene.remove(nc.rideG); GFX.disposeTree(nc.rideG); nc.rideG = null; } nc.rideId = ri; nc.mesh.visible = !ri;   // v93: they're driving a secret ride
@@ -5742,7 +5809,7 @@ const ONLINE = (() => {
         s.hydro = { z: sm('z', num(H.z, -0.1, 0.3)), p: sm('p', num(H.p, -1.6, 1.6)), r: sm('r', num(H.r, -1.6, 1.6)), th: sm('th', num(H.th, -3.2, 3.2)), piv: H.pv === 1 ? 1 : H.pv === -1 ? -1 : 0, flip: H.f ? 1 : 0, d: a4(H.d, -0.1, 0.1), hang: a4(H.hg, 0, 0.05), sq: a4(H.sq, 0, 0.3), lift: [0, 0, 0, 0] }; } else s.hydro = null;
       s.lift = d.lf && typeof d.lf === 'object' ? { z: num(d.lf.z, 0, 2), r: num(d.lf.r, -1, 1), p: num(d.lf.p, -1, 1) } : null;
       s.delta = num(d.d, -1.4, 1.4); s.w = num(d.w, -20, 20); s.slip = num(d.sl, -1.6, 1.6); s.speed = Math.hypot(s.vx, s.vy); s.u = s.speed; s.inp.brake = d.br ? 1 : 0; s.inf = !!d.pf; s.ti = track.nearest(s.x, s.y, s.ti); s.lat = track.lateral(s.x, s.y, s.ti);
-      nc.tune = { camberF: num(d.cf, -12, 0), camberR: num(d.cr, -5, 0), offset: num(d.of, 0, 12), rideHeight: num(d.rh, 4, 9), toeF: 0, toeR: 0 }; nc.score = num(d.sc, 0, 1e9); const talking = !!d.vt && ONLINE.voice.hear && !ONLINE.voice.muted.has(p.peer) && !ONLINE.blocked.has(p.peer); if (talking !== nc.vt) { nc.vt = talking; nc.mesh.children.forEach(o => { if (o.userData.mic) o.visible = talking; }); }
+      { const tk = d.cf + '|' + d.cr + '|' + d.of + '|' + d.rh; if (nc.tuneK !== tk) { nc.tuneK = tk; nc.tune = { camberF: num(d.cf, -12, 0), camberR: num(d.cr, -5, 0), offset: num(d.of, 0, 12), rideHeight: num(d.rh, 4, 9), toeF: 0, toeR: 0 }; } } nc.score = num(d.sc, 0, 1e9); nc.mo = !!d.mo; const talking = !!d.vt && ONLINE.voice.hear && !ONLINE.voice.muted.has(p.peer) && !ONLINE.blocked.has(p.peer); if (talking !== nc.vt) { nc.vt = talking; nc.mesh.children.forEach(o => { if (o.userData.mic) o.visible = talking; }); }
     }
     // a late packet or two must not make a driver vanish and pop back: keep their car (coasting) for 3 s before removing it
     for (const [id, nc] of netCars) if (!seen.has(id)) { const s = nc.sim; s.x += s.vx * dt * 0.5; s.y += s.vy * dt * 0.5; if (now - (nc.seenAt || 0) > 3000) { GFX.disposeTree(nc.mesh); netCars.delete(id); } }
@@ -5973,6 +6040,8 @@ const ONLINE = (() => {
     list.forEach((p, i) => { const R0 = RIDES[p.id], r = { key: track.def.id + ':' + i, id: p.id, p, x: p.x, y: p.y, yaw: (p.ry || 0) + R0.front, g: null, cols: [], net: null };
       r.cols = (track.colliders || []).filter(b => p.x > b[0] && p.x < b[2] && p.y > b[1] && p.y < b[3]); rides.push(r);
       GFX.buildRide(p, R0.front).then(g => { if (!g || world.group !== wg) return; r.g = g; ridePose(r); if (r.net) g.visible = false; wg.add(g); }, () => { }); }); }
+  // v95: line the ride's rear axle up with the car's rear axle (the sim pivots like an RC car); off = vehicle centre ahead of the sim centre
+  function rideOff(id) { const d = GFX.PROP[id], R0 = RIDES[id], rq = rides.find(q => q.id === id), s = (rq && rq.p && rq.p.s) || (id === 'taco_truck' ? 1 : 0.1); if (!d || !d.hdr.wheels || !d.hdr.wheels.length) return 0; const xs = d.hdr.wheels.map(w => w[0] * s);   /* the ride group nets out to the heading, so prop +x is forward for every ride */ return -SIM.WB / 2 - Math.min(...xs); }
   function ridePose(r) { if (!r.g) return; r.g.position.set(r.x, 0, -r.y); r.g.rotation.y = r.yaw - RIDES[r.id].front; }
   function rideCols(r, on) { const C = track.colliders || (track.colliders = []); for (const b of r.cols) { const i = C.indexOf(b); if (i >= 0) C.splice(i, 1); } r.cols = [];
     if (on) { const R0 = RIDES[r.id], c = Math.abs(Math.cos(r.yaw)), sn = Math.abs(Math.sin(r.yaw)), hx = (R0.len * c + R0.wid * sn) / 2 * 0.8, hy = (R0.len * sn + R0.wid * c) / 2 * 0.8, b = [r.x - hx, r.y - hy, r.x + hx, r.y + hy]; C.push(b); r.cols = [b]; } }
@@ -5980,13 +6049,13 @@ const ONLINE = (() => {
     el2.classList.toggle('on', !!card); if (card && r) { const R0 = RIDES[r.id]; el2.innerHTML = ''; el2.appendChild(el('div', 'rt', R0.nm)); const a = el('button', 'ghost', R0.ask), b = el('button', 'big', '👊 ' + R0.take);
       a.onclick = e => { e.stopPropagation(); toast(R0.jokes[(Math.random() * R0.jokes.length) | 0], 'good'); rideT = -12; rideUI(false); }; b.onclick = e => { e.stopPropagation(); rideStart(r); }; el2.append(a, b); }
     let out = document.getElementById('rideOut'); if (!out) { out = el('button', 'big', 'HOP OUT'); out.id = 'rideOut'; out.onclick = e => { e.stopPropagation(); rideExit(); }; document.body.appendChild(out); } out.classList.toggle('on', !!RD); }
-  function rideStart(r) { if (RD || r.net) return; const P = player.sim; RD = r; rideCols(r, false); P.x = r.x; P.y = r.y; P.yaw = r.yaw; P.vx = P.vy = P.r = 0; player.skid = [null, null];
+  function rideStart(r) { if (RD || r.net) return; const P = player.sim; RD = r; rideCols(r, false); const o = rideOff(r.id); P.yaw = r.yaw; P.x = r.x - Math.cos(r.yaw) * o; P.y = r.y - Math.sin(r.yaw) * o; P.vx = P.vy = P.r = 0; player.skid = [null, null];
     P.p = SIM.derive(Object.assign({}, S.tune, RIDES[r.id].tune), track.surface, physK()); player.mesh.visible = false; rideUI(false); rideNear = null; rideT = 0; toast('👊 You took the ' + RIDES[r.id].nm.toLowerCase() + '! · E or HOP OUT to park it', 'good'); }
-  function rideExit(why) { const r = RD; if (!r) return; RD = null; const P = player.sim, R0 = RIDES[r.id]; r.x = P.x; r.y = P.y; r.yaw = P.yaw; r.moved = true; ridePose(r); rideCols(r, true);
-    const off = R0.wid / 2 + 0.16; P.x += -Math.sin(P.yaw) * off; P.y += Math.cos(P.yaw) * off; P.vx = P.vy = P.r = 0; player.skid = [null, null]; applyTune(); player.mesh.visible = true; rideT = -3; rideNear = null; rideUI(false); if (why) toast(why, 'bad'); }
-  function rideTick(dt) { document.documentElement.classList.toggle('inroom', !!ONLINE.room); if (ONLINE.room && !rideTick.mu) { rideTick.mu = 1; micUI(); } if (!ONLINE.room) rideTick.mu = 0; for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; nc.rideG.position.set(nc.sim.x, 0, -nc.sim.y); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; }
+  function rideExit(why) { const r = RD; if (!r) return; RD = null; const P = player.sim, R0 = RIDES[r.id], o = rideOff(r.id); r.x = P.x + Math.cos(P.yaw) * o; r.y = P.y + Math.sin(P.yaw) * o; r.yaw = P.yaw; r.moved = true; ridePose(r); rideCols(r, true);
+    const off = R0.wid / 2 + 0.16; P.x = r.x - Math.sin(P.yaw) * off; P.y = r.y + Math.cos(P.yaw) * off; P.vx = P.vy = P.r = 0; player.skid = [null, null]; applyTune(); player.mesh.visible = true; rideT = -3; rideNear = null; rideUI(false); if (why) toast(why, 'bad'); }
+  function rideTick(dt) { document.documentElement.classList.toggle('inroom', !!ONLINE.room); if (ONLINE.room && !rideTick.mu) { rideTick.mu = 1; micUI(); } if (!ONLINE.room) rideTick.mu = 0; for (const nc of netCars.values()) if (nc.rideG) { nc.mesh.visible = false; const o = rideOff(nc.rideId); nc.rideG.position.set(nc.sim.x + Math.cos(nc.sim.yaw) * o, 0, -(nc.sim.y + Math.sin(nc.sim.yaw) * o)); nc.rideG.rotation.y = nc.sim.yaw - RIDES[nc.rideId].front; }
     if (!rides.length || !player) return; const P = player.sim;
-    if (RD) { if (!RD.g) return; RD.x = P.x; RD.y = P.y; RD.yaw = P.yaw; ridePose(RD); player.mesh.visible = false; const fwd = P.vx * Math.cos(P.yaw) + P.vy * Math.sin(P.yaw);
+    if (RD) { if (!RD.g) return; const o = rideOff(RD.id); RD.x = P.x + Math.cos(P.yaw) * o; RD.y = P.y + Math.sin(P.yaw) * o; RD.yaw = P.yaw; ridePose(RD); player.mesh.visible = false; const fwd = P.vx * Math.cos(P.yaw) + P.vy * Math.sin(P.yaw);
       for (const w of RD.g.userData.spin || []) w.rotation.z -= fwd * dt / (w.userData.r || 0.05); return; }
     if (mode !== 'drive') return; let best = null, bd = 1e9;
     for (const r of rides) { if (r.net || !r.g) continue; const R0 = RIDES[r.id], dx = P.x - r.x, dy = P.y - r.y, c = Math.cos(-r.yaw), sn = Math.sin(-r.yaw), lx = dx * c - dy * sn, ly = dx * sn + dy * c, d0 = Math.hypot(Math.max(0, Math.abs(lx) - R0.len / 2), Math.max(0, Math.abs(ly) - R0.wid / 2)), b = r.cols[0];
@@ -6126,8 +6195,8 @@ const ONLINE = (() => {
     { const R = ONLINE.room, el2 = hud.roster || (hud.roster = (() => { const d = document.createElement('div'); d.id = 'hRoster'; $('#hTR').appendChild(d); return d; })());
       if (!R || !R.names || S.opt.roster === false) { if (el2.childNodes.length) el2.textContent = ''; el2.style.display = 'none'; }
       else if ((hud.rT = (hud.rT || 0) - 1) <= 0) { hud.rT = 20; el2.style.display = '';
-        const here = new Map(); for (const [pid, nc] of netCars) here.set(pid, nc); const rows = [['● ' + (S.opt.name || 'You') + ' (you)', 'me']];
-        for (const [pid, n] of Object.entries(R.names)) { const nc = here.get(pid); rows.push([(nc && nc.vt ? '🎤 ' : '') + n + (nc ? '' : ' · other track'), nc ? '' : 'away']); }
+        const here = new Map(); for (const [pid, nc] of netCars) here.set(pid, nc); const rows = [[(VO.track && S.opt.voice !== 'off' ? '🎙 ' : '● ') + (S.opt.name || 'You') + ' (you)', 'me']];
+        for (const [pid, n] of Object.entries(R.names)) { const nc = here.get(pid); rows.push([(nc && nc.vt ? '🔊 ' : nc && nc.mo ? '🎙 ' : '') + n + (nc ? '' : ' · other track'), nc ? (nc.vt ? 'talk' : '') : 'away']);   /* v95: 🎙 = mic on, 🔊 = talking now */ }
         const html = rows.map(([t, c]) => '<div class="' + c + '">' + t.replace(/[<>&]/g, '') + '</div>').join(''); if (el2.innerHTML !== html) el2.innerHTML = html; } }
     if (hud.ww) hud.ww.className = mode === 'drive' && score.wrong && !player.sim.inf ? 'on' : '';
     { const ct = document.getElementById('crawlTip'); if (ct) { const P = player.sim, msg = !isCrawl() || mode !== 'drive' ? '' : P.righting ? 'FLIPPING IT BACK OVER…' : P.flip > 0.3 ? (P.turtle ? 'TURTLED · hang on, or press R' : 'ON ITS SIDE · hang on, or press R') : S.hunt.egg === 'carry' ? '🥚 CARRYING THE EGG · take it home' : P.wet ? 'FORDING · keep it steady' : ''; ct.textContent = msg; ct.className = msg ? 'on' : ''; } }
@@ -6209,7 +6278,15 @@ const ONLINE = (() => {
   function myLook() { if (ONLINE.isGuest && ONLINE.isGuest()) return GUEST_LOOK; let L = S.look; if (L.driver && S.hunt.egg !== 'done') { L = Object.assign({}, L); delete L.driver; }
     if (L.wheel === 'dayton' && !lotFound()) L = Object.assign({}, L, { wheel: 'five' });
     const b = L.body; if (b && eggCar(b) && !movieOk(b)) { huntKeep(); if (!movieOk(b)) return Object.assign({}, L, { body: GFX.DEF_LOOK.body }); } return L; }
-  function rebuildPlayer() { GFX.disposeTree(player.mesh); let L = lotWheels(myLook()); if (isCrawl()) L = Object.assign({}, L, { tires: 'crawl' }); player.mesh = GFX.buildCar(L, !isTouchDev()); player.look = L; scene.add(player.mesh); save(); }
+  // v95: the player's uploaded picture. Lives only in this browser (never sent to the room or the server), so only you see it on your car.
+  let userImg = null;
+  function loadUserImg(url) { return new Promise(res => { if (!url) return res(null); const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = url; }); }
+  try { const u = localStorage.getItem('rcdl_img'); if (u) loadUserImg(u).then(im => { userImg = im; if (im && player && S.look.stk && S.look.stk.some(q => q.k === 'img')) rebuildPlayer(); }); } catch (e) { }
+  function pickUserImg(done) { const fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.onchange = () => { const f = fi.files && fi.files[0]; if (!f) return; const rd = new FileReader();
+      rd.onload = () => loadUserImg(rd.result).then(im => { if (!im) { toast('Could not read that picture', 'bad'); return; } const mx = 384, k = Math.min(1, mx / Math.max(im.width, im.height)), cv = document.createElement('canvas'); cv.width = Math.max(8, Math.round(im.width * k)); cv.height = Math.max(8, Math.round(im.height * k)); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        let url = cv.toDataURL('image/png'); if (url.length > 600000) url = cv.toDataURL('image/jpeg', 0.85); try { localStorage.setItem('rcdl_img', url); } catch (e) { toast('Picture too big to keep, try a smaller one', 'bad'); }
+        loadUserImg(url).then(im2 => { userImg = im2; done && done(); }); }); rd.readAsDataURL(f); }; fi.click(); }
+  function rebuildPlayer() { GFX.disposeTree(player.mesh); let L = lotWheels(myLook()); if (isCrawl()) L = Object.assign({}, L, { tires: 'crawl' }); if (userImg && L.stk && L.stk.some(q => q.k === 'img')) L = Object.assign({}, L, { _img: userImg }); player.mesh = GFX.buildCar(L, !isTouchDev()); player.look = L; scene.add(player.mesh); save(); }
   function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && (ONLINE.unread || SOC.n)) b.appendChild(el('i', 'badge', String((ONLINE.unread | 0) + SOC.n))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
   function drawEsc(cv) {   // v54: ESC curve graph like the programmer apps (wheel speed / motor rpm vs trigger)
     const g = cv.getContext('2d'), W = cv.width, H = cv.height, L = 56, B = 34, T = 14, R = 30, p = SIM.derive(S.tune, 'vinyl'), e = p.thrExpo;
@@ -6564,15 +6641,24 @@ const ONLINE = (() => {
         add(chips(mv.map(b => movieOk(b.id) ? { id: b.id, name: b.name, sub: b.tag } : { id: b.id, name: b.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg, unlock the cars.') }), S.look.body, pickBody, 'grid movies'));
         msg(open ? 'You found the egg. Every movie car is yours. They keep their screen look and stock stance but run the same drift chassis. Repaint them below if you want.' : 'Find the egg, unlock the cars. Some cars are earned, not given…' + (S.hunt.keep ? ' (You keep the ' + GFX.bodyInfo(S.hunt.keep).name + ' you were already driving.)' : '')); }
       { const open = S.hunt.egg === 'done'; h('Driver', open ? '🥚 unlocked' : '🔒 find the egg');
-        const ds = [{ id: 'none', name: 'No driver', sub: 'Blacked-out glass' }].concat(GFX.DRIVERS.map(d => open ? { id: d.id, name: d.name, sub: d.sub } : { id: d.id, name: d.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg to put a driver in your car.') }));
+        const ds = [{ id: 'none', name: 'No driver', sub: 'Empty seat' }].concat(GFX.DRIVERS.map(d => open ? { id: d.id, name: d.name, sub: d.sub } : { id: d.id, name: d.name, sub: '🔒 find the egg', lock: () => toast('🥚 Find the egg to put a driver in your car.') }));
         add(chips(ds, S.look.driver || 'none', v => { if (v === 'none') delete S.look.driver; else { S.look.driver = v; S.look.dseed = S.look.dseed || (1 + Math.floor(Math.random() * 9999)); } rebuildPlayer(); save(); }, 'grid'));
         msg(open ? 'Pick who rides in your car. With a driver on board your windows turn tinted see-through so everyone can see them. Hit Re-roll for new clothes.' : 'Drivers are an egg reward. Find the egg and you can put a homie or a skeleton behind the wheel.');
         if (open && S.look.driver) { const rr = el('button', 'ghost', 'Re-roll clothes'); rr.onclick = () => { S.look.dseed = 1 + Math.floor(Math.random() * 9999); rebuildPlayer(); save(); }; add(rr); } }
+        h('Window tint'); add(chips([{ id: 'auto', name: 'Stock', sub: S.look.driver ? 'light, shows driver' : 'blacked out' }].concat(GFX.TINTS), S.look.tint || 'auto', v => { if (v === 'auto') delete S.look.tint; else S.look.tint = v; rebuildPlayer(); save(); }, 'grid'));
+        msg('Works with or without a driver. Clear shows straight through the car.');
       h('Paint'); add(row('Colour', swatches(S.look.color, v => { S.look.color = v; rebuildPlayer(); })));
       add(row('Finish', chips(GFX.FINISHES, S.look.finish, v => { S.look.finish = v; rebuildPlayer(); })));
       add(row('Style', chips(GFX.LIVERIES, S.look.livery, v => { S.look.livery = v; rebuildPlayer(); })));
       add(row('Accent', swatches(S.look.color2, v => { S.look.color2 = v; rebuildPlayer(); })));
       { const nu = el('input'); nu.type = 'text'; nu.inputMode = 'numeric'; nu.maxLength = 3; nu.value = S.look.num ?? 86; nu.onchange = () => { const v = parseInt(nu.value, 10); S.look.num = v >= 0 && v <= 999 ? v : 86; nu.value = S.look.num; rebuildPlayer(); }; add(row('Race number', nu, 'Shows on the door with the Team livery and the Sticker kit.')); }
+      { h('Stickers', (S.look.stk || []).length + ' on'); const at = F.stkAt || 'door', list = S.look.stk || [], cur = list.find(q => q.at === at);
+        add(row('Spot', chips(GFX.STK_SLOTS.map(o => Object.assign({}, o, { name: o.name + (list.some(q => q.at === o.id) ? ' ●' : '') })), at, v => { F.stkAt = v; renderPanel(); })));
+        const setStk = k => { let L2 = (S.look.stk || []).filter(q => q.at !== at); if (k !== 'none') L2.push({ k, at, s: cur && cur.s || 1 }); if (L2.length) S.look.stk = L2; else delete S.look.stk; rebuildPlayer(); save(); renderPanel(); };
+        add(chips([{ id: 'none', name: 'None' }].concat(GFX.STICKERS.map(o => o.id === 'img' ? Object.assign({}, o, { name: userImg ? 'My picture' : '＋ Upload picture' }) : o)), cur ? cur.k : 'none', v => { if (v === 'img' && !userImg) { pickUserImg(() => setStk('img')); return; } setStk(v); }, 'grid'));
+        if (cur) add(row('Size', slider(0.4, 1.5, 0.05, cur.s || 1, v => Math.round(v * 100) + '%', v => { cur.s = v; clearTimeout(F.stkT); F.stkT = setTimeout(() => { rebuildPlayer(); save(); }, 120); })));
+        { const up = el('button', 'ghost', userImg ? 'Change my picture' : 'Upload a picture'); up.onclick = () => pickUserImg(() => { if (list.some(q => q.k === 'img')) rebuildPlayer(); else setStk('img'); renderPanel(); }); add(up); }
+        msg('Pick a spot, then a sticker. One sticker per spot, both sides of the car. Your uploaded picture only shows on your screen. Other drivers see the rest of your stickers.'); }
       h('Wheels'); add(chips(GFX.WHEELS.map(o => o.id === 'dayton' && !lotFound() ? Object.assign({}, o, { name: '🔒 ' + o.name, lock: () => toast('Wire wheels come from a hidden lowrider spot. Find it first') }) : o), S.look.wheel, v => { S.look.wheel = v; rebuildPlayer(); camFocus('wheel'); }));
       add(row('Wheel colour', swatches(S.look.wheelColor, v => { S.look.wheelColor = v; rebuildPlayer(); camFocus('wheel'); })));
       h('Extras'); add(row('Wing', chips(GFX.WINGS, S.look.wing, v => { S.look.wing = v; rebuildPlayer(); camFocus('wing'); })));
@@ -6903,15 +6989,16 @@ const ONLINE = (() => {
   }).catch(e => { if (!ld) return; const d = ld.querySelector('div'); d.textContent = 'Couldn\'t download the cars. Your connection may have dropped. '; const b = document.createElement('button'); b.textContent = 'Try again'; b.style.cssText = 'margin-left:6px;padding:6px 14px;border-radius:8px;border:0;background:#ff6a00;color:#fff;font:inherit;cursor:pointer'; b.onclick = () => location.reload(); d.appendChild(b); });
   function frame(now) {
     requestAnimationFrame(frame); const dt = Math.min(0.05, (now - last) / 1000); last = now; if (dt <= 0) return;
-    readInput(dt); hydroTick(dt); netRecv(dt);
-    if (mode !== 'pause') simulate(dt); netSend(dt); huntTick(dt);
+    const PF = window.__perf, pt = PF ? performance.now() : 0, pm = PF ? (k, t0) => { const d = performance.now() - t0; const q = PF[k] || (PF[k] = { n: 0, sum: 0, max: 0, spikes: 0 }); q.n++; q.sum += d; if (d > q.max) q.max = d; if (d > 6) q.spikes++; return performance.now(); } : null;   /* v95: window.__perf = {} logs per-phase frame cost */
+    let tq = pt; readInput(dt); hydroTick(dt); netRecv(dt); if (PF) tq = pm('in+net', tq);
+    if (mode !== 'pause') simulate(dt); if (PF) tq = pm('sim', tq); netSend(dt); huntTick(dt); if (PF) tq = pm('send+hunt', tq);
     if (mode !== 'drive') { const P0 = player.sim; if (OV.focus && OV.focus.steer) P0.delta += (P0.p.lock * P0.p.dual - P0.delta) * Math.min(1, dt * 10); else if (mode === 'pause' && Math.abs(P0.delta) > 0.001) P0.delta *= Math.exp(-dt * 6); }
     for (const c of cars) { if (!c._tm || (c._tmN = (c._tmN || 0) + 1) % 30 === 0) c._tm = Object.assign({}, SIM.DEF_TUNE, c.tune); GFX.poseCar(c.mesh, c.sim, c._tm, mode === 'pause' ? 0 : dt, world.night || world.dusk); }
-    for (const c of netCars.values()) { GFX.poseCar(c.mesh, c.sim, Object.assign({}, SIM.DEF_TUNE, c.tune), dt, world.night || world.dusk); lodNet(c); }
-    updateCam(dt); audioUpdate(); if (mode === 'drive') { updateHud(); drawMini(); }
-    if (composer) composer.render(dt); else renderer.render(scene, camera);
+    for (const c of netCars.values()) { if (!c._tm || c._tmS !== c.tune) { c._tm = Object.assign({}, SIM.DEF_TUNE, c.tune); c._tmS = c.tune; } GFX.poseCar(c.mesh, c.sim, c._tm, dt, world.night || world.dusk); lodNet(c); }
+    if (PF) tq = pm('pose', tq); updateCam(dt); audioUpdate(); if (PF) tq = pm('cam+audio', tq); if (mode === 'drive') { updateHud(); if (PF) tq = pm('hud', tq); drawMini(); if (PF) tq = pm('mini', tq); }
+    if (composer) composer.render(dt); else renderer.render(scene, camera); if (PF) tq = pm('render', tq);
     // v77 live feed (Prodigy V2 projector / TV / Bret's laptop): copy the finished frame into a small canvas. Desktop ~10 fps; phones take one still a few seconds in, then every 10 s (a GPU readback is costly there)
-    { const F = world && world.liveFeed; if (F && mode === 'drive' && S.opt.liveScr !== false) { F.n++; const every = isTouch ? 600 : 6; if ((F.n === 120 || (F.n > 120 && F.n % every === 0)) && feedSeen(F)) { try { F.g.drawImage(renderer.domElement, 0, 0, F.cv.width, F.cv.height); F.t.needsUpdate = true; } catch (e) { } } } }
+    { const F = world && world.liveFeed; if (F && mode === 'drive' && S.opt.liveScr !== false) { F.n++; const every = isTouch ? 600 : fEma > 1 / 50 ? 90 : 24;   /* v95: the TV readback stalls the GPU; ~2.5 fps is plenty for a screen in the background */ if ((F.n === 120 || (F.n > 120 && F.n % every === 0)) && feedSeen(F)) { try { F.g.drawImage(renderer.domElement, 0, 0, F.cv.width, F.cv.height); F.t.needsUpdate = true; } catch (e) { } } } }
     // dynamic resolution: if a phone can't hold ~40 fps, drop render resolution (one-way per track, no rebuild hitches)
     fEma += (Math.min(dt, 0.1) - fEma) * 0.03; drT += dt;
     if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + ' fps · res ' + Math.round(drs * 100) + '%'; } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
@@ -6960,7 +7047,7 @@ const ONLINE = (() => {
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const [mat, L] of by) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { GFX, rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
+  window.__game = { GFX, chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
