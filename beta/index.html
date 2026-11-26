@@ -5278,7 +5278,7 @@ const ONLINE = (() => {
       if (st.error) throw st.error; O.stats = st.data; O.status = 'ready';
       const { data } = await O.sb.auth.getSession(); await setUser(data && data.session ? data.session.user : null); O.authKnown = true; fire();
       O.sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; setTimeout(() => setUser(u), 0); });   // never call the API inside the auth callback (supabase-js lock)
-      O.refreshLobbies(); setInterval(() => { if (!O.room) O.refreshLobbies(); }, 20000);
+      O.refreshLobbies(); setInterval(() => { if (!O.room && !document.hidden) O.refreshLobbies(); }, 20000);   /* v108: not from background tabs */
     } catch (e) { O.tries = (O.tries || 0) + 1; if (O.tries < 4 && !(e && e.message === 'lib' && O.tries > 1)) { O.status = 'off'; setTimeout(O.init, 2500 * O.tries); } else { O.status = 'unavailable'; O.err = 'Online is not reachable from this copy of the game.'; } }
     fire();
   };
@@ -5318,6 +5318,8 @@ const ONLINE = (() => {
   O.live = null; O.unread = 0; O.blocked = new Set();
   // presence counts people per device: same device before and after sign-in is one row; signed-in devices merge by account
   const devId = () => String(gid || 'gnone00').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  // v108 crash reports + perf samples from the real game only (not test pages); plain keepalive fetch so it works before sign-in and while the page closes
+  O.report = p => { try { if (!/rcdriftlab\.github\.io$/.test(location.hostname)) return; fetch(URL + '/rest/v1/rpc/client_report', { method: 'POST', keepalive: true, headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: Object.assign({ gid: devId() }, p) }) }).catch(() => { }); } catch (e) { } };
   O.pingOff = () => { try { fetch(URL + '/rest/v1/rpc/ping_off', { method: 'POST', keepalive: true, headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_gid: devId() }) }); } catch (e) { } };
   O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping2', { p_gid: devId(), p_track: track || null, p_room: !!inRoom, p_code: inRoom && O.room ? O.room.code : null }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
   // ---- messages, blocks, reports, player cards ----
@@ -5898,6 +5900,19 @@ if (typeof module !== 'undefined') module.exports = COMP;
   const DRS = { hz: 60, smp: [], lo: matchMedia && matchMedia('(pointer:coarse)').matches ? 0.6 : 0.5, cap: 1, capAt: 0, late: 0, n: 0 };
   const GPU = (() => { try { const g = renderer.getContext(), d = g.getExtension('WEBGL_debug_renderer_info'); return d ? String(g.getParameter(d.UNMASKED_RENDERER_WEBGL)) : ''; } catch (e) { return ''; } })();
   const weakGPU = /Intel|UHD|Iris|Mali|Adreno|PowerVR|Radeon\(TM\) Graphics|Vega \d+ Graphics|SwiftShader|Microsoft Basic/i.test(GPU) && !/Apple/i.test(GPU); const _v1 = new T.Vector3(), _v2 = new T.Vector3(), _v3 = new T.Vector3();
+
+  // v108 reliability: real crashes and graphics-driver resets get reported (so they get fixed before anyone has to tell us), and a lost
+  // WebGL context no longer leaves a frozen black screen: the game saves and reloads itself.
+  const REP = { seen: new Set(), sent: 0, driveT: 0, frames: 0, late: 0, perfSent: false };
+  function report(kind, msg, src, stack, info) { try { const k = kind + '|' + msg; if (REP.seen.has(k) || REP.sent >= 20) return; REP.seen.add(k); REP.sent++;
+    ONLINE.report && ONLINE.report({ kind, msg: String(msg || '').slice(0, 300), src: String(src || '').slice(0, 200), stack: String(stack || '').slice(0, 1500), ver: typeof VERSION !== 'undefined' ? VERSION : '?', track: track && track.def ? track.def.id : null,
+      info: Object.assign({ ua: navigator.userAgent.slice(0, 160), gpu: GPU.slice(0, 90), dpr: devicePixelRatio, w: innerWidth, h: innerHeight, q: S.opt.quality, mode: typeof mode !== 'undefined' ? mode : '?', name: ONLINE.profile ? ONLINE.profile.driver_name : null }, info || {}) }); } catch (e) { } }
+  window.addEventListener('error', e => { if (!e.message) return; report('error', e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, e.error && e.error.stack); });
+  window.addEventListener('unhandledrejection', e => { const r = e.reason; report('error', 'promise: ' + (r && r.message ? r.message : String(r)).slice(0, 200), '', r && r.stack); });
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); report('gl', 'context lost', '', '', { drs }); try { save(); } catch (x) { }
+    if (!document.getElementById('gllost')) { const d = document.createElement('div'); d.id = 'gllost'; d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(8,9,12,.92);color:#fff;font:600 16px system-ui;text-align:center;padding:20px';
+      d.innerHTML = '<div>Your graphics driver reset.<br><span style="opacity:.7;font-weight:400">Saving and reloading the game…</span></div>'; const b = document.createElement('button'); b.textContent = 'Reload now'; b.className = 'big'; b.onclick = () => location.reload(); d.appendChild(b); document.body.appendChild(d); }
+    setTimeout(() => location.reload(), 4000); }, false);
   function softResize() { const w = LW(), h = LH(), pr = Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); if (fxaa) fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); } }
   function resize() { const w = LW(), h = LH(); fitBar(w); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
   addEventListener('resize', resize);
@@ -6166,7 +6181,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
     bodyClass: (c, on) => compCls(on, c),
     beep: (f, d, v, type) => { if (!AC || !S.opt.sound) return; const t0 = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(v || 0.3, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d); o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d + 0.05); },
     toast: (m, c) => toast(m, c), go: () => { },
-    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec) }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
+    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec), parts: Object.assign({}, R.parts, { ded: R.ded.map(d => d.j + ':' + d.pts), hit: (R.zones || []).filter(z => z.hit).length, zones: (R.zones || []).length, phys: physOf(devOf()), dev: devOf() }) }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
   });
   // v107 (Shaun): joining a room puts you OFF the track, just inside the pit opening, nose angled toward the track, so nobody already drifting
   // slams into a car that appears in their line. Spots are checked against walls/props/people/other cars; your player id picks a different first spot.
@@ -6343,7 +6358,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v107', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v108', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7087,9 +7102,16 @@ if (typeof module !== 'undefined') module.exports = COMP;
   if (BETA) { const t = document.createElement('div'); t.textContent = 'BETA ' + VERSION; t.style.cssText = 'position:fixed;left:50%;bottom:4px;transform:translateX(-50%);z-index:99;font:800 11px Arial;letter-spacing:.12em;color:#111;background:#ffcf3a;padding:2px 8px;border-radius:4px;pointer-events:none'; document.body.appendChild(t); }
   if (!BETA && !inClaude && 'serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js'); } catch (e) { } }
   // v46.1: notice a newer version while the game is open (or reopened from cache) and offer a one-tap update
-  if (!BETA && !inClaude && location.protocol === 'https:') { let told = false; const chk = () => { if (told || document.hidden) return; fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
-      if (!j || !j.v || j.v === VERSION || told) return; told = true; const b = el('button', 'updbar', 'New version ' + j.v + ' ready · tap to update'); b.onclick = () => { try { navigator.serviceWorker && navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(x => x.update())); } catch (e) { } setTimeout(() => location.reload(), 150); }; document.body.appendChild(b); }).catch(() => { }); };
-    setTimeout(chk, 4000); setInterval(chk, 5 * 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) chk(); }); }
+  if (!BETA && !inClaude && location.protocol === 'https:') { let told = false, auto = false; const chk = () => { if (told || document.hidden) return; fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
+      if (!j || !j.v || j.v === VERSION || told) return; told = true;
+      if (auto && !ONLINE.room && !compOn) { try { save(); } catch (e) { } toast('Updating to ' + j.v + '…'); setTimeout(() => location.reload(), 700); return; } const b = el('button', 'updbar', 'New version ' + j.v + ' ready · tap to update'); b.onclick = () => { try { navigator.serviceWorker && navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(x => x.update())); } catch (e) { } setTimeout(() => location.reload(), 150); }; document.body.appendChild(b); }).catch(() => { }); };
+    setTimeout(chk, 4000); setInterval(chk, 5 * 60000);
+    /* v108: players who left the tab open for hours were running old versions next to new ones (mixed-version rooms). Coming back after 2+ min away,
+       outside a room and not mid-run, a pending update now installs itself (settings and garage are saved first); otherwise the button stays. */
+    let hidAt = 0; document.addEventListener('visibilitychange', () => { if (document.hidden) { hidAt = Date.now(); return; }
+      const away = hidAt && Date.now() - hidAt > 120000; hidAt = 0;
+      if (away && told && !ONLINE.room && !compOn) { try { save(); } catch (e) { } toast('Updating to the new version…'); setTimeout(() => location.reload(), 700); return; }
+      auto = away; chk(); setTimeout(() => { auto = false; }, 8000); }); }
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; if (mode !== 'drive' && (tab === 'settings')) renderPanel(); });
   addEventListener('appinstalled', () => { installEv = null; installed = true; toast('Installed. Open RC Drift Lab from your home screen', 'good'); });
   const isApp = () => (window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches)) || navigator.standalone === true;
@@ -7893,7 +7915,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     perfTick(now, dt);
     if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + '/' + Math.min(60, DRS.hz) + ' fps · res ' + Math.round(drs * 100) + '%' + (DRS.n > 60 ? ' · ' + Math.round(100 * DRS.late / DRS.n) + '% late' : ''); if (DRS.n > 600) { DRS.n = 0; DRS.late = 0; } } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
     { const ms = Math.min(dt, 0.1) * 1000; if (DRS.smp.length < 240) { DRS.smp.push(ms); if (DRS.smp.length === 240) { const a = DRS.smp.slice().sort((x, y) => x - y), lo = a[Math.floor(a.length * 0.1)]; DRS.hz = lo < 8 ? 144 : lo < 9.5 ? 120 : lo < 12 ? 90 : 60; } }
-      const tgt = 1 / Math.min(60, DRS.hz); if (mode === 'drive') { DRS.n++; if (ms > tgt * 1500) DRS.late++; }
+      const tgt = 1 / Math.min(60, DRS.hz); if (mode === 'drive') { DRS.n++; if (ms > tgt * 1500) DRS.late++; REP.driveT += ms / 1000; REP.frames++; if (ms > tgt * 1500) REP.late++;
+        if (!REP.perfSent && REP.driveT > 60) { REP.perfSent = true; report('perf', 'sample', '', '', { fps: +(REP.frames / REP.driveT).toFixed(1), late: +(100 * REP.late / REP.frames).toFixed(1), hz: DRS.hz, res: drs, phys: physOf(devOf()), dev: devOf(), room: !!ONLINE.room, msaa: weakGPU ? 2 : 4 }); } }
       if (mode === 'drive' && S.opt.autoRes !== false) { const now = performance.now(); if (now - DRS.capAt > 30000) DRS.cap = 1;
         if (drT > 2.5 && fEma > tgt * 1.12 && drs > DRS.lo + 1e-3) { drT = 0; DRS.cap = Math.min(DRS.cap, drs - 0.05); DRS.capAt = now; drs = Math.max(DRS.lo, drs - (fEma > tgt * 1.5 ? 0.15 : 0.08)); softResize(); }
         else if (drT > 8 && fEma < tgt * 1.04 && drs < Math.min(1, DRS.cap) - 1e-3) { drT = 0; drs = Math.min(1, DRS.cap, drs + 0.05); softResize(); } } }
