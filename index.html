@@ -283,6 +283,8 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 #comp .rpcap{position:absolute;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(10,11,14,.86);border-left:4px solid #3ddc6a;color:#fff;font-weight:800;letter-spacing:.06em;padding:8px 14px;border-radius:6px;font-size:16px;opacity:0;transition:opacity .15s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #comp .rpcap.on{opacity:1}#comp .rpcap.bad{border-left-color:#ff3b30;color:#ffd1cd}
 #comp .cw.qres{background:rgba(255,210,63,.08);border-radius:6px;padding:6px}#comp .cw.qres>b{color:#ffd23f}#comp .cw.qres em{font-style:normal;font-weight:900;font-size:18px;color:#ffd23f}
+#comp .cver{font-size:12px;color:#9fb3c8;margin:6px 0 2px}#comp .cver.ok{color:#8ff0a6}#comp .cver.warn{color:#ffd23f}
+#comp .cev{font-size:13px;margin:4px 0;padding:6px 8px;border-radius:6px;background:rgba(255,210,63,.08);color:#fff4cf}#comp .cev b{color:#ffd23f}
 .comprp #hud,.comprp #touch,.comprp #toast{display:none!important}
 .inmenu #comp{display:none!important}
 .compbtn{background:linear-gradient(90deg,#1b2a6b,#13306b)!important;color:#fff!important;border:1px solid #2f5bff!important}.compbtn small{display:block;font-size:11px;font-style:normal;font-weight:600;letter-spacing:.06em;opacity:.75;margin-top:3px}
@@ -298,12 +300,14 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 .ecard .ett{font-size:20px;font-weight:800;margin:4px 0 2px}.ecard.off .ett{color:#fff4cf}
 .ecard .emeta{font-size:13px;color:#cfd8e3}.ecard .ewhen{font-size:13px;font-weight:700;margin-top:2px;color:#7cc4ff}.ecard.off .ewhen{color:#ffd23f}
 .ecard .efill{display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:12px}.ecard .efill span{flex:1;height:8px;background:#22262e;border-radius:4px;overflow:hidden}.ecard .efill i{display:block;height:100%;background:#3ddc6a}.ecard.off .efill i{background:#ffd23f}
+.ecard.live{border-color:#ff3b30;box-shadow:0 0 0 1px rgba(255,59,48,.25)}.ecard.live .ewhen{color:#ff6b61}.ecard .estd{margin:8px 0}.ecard .estd .me{background:rgba(255,210,63,.12)}
 .ecard .edrv{font-size:12px;color:#9fb3c8;margin:2px 0 6px}
 .ecard .epod{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-weight:700}
 .hostf .hrow{display:flex;align-items:center;gap:10px;margin:6px 0}.hostf .hrow>span{flex:0 0 104px;font-size:13px;color:#cfd8e3}
 .hostf input:not([type=checkbox]),.hostf select,.hostf textarea{flex:1;min-width:0;background:#15171d;color:#fff;border:1px solid var(--ln);border-radius:6px;padding:8px;font:inherit;font-size:14px}
 .hostf input[type=checkbox]{width:20px;height:20px}
 #tour .tcard.compann{border-top:3px solid #ffd23f!important;background:linear-gradient(160deg,#2a2208,#121317 55%)}#tour .tcard.compann .tstep{color:#ffd23f!important}#tour .tcard.compann h2{color:#fff4cf}
+#tday{margin:6px 0 10px;padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,#7a3b12,#b8641d 50%,#7a3b12);color:#fff4dc;font-weight:800;letter-spacing:.03em;text-align:center;box-shadow:0 4px 14px rgba(184,100,29,.35)}
 </style>
 </head>
 <body class="inmenu">
@@ -358,7 +362,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 <rect x="34" y="64" width="338" height="3" fill="#ff5a1f"/><rect x="380" y="64" width="22" height="3" fill="#ff5a1f" opacity=".6"/><rect x="408" y="64" width="10" height="3" fill="#ff5a1f" opacity=".3"/>
 </g>
 <text x="22" y="94" font-size="14.5" font-weight="600" letter-spacing="4.2" fill="#a3abb8" font-family="Chakra Petch,system-ui,sans-serif">BY <tspan fill="#35e0ff" font-weight="700">STRANGER KREATIONS</tspan></text>
-</svg></h1><div class="sub">1/10 scale · RWD · gyro</div><div id="nav"></div><div id="panel"></div></div>
+</svg></h1><div class="sub">1/10 scale · RWD · gyro</div><div id="tday" style="display:none">🦃 Happy Thanksgiving from RC Drift Lab! Thank you for driving with us. 🍂</div><div id="nav"></div><div id="panel"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -5278,7 +5282,7 @@ const ONLINE = (() => {
       if (st.error) throw st.error; O.stats = st.data; O.status = 'ready';
       const { data } = await O.sb.auth.getSession(); await setUser(data && data.session ? data.session.user : null); O.authKnown = true; fire();
       O.sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; setTimeout(() => setUser(u), 0); });   // never call the API inside the auth callback (supabase-js lock)
-      O.refreshLobbies(); setInterval(() => { if (!O.room) O.refreshLobbies(); }, 20000);
+      O.refreshLobbies(); setInterval(() => { if (!O.room && !document.hidden) O.refreshLobbies(); }, 20000);   /* v108: not from background tabs */
     } catch (e) { O.tries = (O.tries || 0) + 1; if (O.tries < 4 && !(e && e.message === 'lib' && O.tries > 1)) { O.status = 'off'; setTimeout(O.init, 2500 * O.tries); } else { O.status = 'unavailable'; O.err = 'Online is not reachable from this copy of the game.'; } }
     fire();
   };
@@ -5318,6 +5322,8 @@ const ONLINE = (() => {
   O.live = null; O.unread = 0; O.blocked = new Set();
   // presence counts people per device: same device before and after sign-in is one row; signed-in devices merge by account
   const devId = () => String(gid || 'gnone00').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  // v108 crash reports + perf samples from the real game only (not test pages); plain keepalive fetch so it works before sign-in and while the page closes
+  O.report = p => { try { if (!/rcdriftlab\.github\.io$/.test(location.hostname)) return; fetch(URL + '/rest/v1/rpc/client_report', { method: 'POST', keepalive: true, headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: Object.assign({ gid: devId() }, p) }) }).catch(() => { }); } catch (e) { } };
   O.pingOff = () => { try { fetch(URL + '/rest/v1/rpc/ping_off', { method: 'POST', keepalive: true, headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_gid: devId() }) }); } catch (e) { } };
   O.ping = async (track, inRoom) => { if (!O.sb) return; try { const { data } = await O.sb.rpc('ping2', { p_gid: devId(), p_track: track || null, p_room: !!inRoom, p_code: inRoom && O.room ? O.room.code : null }); if (data) { const was = O.unread; O.live = data; O.unread = data.unread | 0; if (data.drivers != null) O.stats = Object.assign(O.stats || {}, data); if (O.unread > was && O.onUnread) O.onUnread(O.unread - was); fire(); } } catch (e) { } };
   // ---- messages, blocks, reports, player cards ----
@@ -5355,6 +5361,8 @@ const ONLINE = (() => {
   O.compList = async () => (await rpc('comp_list')) || null;
   O.compCreate = async p => { const r = await rpc('comp_create', { p }); return r && r.ok ? { id: r.id } : { err: said(r) }; };
   O.compRegister = async (id, on) => said(await rpc('comp_register', { p_comp: id, p_on: !!on }));
+  O.compSaveRun2 = async p => { if (!O.sb) return null; const { data, error } = await O.sb.rpc('comp_run_save2', { p }); return error ? null : data; };
+  O.compJudge = async (id, comp) => { try { const { data, error } = await O.sb.functions.invoke('judge-run', { body: comp ? { id, comp } : { id } }); return error || !data ? null : data; } catch (e) { return null; } };   /* v109: server re-scores the recording */
   O.compSaveRun = async p => !!(await rpc('comp_run_save', { p }));
   O.compCancel = async id => said(await rpc('comp_cancel', { p_comp: id }));
   O.pedBoard = async () => (await rpc('ped_board')) || { top: [] };   // v98
@@ -5671,7 +5679,7 @@ const COMP = (function () {
 
   // ---- start / stop ----
   function start(o) {
-    tr = o.track; st = stageOf(tr); S.on = true; S.cap = o.cap || 90; S.stageLimit = o.stageLimit || 90; S.who = o.who || 'Driver'; S.trackName = tr.def.name; S.runs = S.track === tr.def.id ? S.runs : []; S.pair = S.track === tr.def.id && S.pair ? S.pair : []; S.track = tr.def.id;
+    tr = o.track; st = stageOf(tr); S.on = true; S.cap = o.cap || 90; S.stageLimit = o.stageLimit || 90; S.who = o.who || 'Driver'; S.trackName = tr.def.name; S.event = o.event || null; S.runs = S.track === tr.def.id ? S.runs : []; S.pair = S.track === tr.def.id && S.pair ? S.pair : []; S.track = tr.def.id;
     if (!tower || tower.tr !== tr) { tower = buildTower(o.group); tower.tr = tr; }
     mkUI(); restage();
   }
@@ -5798,20 +5806,21 @@ const COMP = (function () {
     const best = S.runs.filter(r => !r.zero).reduce((a, r) => !a || r.total > a.total ? r : a, null), qn = R.qn || 1, P = S.pair, pb2 = qn === 2 ? (P[0].total >= P[1].total ? 0 : 1) : -1;
     const when = R.when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), bar = (k, v) => '<div class="cj"><b>' + k + '</b><span><i style="width:' + v.toFixed(0) + '%"></i></span><em>' + v.toFixed(1) + '</em></div>';
     const why = whyLines(R), zl = (R.zones || []).map(z => '<span class="cz ' + (z.hit ? 'ok' : 'no') + '" title="' + esc(z.name) + '">' + esc(z.name.replace('Angle check ', 'A')) + '</span>').join('');
-    card.innerHTML = '<div class="chd"><small>SOLO QUALIFYING · PRACTICE</small><div class="ctot ' + (R.zero ? 'z' : '') + '">' + R.total.toFixed(1) + '</div>' + (R.pb ? '<div class="cpb">NEW BEST ON THIS TRACK</div>' : '') + '</div>' +
+    const EV = S.event;
+    card.innerHTML = '<div class="chd"><small>' + (EV ? '★ ' + esc(EV.title).toUpperCase() + ' · QUALIFYING' : 'SOLO QUALIFYING · PRACTICE') + '</small><div class="ctot ' + (R.zero ? 'z' : '') + '">' + R.total.toFixed(1) + '</div>' + (R.pb ? '<div class="cpb">NEW BEST ON THIS TRACK</div>' : '') + '</div>' +
       '<div class="cw"><b>WHO</b><span>' + esc(S.who) + '</span></div>' +
       '<div class="cw"><b>WHEN</b><span>Qualifying run ' + qn + ' of 2 · ' + when + (R.n > 1 ? ' · run #' + R.n + ' today' : '') + '</span></div>' +
       '<div class="cw"><b>WHERE</b><span>' + esc(S.trackName) + '</span></div>' +
       '<div class="cw"><b>WHAT</b><span>' + (R.zero ? '0 · ' + esc(R.zero.why) : R.total.toFixed(1) + ' (average of the three judges)') + (R.fs ? ' · ' + R.fs + ' false start' + (R.fs > 1 ? 's' : '') : '') + '</span></div>' +
       (R.zero && !R.rec ? '' : bar('LINE', R.line) + bar('ANGLE', R.angle) + bar('STYLE', R.style)) +
-      (zl ? '<div class="czs">' + zl + '</div>' : '') +
+      (zl ? '<div class="czs">' + zl + '</div>' : '') + '<div class="cver">' + verTxt(R) + '</div>' + (S.event ? '<div class="cev">' + evTxt(R) + '</div>' : '') +
       '<div class="cw why"><b>WHY</b><ul>' + (why.length ? why.map((w, i) => '<li class="' + (w.bad ? 'bad' : 'good') + (i >= 7 ? ' more' : '') + '">' + esc(w.txt) + (w.t != null && R.rec ? ' <a data-t="' + w.t + '">▶ watch</a>' : '') + '</li>').join('') + (why.length > 7 ? '<li class="mtog"><a>+ ' + (why.length - 7) + ' more</a></li>' : '') : '<li>Clean run.</li>') + '</ul></div>' +
       (qn === 2 ? '<div class="cw qres"><b>QUALIFIED</b><span><em>' + P[pb2].total.toFixed(1) + '</em> · run 1 ' + P[0].total.toFixed(1) + (pb2 === 0 ? ' ✓' : '') + ' · run 2 ' + P[1].total.toFixed(1) + (pb2 === 1 ? ' ✓' : '') + ' · the better run counts</span></div>' : '') +
       '<div class="cw"><b>NEXT</b><span>' + (qn === 1 ? 'Qualifying run 2 · the better of your two runs counts' : 'Start a new qualifying pair · best single run today ' + (best ? best.total.toFixed(1) : '—')) + '</span></div>' +
-      '<div class="cbtns">' + (R.rec && R.rec.f.length > 3 ? '<button class="ghost rp">▶ REPLAY</button>' : '') + '<button class="big again">' + (qn === 1 ? '▶ QUALIFYING RUN 2' : '↻ NEW QUALIFYING PAIR') + '</button><button class="ghost out">Leave</button></div>' +
-      '<div class="cnote">Practice: same tower, judges and replay the online events will use. Your best is saved on this device; signed-in runs also go to the server so the judges can be tuned on real driving.</div>';
+      '<div class="cbtns">' + (R.rec && R.rec.f.length > 3 ? '<button class="ghost rp">▶ REPLAY</button>' : '') + '<button class="big again">' + (qn === 1 ? '▶ QUALIFYING RUN 2' : '↻ NEW QUALIFYING PAIR') + '</button>' + (S.event ? '<button class="ghost evb">Standings</button>' : '') + '<button class="ghost out">Leave</button></div>' +
+      '<div class="cnote">' + (S.event ? 'Event: 2 runs count, the server judge\'s score is the one that counts, results post when the qualifying window closes.' : 'Practice: same tower, judges and replay the online events will use. Your best is saved on this device; signed-in runs also go to the server so the judges can be tuned on real driving.') + '</div>';
     card.querySelectorAll('a[data-t]').forEach(a => a.onclick = () => replay(Math.max(R.rec.f[0][0], +a.dataset.t - 2)));
-    const q = s => card.querySelector(s); if (q('.mtog')) q('.mtog').onclick = () => { card.classList.add('all'); q('.mtog').remove(); }; card.classList.remove('all'); if (q('.rp')) q('.rp').onclick = () => replay(); q('.again').onclick = () => { ctx.lock(false); restage(); }; q('.out').onclick = () => ctx.exit();
+    const q = s => card.querySelector(s); if (q('.mtog')) q('.mtog').onclick = () => { card.classList.add('all'); q('.mtog').remove(); }; card.classList.remove('all'); if (q('.rp')) q('.rp').onclick = () => replay(); q('.again').onclick = () => { ctx.lock(false); restage(); }; if (q('.evb')) q('.evb').onclick = () => ctx.events(); q('.out').onclick = () => ctx.exit();
   }
   function buildRp(rb, R) {
     const t1 = R.rec.f[R.rec.f.length - 1][0], mk = [];
@@ -5827,8 +5836,19 @@ const COMP = (function () {
       if (a === 'bk') backToCard(); });
   }
 
+  // v109: the server judge re-scores the uploaded recording with the same code; the card shows whether it agrees
+  function verTxt(R) { const v = R.server; if (R.server === undefined) return R.rec && R.rec.f.length > 3 ? (ctx && ctx.signedIn && ctx.signedIn() ? 'Sending the run to the server judge…' : 'Sign in to have runs checked by the server judge.') : '';
+    if (!v || !v.ok) return 'Server judge unavailable right now (your score still saved here).';
+    const s = v.server; return s.match ? '✓ Server judge agrees: ' + s.total.toFixed(1) : '⚠ Server judge scored it ' + s.total.toFixed(1) + (s.zero ? ' (' + s.zero + ')' : '') + ' · in events the server score counts'; }
+  function verified(R, r) { R.server = r || null; if (r && r.event && S.event) { if (r.event.ok) S.event.my_runs = r.event.runs; R.evRes = r.event; }
+    if (S.res === R && ui) { const e = document.querySelector('#comp .cver'); if (e) { e.textContent = verTxt(R); e.className = 'cver ' + (r && r.ok && r.server.match ? 'ok' : 'warn'); }
+      const ev = document.querySelector('#comp .cev'); if (ev) ev.innerHTML = evTxt(R); const ag = document.querySelector('#comp .again'); if (ag && S.event && S.event.my_runs >= 2) ag.textContent = '↻ PRACTICE RUN'; } }
+  // event result line: counted / not counted, best and place
+  function evTxt(R) { if (!S.event) return ''; const e = R.evRes; if (!e) return R.server === undefined ? 'Waiting for the server judge to count this event run…' : 'This run was not counted for the event (sign in, or check your connection).';
+    if (!e.ok) return '⚠ Not counted for the event: ' + esc(e.why || '') + (e.best != null ? ' · your best ' + (+e.best).toFixed(1) : '');
+    return '<b>Counted: event run ' + e.runs + ' of 2</b> · server score ' + (+e.counted).toFixed(1) + ' · your best ' + (+e.best).toFixed(1) + ' · <b>#' + e.rank + '</b> of ' + e.of + ' so far'; }
   function packRec(rec) { const r4 = v => Math.round(v * 1e4) / 1e4, r3 = v => Math.round(v * 1e3) / 1e3; return { v: rec.v, hz: HZ, pa: r4(rec.pa), pb: r4(rec.pb), f: rec.f.map(a => a.map((v, i) => i === 8 || i === 17 ? v : i <= 3 ? r4(v) : r3(v))) }; }
-  return { packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
+  return { verified, packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
 })();
 if (typeof module !== 'undefined') module.exports = COMP;
 
@@ -5898,6 +5918,19 @@ if (typeof module !== 'undefined') module.exports = COMP;
   const DRS = { hz: 60, smp: [], lo: matchMedia && matchMedia('(pointer:coarse)').matches ? 0.6 : 0.5, cap: 1, capAt: 0, late: 0, n: 0 };
   const GPU = (() => { try { const g = renderer.getContext(), d = g.getExtension('WEBGL_debug_renderer_info'); return d ? String(g.getParameter(d.UNMASKED_RENDERER_WEBGL)) : ''; } catch (e) { return ''; } })();
   const weakGPU = /Intel|UHD|Iris|Mali|Adreno|PowerVR|Radeon\(TM\) Graphics|Vega \d+ Graphics|SwiftShader|Microsoft Basic/i.test(GPU) && !/Apple/i.test(GPU); const _v1 = new T.Vector3(), _v2 = new T.Vector3(), _v3 = new T.Vector3();
+
+  // v108 reliability: real crashes and graphics-driver resets get reported (so they get fixed before anyone has to tell us), and a lost
+  // WebGL context no longer leaves a frozen black screen: the game saves and reloads itself.
+  const REP = { seen: new Set(), sent: 0, driveT: 0, frames: 0, late: 0, perfSent: false };
+  function report(kind, msg, src, stack, info) { try { const k = kind + '|' + msg; if (REP.seen.has(k) || REP.sent >= 20) return; REP.seen.add(k); REP.sent++;
+    ONLINE.report && ONLINE.report({ kind, msg: String(msg || '').slice(0, 300), src: String(src || '').slice(0, 200), stack: String(stack || '').slice(0, 1500), ver: typeof VERSION !== 'undefined' ? VERSION : '?', track: track && track.def ? track.def.id : null,
+      info: Object.assign({ ua: navigator.userAgent.slice(0, 160), gpu: GPU.slice(0, 90), dpr: devicePixelRatio, w: innerWidth, h: innerHeight, q: S.opt.quality, mode: typeof mode !== 'undefined' ? mode : '?', name: ONLINE.profile ? ONLINE.profile.driver_name : null }, info || {}) }); } catch (e) { } }
+  window.addEventListener('error', e => { if (!e.message) return; report('error', e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, e.error && e.error.stack); });
+  window.addEventListener('unhandledrejection', e => { const r = e.reason; report('error', 'promise: ' + (r && r.message ? r.message : String(r)).slice(0, 200), '', r && r.stack); });
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); report('gl', 'context lost', '', '', { drs }); try { save(); } catch (x) { }
+    if (!document.getElementById('gllost')) { const d = document.createElement('div'); d.id = 'gllost'; d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(8,9,12,.92);color:#fff;font:600 16px system-ui;text-align:center;padding:20px';
+      d.innerHTML = '<div>Your graphics driver reset.<br><span style="opacity:.7;font-weight:400">Saving and reloading the game…</span></div>'; const b = document.createElement('button'); b.textContent = 'Reload now'; b.className = 'big'; b.onclick = () => location.reload(); d.appendChild(b); document.body.appendChild(d); }
+    setTimeout(() => location.reload(), 4000); }, false);
   function softResize() { const w = LW(), h = LH(), pr = Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); if (fxaa) fxaa.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr)); } }
   function resize() { const w = LW(), h = LH(); fitBar(w); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, [1, 1.5, 2][S.opt.quality]) * drs); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); setupPost(); }
   addEventListener('resize', resize);
@@ -6152,10 +6185,13 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- v103 competition: solo qualifying practice (comp.js does the tower, judges, card and replay) ----------------
   let compOn = false;
   const compCls = (on, c) => document.documentElement.classList.toggle(c || 'comp', !!on);
-  function compStart() {
+  function compStart(ev) {
+    // v109 qualifying events: the event's track is loaded first; the run is scored by the server judge and counted for the event
+    if (ev && ev.track && track.def.id !== ev.track) { const i = SIM.TRACK_DEFS.findIndex(d => d.id === ev.track); if (i < 0) { toast('This event needs a newer version of the game', 'bad'); return; } if (ONLINE.room) leaveLobby(); S.opt.track = i; loadTrack(i); }
     if (ONLINE.room || !COMP.available(track)) return; if (isTouchDev()) goFull();
     compOn = true; newSession(); drive(false);
-    COMP.start({ track, group: world.group, who: (S.opt.name || 'You').trim() || 'You', cap: Math.max(60, Math.round(lapCap() * 1.5)), stageLimit: 90 });
+    const who = ONLINE.profile ? ONLINE.profile.driver_name : (S.opt.name || 'You').trim() || 'You';
+    COMP.start({ track, group: world.group, who, cap: Math.max(60, Math.round(lapCap() * 1.5)), stageLimit: ev ? (ev.staging || 90) : 90, event: ev || null });
   }
   function compExit() { if (!compOn) return; compOn = false; COMP.stop(); compCls(false); compCls(false, 'comprp'); newSession(); applyTune(); }
   COMP.init({
@@ -6165,8 +6201,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     lock: on => { if (on) { const s = player.sim; s.inp.throttle = 0; s.inp.steer = 0; } },
     bodyClass: (c, on) => compCls(on, c),
     beep: (f, d, v, type) => { if (!AC || !S.opt.sound) return; const t0 = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(v || 0.3, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d); o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d + 0.05); },
-    toast: (m, c) => toast(m, c), go: () => { },
-    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec) }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
+    toast: (m, c) => toast(m, c), go: () => { }, events: () => { compExit(); tab = 'comps'; openMenu('main', 'comps'); }, signedIn: () => !!ONLINE.profile && !inClaude,
+    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { const ev = COMP.state().event; ONLINE.compSaveRun2({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec), parts: Object.assign({}, R.parts, { ded: R.ded.map(d => d.j + ':' + d.pts), hit: (R.zones || []).filter(z => z.hit).length, zones: (R.zones || []).length, phys: physOf(devOf()), dev: devOf() }) }).then(id => id ? ONLINE.compJudge(id, ev ? ev.id : null) : null).then(r => { COMP.verified(R, r); if (ev) compLoad(true); }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
   });
   // v107 (Shaun): joining a room puts you OFF the track, just inside the pit opening, nose angled toward the track, so nobody already drifting
   // slams into a car that appears in their line. Spots are checked against walls/props/people/other cars; your player id picks a different first spot.
@@ -6343,7 +6379,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v107', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v111', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7087,9 +7123,16 @@ if (typeof module !== 'undefined') module.exports = COMP;
   if (BETA) { const t = document.createElement('div'); t.textContent = 'BETA ' + VERSION; t.style.cssText = 'position:fixed;left:50%;bottom:4px;transform:translateX(-50%);z-index:99;font:800 11px Arial;letter-spacing:.12em;color:#111;background:#ffcf3a;padding:2px 8px;border-radius:4px;pointer-events:none'; document.body.appendChild(t); }
   if (!BETA && !inClaude && 'serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js'); } catch (e) { } }
   // v46.1: notice a newer version while the game is open (or reopened from cache) and offer a one-tap update
-  if (!BETA && !inClaude && location.protocol === 'https:') { let told = false; const chk = () => { if (told || document.hidden) return; fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
-      if (!j || !j.v || j.v === VERSION || told) return; told = true; const b = el('button', 'updbar', 'New version ' + j.v + ' ready · tap to update'); b.onclick = () => { try { navigator.serviceWorker && navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(x => x.update())); } catch (e) { } setTimeout(() => location.reload(), 150); }; document.body.appendChild(b); }).catch(() => { }); };
-    setTimeout(chk, 4000); setInterval(chk, 5 * 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) chk(); }); }
+  if (!BETA && !inClaude && location.protocol === 'https:') { let told = false, auto = false; const chk = () => { if (told || document.hidden) return; fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
+      if (!j || !j.v || j.v === VERSION || told) return; told = true;
+      if (auto && !ONLINE.room && !compOn) { try { save(); } catch (e) { } toast('Updating to ' + j.v + '…'); setTimeout(() => location.reload(), 700); return; } const b = el('button', 'updbar', 'New version ' + j.v + ' ready · tap to update'); b.onclick = () => { try { navigator.serviceWorker && navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(x => x.update())); } catch (e) { } setTimeout(() => location.reload(), 150); }; document.body.appendChild(b); }).catch(() => { }); };
+    setTimeout(chk, 4000); setInterval(chk, 5 * 60000);
+    /* v108: players who left the tab open for hours were running old versions next to new ones (mixed-version rooms). Coming back after 2+ min away,
+       outside a room and not mid-run, a pending update now installs itself (settings and garage are saved first); otherwise the button stays. */
+    let hidAt = 0; document.addEventListener('visibilitychange', () => { if (document.hidden) { hidAt = Date.now(); return; }
+      const away = hidAt && Date.now() - hidAt > 120000; hidAt = 0;
+      if (away && told && !ONLINE.room && !compOn) { try { save(); } catch (e) { } toast('Updating to the new version…'); setTimeout(() => location.reload(), 700); return; }
+      auto = away; chk(); setTimeout(() => { auto = false; }, 8000); }); }
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; if (mode !== 'drive' && (tab === 'settings')) renderPanel(); });
   addEventListener('appinstalled', () => { installEv = null; installed = true; toast('Installed. Open RC Drift Lab from your home screen', 'good'); });
   const isApp = () => (window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches)) || navigator.standalone === true;
@@ -7137,7 +7180,10 @@ if (typeof module !== 'undefined') module.exports = COMP;
   const compWhen = iso => { const d = new Date(iso); return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
   const compIn = iso => { const m = Math.round((new Date(iso) - Date.now()) / 60000); if (m <= 0) return 'LIVE NOW'; if (m < 60) return 'in ' + m + ' min'; const hh = Math.floor(m / 60); if (hh < 48) return 'in ' + hh + ' h ' + (m % 60) + ' min'; return 'in ' + Math.floor(hh / 24) + ' days'; };
   let compData = null, compAt = 0, compBusy = false, compAnnDone = false;
-  async function compLoad(force) { if (compBusy || (!force && compData && Date.now() - compAt < 20000)) return compData; compBusy = true; try { const d = await ONLINE.compList(); if (d) { compData = d; compAt = Date.now(); } } finally { compBusy = false; } return compData; }
+  const liveTold = new Set();
+  async function compLoad(force) { if (compBusy || (!force && compData && Date.now() - compAt < 20000)) return compData; compBusy = true; try { const d = await ONLINE.compList(); if (d) { compData = d; compAt = Date.now();
+        for (const c of d.upcoming || []) if (c.live && c.mine && (c.my_runs || 0) < 2 && !liveTold.has(c.id) && !compOn) { liveTold.add(c.id); toast('🏁 ' + c.title + ' qualifying is LIVE · Comps tab', 'good'); } } } finally { compBusy = false; } return compData; }
+  setInterval(() => { if (ONLINE.status === 'ready' && ONLINE.profile && !document.hidden) compLoad(); }, 60000);   /* v109: a registered driver hears when qualifying opens */
   // a new official event gets a full-screen announcement once per device (hold to close)
   async function compAnnounce() {
     if (compAnnDone || document.getElementById('tour')) return; const d = await compLoad(); if (!d) return; compAnnDone = true;
@@ -7151,6 +7197,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     const done = () => { ov.remove(); try { localStorage.setItem('rcdl_compann_' + c.id, '1'); } catch (e) { } };
     btns.append(holdBtn('Hold to close', 'ghost', done), holdBtn(c.mine ? 'Hold · open Comps' : 'Hold · register', 'big', () => { done(); tab = 'comps'; openMenu('main', 'comps'); }));
   }
+  // Thanksgiving 2026 (Shaun): today only, by the player's own calendar. Menu ribbon + one greeting toast per visit.
+  { const d = new Date(); if (d.getFullYear() === 2026 && d.getMonth() === 10 && d.getDate() === 26) { const e = document.getElementById('tday'); if (e) e.style.display = ''; setTimeout(() => toast('🦃 Happy Thanksgiving from RC Drift Lab!', 'good'), 2500); } }
   // v101 one-time announcement for returning players (new players get the tour instead): thank you + V2.1 is live + what changed
   const ANN_KEY = 'rcdl_ann_v101';
   function announce() {
@@ -7722,17 +7770,20 @@ if (typeof module !== 'undefined') module.exports = COMP;
       if (!web || O.status !== 'ready') { h('Events'); msg(!web ? 'Online events are on the web version: ' + WEB : 'Connecting…'); return; }
       const d = compData; if (!d || Date.now() - compAt > 20000) compLoad(!d).then(() => { if (tab === 'comps' && mode !== 'drive') renderPanel(); });
       if (!d) { h('Upcoming events'); msg('Loading…'); return; }
-      const card = c => { const off = !!c.official, past = new Date(c.starts_at) <= Date.now(), full = c.n >= c.max, b = el('div', 'ecard' + (off ? ' off' : ''));
+      const card = c => { const off = !!c.official, past = new Date(c.starts_at) <= Date.now() && !c.live, full = c.n >= c.max, b = el('div', 'ecard' + (off ? ' off' : '') + (c.live ? ' live' : ''));
         b.appendChild(el('div', 'etag', off ? '★ OFFICIAL EVENT' : 'FRIENDLY · hosted by ' + c.host_name));
         b.appendChild(el('div', 'ett', c.title));
-        b.appendChild(el('div', 'emeta', compTrackName(c.track) + ' · ' + COMP_FMT[c.format] + ' · ' + c.staging + ' s to stage'));
-        b.appendChild(el('div', 'ewhen', compWhen(c.starts_at) + ' · ' + compIn(c.starts_at)));
+        b.appendChild(el('div', 'emeta', compTrackName(c.track) + ' · ' + (c.format === 'qual_only' ? 'Qualifying' : COMP_FMT[c.format] + ' (this event runs the qualifying round; live brackets come in a later update)') + ' · ' + c.staging + ' s to stage'));
+        b.appendChild(el('div', 'ewhen', c.live ? '● LIVE · qualifying open · ends in ' + Math.max(1, Math.round((new Date(c.ends_at) - Date.now()) / 60000)) + ' min' : compWhen(c.starts_at) + ' · ' + compIn(c.starts_at) + ' · qualifying window ' + (c.window || 30) + ' min'));
         if (c.blurb) b.appendChild(el('p', 'tip', c.blurb));
         const fill = el('div', 'efill'); fill.innerHTML = '<span><i style="width:' + Math.min(100, 100 * c.n / c.max) + '%"></i></span><b></b>'; fill.querySelector('b').textContent = c.n + ' / ' + c.max + (full ? ' · FULL' : ''); b.appendChild(fill);
-        if (c.drivers && c.drivers.length) b.appendChild(el('div', 'edrv', c.drivers.map(String).join(' · ')));
+        if (c.standings && c.standings.some(x => x.runs > 0)) { const w = el('div', 'lb estd'); c.standings.filter(x => x.runs > 0).slice(0, 12).forEach((x, i) => { const r = el('div', 'lbr lbr3' + (x.me ? ' me' : '')); r.appendChild(el('span', '', '#' + (i + 1) + ' ' + x.n)); r.appendChild(el('span', 'lbn', x.runs + ' of 2 runs')); r.appendChild(el('span', 'lbp', (+x.best).toFixed(1))); w.appendChild(r); }); b.appendChild(w); }
+        else if (c.drivers && c.drivers.length) b.appendChild(el('div', 'edrv', c.drivers.map(String).join(' · ')));
         const row2 = el('div', 'btnrow');
         if (!signed) { const sb = el('button', 'ghost', 'Sign in to register'); sb.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; row2.appendChild(sb); }
-        else if (!past) { const rb = el('button', c.mine ? 'ghost' : 'big', c.mine ? '✓ Registered · tap to drop out' : full ? 'Full' : 'Register'); rb.disabled = !c.mine && full;
+        else if (c.live && c.mine) { const k = c.my_runs || 0; if (k < 2) { const qb = el('button', 'big compbtn'); qb.innerHTML = '▶ QUALIFY NOW · RUN ' + (k + 1) + ' OF 2<small>' + compTrackName(c.track) + ' · scored by the server judge</small>'; qb.onclick = () => compStart(c); row2.appendChild(qb); }
+          else row2.appendChild(el('div', 'tip', '✓ Both runs in · your best ' + (+c.my_best).toFixed(1) + '. Results post when qualifying closes.')); }
+        else if (!past) { const rb = el('button', c.mine ? 'ghost' : 'big', c.mine ? '✓ Registered · tap to drop out' : full ? 'Full' : c.live ? 'Register & qualify' : 'Register'); rb.disabled = !c.mine && full;
           rb.onclick = async () => { rb.disabled = true; const e = await ONLINE.compRegister(c.id, !c.mine); if (e) toast(e, 'bad'); else toast(c.mine ? 'Dropped out of ' + c.title : 'You\'re in: ' + c.title, 'good'); await compLoad(true); renderPanel(); }; row2.appendChild(rb); }
         if (signed && (c.host === myId || d.admin)) { const cx = el('button', 'ghost', 'Cancel event'); cx.onclick = async () => { if (cx.dataset.sure !== '1') { cx.dataset.sure = '1'; cx.textContent = 'Tap again to cancel it'; return; } const e = await ONLINE.compCancel(c.id); if (e) toast(e, 'bad'); else toast('Event cancelled'); await compLoad(true); renderPanel(); }; row2.appendChild(cx); }
         b.appendChild(row2); return b; };
@@ -7750,11 +7801,12 @@ if (typeof module !== 'undefined') module.exports = COMP;
         const mx = inp('Max drivers', el('select')); for (const n of (d.admin ? [4, 8, 16, 24, 32] : [4, 8, 12, 16])) { const o = el('option', '', n + ' drivers'); o.value = n; if (n === (d.admin ? 16 : 8)) o.selected = true; mx.appendChild(o); }
         const fm = inp('Format', el('select')); for (const k of Object.keys(COMP_FMT)) { const o = el('option', '', COMP_FMT[k]); o.value = k; fm.appendChild(o); }
         const sg = inp('Time to stage', el('select')); for (const n of [60, 90, 120]) { const o = el('option', '', n + ' s'); o.value = n; if (n === 90) o.selected = true; sg.appendChild(o); }
+        const wn = inp('Qualifying window', el('select')); for (const n of [15, 30, 60, 120]) { const o = el('option', '', n + ' min · 2 runs each'); o.value = n; if (n === 30) o.selected = true; wn.appendChild(o); }
         const bl = inp('Notes', el('textarea')); bl.maxLength = 400; bl.rows = 2; bl.placeholder = 'Prizes, car class, anything drivers should know';
         let offc = null; if (d.admin) { offc = inp('Official', el('input')); offc.type = 'checkbox'; offc.checked = true; }
         add(f); const go = el('button', 'big', d.admin ? 'CREATE EVENT' : 'CREATE FRIENDLY EVENT');
         go.onclick = async () => { const when = new Date(wh.value); if (isNaN(when)) { toast('Pick a start time', 'bad'); return; } go.disabled = true;
-          const r = await ONLINE.compCreate({ title: ti.value, track: tsel.value, starts_at: when.toISOString(), max: +mx.value, format: fm.value, staging: +sg.value, blurb: bl.value, official: offc ? offc.checked : false });
+          const r = await ONLINE.compCreate({ title: ti.value, track: tsel.value, starts_at: when.toISOString(), max: +mx.value, format: fm.value, staging: +sg.value, window: +wn.value, blurb: bl.value, official: offc ? offc.checked : false });
           go.disabled = false; if (r.err) { toast(r.err, 'bad'); return; } toast((offc && offc.checked ? 'Official event' : 'Friendly event') + ' created · you\'re registered', 'good'); await compLoad(true); renderPanel(); };
         add(go); msg('Official events get the gold card and a full-screen announcement for every player. Untick Official for a small low-key event (plain card, no announcement).'); }
       // ---- results ----
@@ -7762,6 +7814,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
       if (!past.length) msg('No finished events yet. Podiums and full results land here after each event.');
       for (const c of past) { const b = el('div', 'ecard' + (c.official ? ' off' : '') + ' done'); b.appendChild(el('div', 'etag', (c.official ? '★ OFFICIAL' : 'FRIENDLY · ' + c.host_name) + ' · ' + compWhen(c.starts_at)));
         b.appendChild(el('div', 'ett', c.title)); b.appendChild(el('div', 'emeta', compTrackName(c.track) + ' · ' + c.n + ' drivers'));
+        const std = (c.results && c.results.standings) || []; if (std.length) { const w = el('div', 'lb estd'); std.filter(x => x.runs > 0).slice(0, 16).forEach((x, i) => { const r = el('div', 'lbr lbr3' + (x.me ? ' me' : '')); r.appendChild(el('span', '', '#' + (i + 1) + ' ' + x.n)); r.appendChild(el('span', 'lbn', '')); r.appendChild(el('span', 'lbp', (+x.best).toFixed(1))); w.appendChild(r); }); b.appendChild(w); }
         const pod = (c.results && c.results.podium) || []; if (pod.length) { const pd = el('div', 'epod'); pod.slice(0, 3).forEach((nm, i) => pd.appendChild(el('span', 'p' + (i + 1), ['🥇', '🥈', '🥉'][i] + ' ' + nm))); b.appendChild(pd); }
         add(b); }
       return;
@@ -7893,7 +7946,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     perfTick(now, dt);
     if (S.opt.showFps) { if (!fpsEl) { fpsEl = document.createElement('div'); fpsEl.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:50;font:600 12px monospace;color:#7CFC00;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(fpsEl); } if ((fpsT += dt) > 0.5) { fpsT = 0; fpsEl.textContent = Math.round(1 / fEma) + '/' + Math.min(60, DRS.hz) + ' fps · res ' + Math.round(drs * 100) + '%' + (DRS.n > 60 ? ' · ' + Math.round(100 * DRS.late / DRS.n) + '% late' : ''); if (DRS.n > 600) { DRS.n = 0; DRS.late = 0; } } fpsEl.style.display = 'block'; } else if (fpsEl) fpsEl.style.display = 'none';
     { const ms = Math.min(dt, 0.1) * 1000; if (DRS.smp.length < 240) { DRS.smp.push(ms); if (DRS.smp.length === 240) { const a = DRS.smp.slice().sort((x, y) => x - y), lo = a[Math.floor(a.length * 0.1)]; DRS.hz = lo < 8 ? 144 : lo < 9.5 ? 120 : lo < 12 ? 90 : 60; } }
-      const tgt = 1 / Math.min(60, DRS.hz); if (mode === 'drive') { DRS.n++; if (ms > tgt * 1500) DRS.late++; }
+      const tgt = 1 / Math.min(60, DRS.hz); if (mode === 'drive') { DRS.n++; if (ms > tgt * 1500) DRS.late++; REP.driveT += ms / 1000; REP.frames++; if (ms > tgt * 1500) REP.late++;
+        if (!REP.perfSent && REP.driveT > 60) { REP.perfSent = true; report('perf', 'sample', '', '', { fps: +(REP.frames / REP.driveT).toFixed(1), late: +(100 * REP.late / REP.frames).toFixed(1), hz: DRS.hz, res: drs, phys: physOf(devOf()), dev: devOf(), room: !!ONLINE.room, msaa: weakGPU ? 2 : 4 }); } }
       if (mode === 'drive' && S.opt.autoRes !== false) { const now = performance.now(); if (now - DRS.capAt > 30000) DRS.cap = 1;
         if (drT > 2.5 && fEma > tgt * 1.12 && drs > DRS.lo + 1e-3) { drT = 0; DRS.cap = Math.min(DRS.cap, drs - 0.05); DRS.capAt = now; drs = Math.max(DRS.lo, drs - (fEma > tgt * 1.5 ? 0.15 : 0.08)); softResize(); }
         else if (drT > 8 && fEma < tgt * 1.04 && drs < Math.min(1, DRS.cap) - 1e-3) { drT = 0; drs = Math.min(1, DRS.cap, drs + 0.05); softResize(); } } }
