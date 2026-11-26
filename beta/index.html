@@ -268,7 +268,8 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 #comp .cz.ok{background:#173d22;color:#8ff0a6}#comp .cz.no{background:#3d1a17;color:#ff9d94}
 #comp .cbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}#comp .cbtns button{flex:1 1 auto}
 #comp .cbtns button{flex:1 1 0;min-width:0;padding:12px 8px;font-size:15px;margin:0}
-.comp #toast{top:max(17%,108px)}
+.comp #toast:not(.zone){top:max(17%,108px)}
+.comp #hTL{display:none}
 @media (max-height:520px){#comp .ccard{padding:10px 14px}#comp .ctot{font-size:36px}#comp .cw{padding:3px 0;font-size:13px}#comp .cj{margin:2px 0}#comp .cbtns{padding:6px 0 2px}#comp .cbtns button{padding:9px 6px;font-size:13px}#comp .cnote{display:none}#comp .cbar{top:calc(50px + env(safe-area-inset-top));font-size:13px;padding:4px 6px 4px 8px}#comp .crp{padding:6px 8px}#comp .rpcap{bottom:calc(82px + env(safe-area-inset-bottom));font-size:14px}}
 #comp .cnote{margin-top:8px;font-size:11px;color:#7d8896}
 #comp .crp{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(760px,94vw);background:rgba(10,11,14,.85);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;pointer-events:auto;color:#fff}
@@ -284,6 +285,24 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 .comprp #hud,.comprp #touch,.comprp #toast{display:none!important}
 .inmenu #comp{display:none!important}
 .compbtn{background:linear-gradient(90deg,#1b2a6b,#13306b)!important;color:#fff!important;border:1px solid #2f5bff!important}.compbtn small{display:block;font-size:11px;font-style:normal;font-weight:600;letter-spacing:.06em;opacity:.75;margin-top:3px}
+
+/* v104 competitions tab + hold-to-close */
+.nav.navc{color:#ffd23f}#nav{column-gap:0}.nav{padding-left:6px;padding-right:6px}
+.holdb{position:relative;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none}
+.holdb i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.28);pointer-events:none}
+.holdb span{position:relative}
+.ecard{border:1px solid var(--ln);border-radius:8px;padding:12px 14px;margin:10px 0;background:rgba(255,255,255,.03)}
+.ecard.off{border:1px solid #d9a521;background:linear-gradient(135deg,rgba(217,165,33,.18),rgba(20,16,6,.6) 60%);box-shadow:0 0 0 1px rgba(255,210,63,.15),0 8px 24px rgba(217,165,33,.12)}
+.ecard .etag{font-size:11px;font-weight:800;letter-spacing:.12em;color:#9fb3c8}.ecard.off .etag{color:#ffd23f}
+.ecard .ett{font-size:20px;font-weight:800;margin:4px 0 2px}.ecard.off .ett{color:#fff4cf}
+.ecard .emeta{font-size:13px;color:#cfd8e3}.ecard .ewhen{font-size:13px;font-weight:700;margin-top:2px;color:#7cc4ff}.ecard.off .ewhen{color:#ffd23f}
+.ecard .efill{display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:12px}.ecard .efill span{flex:1;height:8px;background:#22262e;border-radius:4px;overflow:hidden}.ecard .efill i{display:block;height:100%;background:#3ddc6a}.ecard.off .efill i{background:#ffd23f}
+.ecard .edrv{font-size:12px;color:#9fb3c8;margin:2px 0 6px}
+.ecard .epod{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-weight:700}
+.hostf .hrow{display:flex;align-items:center;gap:10px;margin:6px 0}.hostf .hrow>span{flex:0 0 104px;font-size:13px;color:#cfd8e3}
+.hostf input:not([type=checkbox]),.hostf select,.hostf textarea{flex:1;min-width:0;background:#15171d;color:#fff;border:1px solid var(--ln);border-radius:6px;padding:8px;font:inherit;font-size:14px}
+.hostf input[type=checkbox]{width:20px;height:20px}
+#tour .tcard.compann{border-top:3px solid #ffd23f!important;background:linear-gradient(160deg,#2a2208,#121317 55%)}#tour .tcard.compann .tstep{color:#ffd23f!important}#tour .tcard.compann h2{color:#fff4cf}
 </style>
 </head>
 <body class="inmenu">
@@ -5330,6 +5349,11 @@ const ONLINE = (() => {
   O.setEmailUpdates = async on => { const r = await rpc('set_email_updates', { p_on: !!on }); if (r !== null && O.profile) O.profile.email_updates = !!r; fire(); return r; };
   O.adminEmailList = async () => (await rpc('admin_email_list')) || [];
   O.searchDrivers = async (q, n) => (await rpc('search_drivers', { p_q: String(q || '').slice(0, 24), p_limit: n || 30 })) || [];
+  // v104 competitions: friendly events anyone signed in can host, official ones only admins can make
+  O.compList = async () => (await rpc('comp_list')) || null;
+  O.compCreate = async p => { const r = await rpc('comp_create', { p }); return r && r.ok ? { id: r.id } : { err: said(r) }; };
+  O.compRegister = async (id, on) => said(await rpc('comp_register', { p_comp: id, p_on: !!on }));
+  O.compCancel = async id => said(await rpc('comp_cancel', { p_comp: id }));
   O.pedBoard = async () => (await rpc('ped_board')) || { top: [] };   // v98
   O.onlineDrivers = async () => (await rpc('online_drivers')) || { drivers: [], guests: 0 };
   O.FORUM_CATS = [['feedback', 'Game feedback'], ['howto', 'How to play'], ['tuning', 'Tuning help'], ['bugs', 'Bugs & problems'], ['ideas', 'Ideas & upgrades'], ['general', 'General']];
@@ -5519,7 +5543,7 @@ const COMP = (function () {
     if (!f || f.length < 3 || !tr.zones) { out.zero = { why: 'No run recorded', t: 0 }; return finish(out); }
     const c = SIMr.makeCar('judge'); c.p = Object.assign({}, c.p, { a: rec.pa, b: rec.pb }); const J = {}, o = {}, h = 1 / 60, t1 = f[f.length - 1][0];
     const zs = tr.zones.map((z, k) => ({ z, k, name: zName(z, k), best: null, samp: [], minA: 99 }));
-    let hint = 0, firstDrift = -1, entrySp = 0, driftD = 0, courseD = 0, lostT = 0, wasDrift = false, inChain = false, lastSide = 0, sideT = -9, trans = 0, wwT = 0, spinT = 0, lastLight = -9, zoneSeen = false, angS = 0, trP = -9, dist = 0;
+    let hint = 0, firstDrift = -1, entrySp = 0, driftD = 0, courseD = 0, lostT = 0, wasDrift = false, inChain = false, lastSide = 0, sideT = -9, trans = 0, wwT = 0, spinT = 0, lastLight = -9, zoneSeen = false, angS = 0, trP = -9, dist = 0, zSpS = 0, zSpN = 0, entS = 0, entN = 0, prevZ = -1, lastZ = -1, broken = false, links = 0, pairs = 0;
     const where = i => locate(tr, zs, i);
     for (let t = f[0][0]; t <= t1 + 1e-6; t += h) {
       hint = sample(rec, t, o, hint); Object.assign(c, { x: o.x, y: o.y, yaw: o.yaw, vx: o.vx, vy: o.vy, slip: o.slip, speed: o.speed, ti: o.ti });
@@ -5539,6 +5563,11 @@ const COMP = (function () {
       /* angle samples: only while the car is actually in a zone's band, smoothed over ~0.25 s so a transition flick isn't a "drop" */
       angS += (deg - angS) * Math.min(1, h / 0.25);
       tr.zones.forEach((z, k) => { const st = J.zs[k]; if (st && st.on) zoneSeen = true; });
+      /* style in the zones: speed through them, entry speed, and whether the drift was linked from the last zone into this one */
+      const inZ = J.liveZ >= 0 && drifting ? J.liveZ : -1;
+      if (inZ >= 0) { zSpS += o.speed; zSpN++; if (inZ !== prevZ) { entS += o.speed; entN++; if (lastZ >= 0 && inZ !== lastZ) { pairs++; if (!broken) links++; } broken = false; lastZ = inZ; } }
+      else if (!drifting && lastZ >= 0 && lostT > 0.45) broken = true;
+      prevZ = inZ;
       if (J.liveZ >= 0 && drifting) { const z = tr.zones[J.liveZ], Z = zs[J.liveZ]; if (z.type === 'outer' || z.type === 'inner') { Z.samp.push(angS); if (angS < Z.minA) { Z.minA = angS; Z.minT = t; } } }
       // style: commitment on entry, how much of the lap is sideways, straightening, transitions
       dist += o.speed * h; if (firstDrift < 0 && drifting) { firstDrift = t; entrySp = o.speed; }
@@ -5559,14 +5588,16 @@ const COMP = (function () {
       if (Z.samp.length > 8) { const m = Z.samp.reduce((p, q) => p + q, 0) / Z.samp.length, sd = Math.sqrt(Z.samp.reduce((p, q) => p + (q - m) * (q - m), 0) / Z.samp.length); cons += clamp(1 - (sd / Math.max(m, 1)) * 2.5, 0, 1); cn++;
         const lo = Z.minA; if (m > 25 && lo < m * 0.55) out.ded.push({ j: 'angle', pts: 5, why: 'Dropped angle in ' + Z.name + ' (' + Math.round(m) + '° to ' + Math.round(lo) + '°)', t: Z.minT, zone: Z.k }); } }
     // ---- STYLE ----
-    const commit = clamp((entrySp - 1.0) / 1.6, 0, 1), cover = courseD > 0 ? clamp(driftD / courseD / 0.85, 0, 1) : 0, bonus = Math.min(9, trans * 3);
-    out.parts = { entrySp, cover: courseD > 0 ? driftD / courseD : 0, trans };
+    const zSp = zSpN ? zSpS / zSpN : 0, ent = entN ? entS / entN : 0, spd = clamp((zSp - 1.2) / 2.4, 0, 1), commit = clamp((ent - 1.0) / 2.2, 0, 1), link = pairs ? links / pairs : 0, bonus = Math.min(9, trans * 3);
+    out.parts = { zoneSp: zSp, entrySp: ent, link, links, pairs, trans, cover: courseD > 0 ? driftD / courseD : 0 };
     const ded = j => out.ded.filter(d => d.j === j).reduce((p, d) => p + d.pts, 0);
     out.line = clamp(wl ? 100 * sl / wl : 0, 0, 100);
     out.angle = clamp(100 * (0.8 * (wa ? sa / wa : 0) + 0.2 * (cn ? cons / cn : 0)) - ded('angle'), 0, 100);
-    out.style = clamp(100 * (0.35 * commit + 0.65 * cover) + bonus - ded('style'), 0, 100);
+    out.style = clamp(100 * (0.4 * spd + 0.25 * commit + 0.35 * link) + bonus - ded('style'), 0, 100);
     if (bonus) out.notes.push({ j: 'style', good: 1, why: trans + ' clean transition' + (trans > 1 ? 's' : '') + ' (+' + bonus + ')', w: bonus / 10 });
-    if (commit > 0.8) out.notes.push({ j: 'style', good: 1, why: 'Committed entry at ' + entrySp.toFixed(1) + ' m/s', w: 0.4 }); else if (commit < 0.35 && firstDrift >= 0) out.notes.push({ j: 'style', bad: 1, why: 'Soft entry (' + entrySp.toFixed(1) + ' m/s into the first flick)', w: 0.4 });
+    if (zSpN) { if (spd > 0.75) out.notes.push({ j: 'style', good: 1, why: 'Carried speed through the zones (' + zSp.toFixed(1) + ' m/s avg)', w: 0.45 }); else if (spd < 0.4) out.notes.push({ j: 'style', bad: 1, why: 'Slow through the zones (' + zSp.toFixed(1) + ' m/s avg)', w: 0.5 });
+      if (commit < 0.35) out.notes.push({ j: 'style', bad: 1, why: 'Soft zone entries (' + ent.toFixed(1) + ' m/s avg)', w: 0.4 }); }
+    if (pairs) { if (link >= 0.8) out.notes.push({ j: 'style', good: 1, why: 'Linked ' + links + ' of ' + pairs + ' zones without straightening', w: 0.45 }); else out.notes.push({ j: 'style', bad: 1, why: 'Linked only ' + links + ' of ' + pairs + ' zones', w: 0.45 }); }
     const bestA = zs.filter(Z => Z.best).sort((p, q) => q.best.ang - p.best.ang)[0]; if (bestA && bestA.best.ang > 45) out.notes.push({ j: 'angle', good: 1, why: 'Held ' + Math.round(bestA.best.ang) + '° through ' + bestA.name, w: 0.5 });
     out.zones = zs.map(Z => ({ k: Z.k, name: Z.name, type: Z.z.type, hit: !!Z.best, pct: Z.best ? Z.best.pct : 0, ang: Z.best ? Z.best.ang : 0, gapCm: Z.best ? Z.best.gapCm : null, t: Z.best ? Z.best.t : null, line: Z.line, angle: Z.angle }));
     return finish(out);
@@ -5666,7 +5697,7 @@ const COMP = (function () {
         else if (S.ph === 'lead') { ui.status('WATCH THE TOWER', 'staged'); if (S.t >= FW.LEAD_IN) { S.ph = 'r1'; S.t = 0; lights(COL.red, COL.off, COL.off); ctx.beep(587, 0.22, 0.35); } }
         else if (S.ph === 'r1') { ui.status('●', 'red'); if (S.t >= FW.RED) { S.ph = 'r2'; S.t = 0; lights(COL.red, COL.red, COL.off); ctx.beep(587, 0.22, 0.35); } }
         else if (S.ph === 'r2') { ui.status('● ●', 'red'); if (S.t >= FW.RED) { S.ph = 'r3'; S.t = 0; lights(COL.red, COL.red, COL.red); ctx.beep(587, 0.22, 0.35); } }
-        else if (S.ph === 'r3') { ui.status('● ● ●', 'red'); if (S.t >= FW.RED) { S.ph = 'run'; S.t = 0; lights(COL.green, COL.green, COL.green); ctx.beep(1175, 0.7, 0.4); ctx.go(); S.rec = newRec(P, tr, S.who); S.target = Math.round(P.prog) + 1; S.nRun++; recTick(S.rec, P, 0, 0); } }
+        else if (S.ph === 'r3') { ui.status('● ● ●', 'red'); if (S.t >= FW.RED) { S.ph = 'run'; S.t = 0; lights(COL.green, COL.green, COL.green); ctx.beep(1175, 0.7, 0.4); ctx.go(); S.rec = newRec(P, tr, S.who); S.target = Math.round(P.prog) + 1; S.nRun++; S.hits = new Set(); S.liveZ = -1; recTick(S.rec, P, 0, 0); } }
         break; }
       case 'false': {
         const on = (S.t % (FW.FLASH_ON + FW.FLASH_OFF)) < FW.FLASH_ON; lights(on ? COL.red : COL.off, COL.off, COL.off);
@@ -5675,7 +5706,7 @@ const COMP = (function () {
         break; }
       case 'run': {
         recTick(S.rec, P, dt, hit); if (S.t > FW.GREEN && tower.cubes[0].userData.c === COL.green) lights(COL.off, COL.off, COL.off);
-        ui.status('RUN · ' + S.rec.t.toFixed(1) + ' s', 'run');
+        ui.status('RUN · ' + S.rec.t.toFixed(1) + ' s · ZONES ' + S.hits.size + '/' + tr.zones.length + (S.liveZ >= 0 ? ' · IN ' + zName(tr.zones[S.liveZ], S.liveZ).replace('Angle check ', 'A') + ' ' + '▮'.repeat(Math.max(1, Math.round(S.liveQ * 5))) : ''), 'run');
         // a zero ends the run on the spot (no point driving out a dead run)
         const zero = hit > HARD_HIT ? 'hit' : P.inf ? 'off' : null;
         if (zero || P.prog >= S.target) { recTick(S.rec, P, 1 / HZ, hit); endRun({}); }
@@ -5692,6 +5723,8 @@ const COMP = (function () {
     try { const k = 'rcdl_comp_pb', pb = JSON.parse(localStorage.getItem(k) || '{}'); if (!R.zero && (!pb[tr.def.id] || R.total > pb[tr.def.id].total)) { pb[tr.def.id] = { total: R.total, line: R.line, angle: R.angle, style: R.style, at: Date.now() }; localStorage.setItem(k, JSON.stringify(pb)); R.pb = true; } } catch (e) { }
   }
   const lock = () => S.on && (S.ph === 'card' || S.ph === 'replay');
+  function live(z, q) { S.liveZ = S.ph === 'run' ? z : -1; S.liveQ = q || 0; }
+  function zoneHit(k) { if (S.ph === 'run' && S.hits) S.hits.add(k); }
 
   // ---------------- replay + broadcast auto-director ----------------
   function replay(fromT) {
@@ -5789,7 +5822,7 @@ const COMP = (function () {
       if (a === 'bk') backToCard(); });
   }
 
-  return { FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
+  return { live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
 })();
 if (typeof module !== 'undefined') module.exports = COMP;
 
@@ -6283,7 +6316,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v103', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v104', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -6483,7 +6516,14 @@ if (typeof module !== 'undefined') module.exports = COMP;
       trailerT = ready ? trailerT + dt : Math.min(0, trailerT); const show = ready && trailerT > 0.6;
       if (tg) { tg.classList.toggle('on', !!show); if (show && tg.dataset.to !== ready) { tg.dataset.to = ready; tg.innerHTML = ready === 'lowrider' ? '🎰 Somebody’s throwing a party out back… RIDE TO THE LOT<small>TAP · or press E / pad X</small>' : ready === 'prodigy2' && isLot() ? '🅿️ VALET · BACK TO PRODIGY RC V2<small>TAP · or press E / pad X</small>' : ready === 'crawl' ? '🗝️🗝️🗝️ The three keys turn… RIDE TO CRAWLER CANYON<small>TAP · or press E / pad X</small>' : ready === 'locked' ? '🔒 THE TRAILER WON\'T BUDGE · ' + huntKeyIcons() + '<small>' + huntHint() + '</small>' : '🚚 RIDE BACK TO PRODIGY RC V2<small>' + (S.hunt.egg === 'carry' ? 'The egg wants to go home… where it all began' : 'TAP · or press E / pad X') + '</small>'; } if (!show) tg.dataset.to = ''; } }
     // ---- scoring ----
-    if (mode === 'drive' && !isCrawl() && !track.def.free) {
+    // v104 (Shaun): comp runs score in the zones only, like a real comp. No chain points, lap toasts or board laps; the zone judge still runs for live feedback.
+    if (compOn && mode === 'drive' && !isCrawl() && !COMP.lock()) {
+      const drifting = SIM.driftCheck(P, dt) && !P.inf, J = score.J || (score.J = {}); J.zs = score.zs; J.drifting = drifting; J.block = !!P.inf; const ev = SIM.judgeTick(J, P, track, dt);
+      COMP.live(J.liveZ, J.live, track);
+      for (const e of ev) { const z = e.z, nm = e.type === 'inner' ? 'IZ' + z.n2 : e.type === 'outer' ? 'OZ' + z.n2 : e.type === 'x' ? 'X' + z.n : e.type === 'ang' ? 'ANGLE CHECK ' + z.n : 'CP' + z.n;
+        COMP.zoneHit(e.k); toast(nm + ' ✓ · ' + (e.type === 'outer' || e.type === 'inner' ? Math.round(e.pct * 100) + '% · ' : '') + Math.round(e.ang) + '°' + (e.type !== 'ang' && e.gapCm != null ? ' · ' + Math.round(e.gapCm) + ' cm' : ''), 'good zone'); }
+    }
+    if (mode === 'drive' && !isCrawl() && !track.def.free && !compOn) {
       // ---- wrong way / fresh ground (v46): points only count going the right way, on track you haven't already covered ----
       { const tx = track.TX[P.ti] || 0, ty = track.TY[P.ti] || 0, along = P.speed > 0.05 ? (P.vx * tx + P.vy * ty) / P.speed : 0;
         if (P.speed > 0.4 && along < -0.35) score.wwT = (score.wwT || 0) + dt; else if (along > 0.2 || P.speed < 0.15) score.wwT = Math.max(0, (score.wwT || 0) - dt * 2.5);
@@ -6990,7 +7030,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
         let url = cv.toDataURL('image/png'); if (url.length > 600000) url = cv.toDataURL('image/jpeg', 0.85); try { localStorage.setItem('rcdl_img', url); } catch (e) { toast('Picture too big to keep, try a smaller one', 'bad'); }
         loadUserImg(url).then(im2 => { userImg = im2; done && done(); }); }); rd.readAsDataURL(f); }; fi.click(); }
   function rebuildPlayer() { GFX.disposeTree(player.mesh); let L = lotWheels(myLook()); if (isCrawl()) L = Object.assign({}, L, { tires: 'crawl' }); if (userImg && L.stk && L.stk.some(q => q.k === 'img')) L = Object.assign({}, L, { _img: userImg }); player.mesh = GFX.buildCar(L, !isTouchDev()); player.look = L; scene.add(player.mesh); save(); }
-  function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : ''), label); if (id === 'community' && (ONLINE.unread || SOC.n)) b.appendChild(el('i', 'badge', String((ONLINE.unread | 0) + SOC.n))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
+  function renderNav() { nav.textContent = ''; for (const [id, label] of [['drive', mode === 'pause' ? 'Session' : 'Drive'], ['comps', 'Comps'], ['garage', 'Garage'], ['tune', 'Tuning'], ['controls', 'Controls'], ['online', 'Online'], ['community', 'Social'], ['boards', 'Boards'], ['settings', 'Settings']]) { const b = el('button', 'nav' + (tab === id ? ' act' : '') + (id === 'comps' ? ' navc' : ''), label); if (id === 'community' && (ONLINE.unread || SOC.n)) b.appendChild(el('i', 'badge', String((ONLINE.unread | 0) + SOC.n))); if (id === 'online' && ONLINE.room) b.appendChild(el('i', 'badge live', '●')); b.onclick = () => { tab = id; if (id !== 'community') thread = null; renderNav(); renderPanel(); }; nav.appendChild(b); } }
   function drawEsc(cv) {   // v54: ESC curve graph like the programmer apps (wheel speed / motor rpm vs trigger)
     const g = cv.getContext('2d'), W = cv.width, H = cv.height, L = 56, B = 34, T = 14, R = 30, p = SIM.derive(S.tune, 'vinyl'), e = p.thrExpo;
     g.clearRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,0.04)'; g.fillRect(L, T, W - L - R, H - T - B);
@@ -7053,7 +7093,34 @@ if (typeof module !== 'undefined') module.exports = COMP;
       else { mk(i > 0 ? 'Back' : '', 'ghost', () => { i--; draw(); }); if (i === 1 && installEv) mk('Install app', 'big', async () => { await doInstall(); i++; draw(); }); if (i < steps.length - 1) { mk('Skip', 'ghost', done); mk('Next', 'big', () => { i++; draw(); }); } else mk("Let's drive", 'big', done); } };
     draw();
   }
-  function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) { setTimeout(() => tour(0), 600); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } } else setTimeout(announce, 1500); }
+  function maybeTour() { let seen = false; try { seen = localStorage.getItem('rcdl_tour') === '1'; } catch (e) { } if (!seen) { setTimeout(() => tour(0), 600); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } } else setTimeout(announce, 1500); let ct = 0; const tryComp = () => { if (ONLINE.status === 'ready') compAnnounce(); else if (++ct < 20) setTimeout(tryComp, 3000); }; setTimeout(tryComp, 4000); }
+  // v104 (Shaun): every announcement closes with a press-and-hold (about a second), so nobody taps past it without reading it
+  function holdBtn(label, cls, onDone, ms) { ms = ms || 1000; const b = el('button', (cls || 'ghost') + ' holdb'); b.innerHTML = '<i></i><span></span>'; b.querySelector('span').textContent = label; const bar = b.querySelector('i'); let t0 = 0, raf = 0, done = false;
+    const stop = () => { cancelAnimationFrame(raf); t0 = 0; if (!done) { bar.style.transition = 'width .15s'; bar.style.width = '0'; } };
+    const step = () => { const k = Math.min(1, (performance.now() - t0) / ms); bar.style.width = (k * 100) + '%'; if (k >= 1) { done = true; onDone(); return; } raf = requestAnimationFrame(step); };
+    const go = e => { if (done || t0) return; if (e && e.preventDefault) e.preventDefault(); bar.style.transition = 'none'; t0 = performance.now(); raf = requestAnimationFrame(step); };
+    b.addEventListener('pointerdown', go); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+    b.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) go(e); }); b.addEventListener('keyup', e => { if (e.key === 'Enter' || e.key === ' ') stop(); });
+    b.onclick = e => e.preventDefault(); b.addEventListener('contextmenu', e => e.preventDefault()); return b; }
+  const COMP_FMT = { qual_tandem: 'Qualifying + tandem bracket', qual_only: 'Qualifying only', strike: 'Strike elimination' };
+  const compTrackName = id => { const d = SIM.TRACK_DEFS.find(x => x.id === id); return d ? d.name : id; };
+  const compWhen = iso => { const d = new Date(iso); return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
+  const compIn = iso => { const m = Math.round((new Date(iso) - Date.now()) / 60000); if (m <= 0) return 'LIVE NOW'; if (m < 60) return 'in ' + m + ' min'; const hh = Math.floor(m / 60); if (hh < 48) return 'in ' + hh + ' h ' + (m % 60) + ' min'; return 'in ' + Math.floor(hh / 24) + ' days'; };
+  let compData = null, compAt = 0, compBusy = false, compAnnDone = false;
+  async function compLoad(force) { if (compBusy || (!force && compData && Date.now() - compAt < 20000)) return compData; compBusy = true; try { const d = await ONLINE.compList(); if (d) { compData = d; compAt = Date.now(); } } finally { compBusy = false; } return compData; }
+  // a new official event gets a full-screen announcement once per device (hold to close)
+  async function compAnnounce() {
+    if (compAnnDone || document.getElementById('tour')) return; const d = await compLoad(); if (!d) return; compAnnDone = true;
+    const c = (d.upcoming || []).find(x => x.official && x.status === 'open' && new Date(x.starts_at) > Date.now() && !localStorage.getItem('rcdl_compann_' + x.id)); if (!c || document.getElementById('tour')) return;
+    const ov = el('div'); ov.id = 'tour'; ov.className = 'pcard synccard'; document.body.appendChild(ov);
+    const card = el('div', 'tcard compann'); ov.appendChild(card); card.appendChild(el('div', 'tstep', '★ OFFICIAL RC DRIFT LAB EVENT'));
+    card.appendChild(el('h2', '', c.title)); const body = el('div', 'tbody'); card.appendChild(body);
+    const left = Math.max(0, c.max - c.n);
+    for (const t of ['🏁 ' + compTrackName(c.track) + ' · ' + COMP_FMT[c.format], '🗓 ' + compWhen(c.starts_at) + ' (' + compIn(c.starts_at) + ')', '👥 ' + c.n + ' of ' + c.max + ' drivers registered · ' + (left ? left + ' spot' + (left > 1 ? 's' : '') + ' left' : 'FULL'), c.blurb || '', 'Real comp rules: tower start, robot judges (Line, Angle, Style), points only in the zones. Practice any time in the 🏁 Comps tab.'].filter(Boolean)) body.appendChild(el('p', '', t));
+    const btns = el('div', 'tbtns'); card.appendChild(btns);
+    const done = () => { ov.remove(); try { localStorage.setItem('rcdl_compann_' + c.id, '1'); } catch (e) { } };
+    btns.append(holdBtn('Hold to close', 'ghost', done), holdBtn(c.mine ? 'Hold · open Comps' : 'Hold · register', 'big', () => { done(); tab = 'comps'; openMenu('main', 'comps'); }));
+  }
   // v101 one-time announcement for returning players (new players get the tour instead): thank you + V2.1 is live + what changed
   const ANN_KEY = 'rcdl_ann_v101';
   function announce() {
@@ -7068,9 +7135,9 @@ if (typeof module !== 'undefined') module.exports = COMP;
       '⚡ Smoother everywhere: the game draws far less behind the scenes, with the same detail. Prodigy V2, The Lot and Crawler Canyon should all feel a lot better on phones and PCs.',
       '🔧 Fixed from your reports: the hydraulics panel is smaller on phones (with a HIDE button) and switches off when you leave The Lot, messages stay up long enough to read, and nobody drives inside the Touge mountain anymore.',
       'Next up: online competition events, run like a real RC drift comp. Bugs or ideas? Post them in Social → Forum. Now go send it.']) body.appendChild(el('p', '', t));
-    const btns = el('div', 'tbtns'); card.appendChild(btns); const ok = el('button', 'ghost', 'Got it'), go = el('button', 'big', 'Drive V2.1');
-    const done = () => { ov.remove(); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } };
-    ok.onclick = done; go.onclick = () => { done(); const vi = SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2_1'); if (vi < 0) return; if (locked(vi)) { freeCard('every track'); return; } if (ONLINE.room) leaveLobby(); loadTrack(vi); applyTune(); save(); drive(true); };
+    const btns = el('div', 'tbtns'); card.appendChild(btns);
+    const done = () => { ov.remove(); try { localStorage.setItem(ANN_KEY, '1'); } catch (e) { } setTimeout(compAnnounce, 800); };
+    const ok = holdBtn('Hold to close', 'ghost', done), go = holdBtn('Hold · drive V2.1', 'big', () => { done(); const vi = SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2_1'); if (vi < 0) return; if (locked(vi)) { freeCard('every track'); return; } if (ONLINE.room) leaveLobby(); loadTrack(vi); applyTune(); save(); drive(true); });
     btns.append(ok, go); }
   // v84: Zelle for people without Venmo. Zelle's own share link (from Shaun's QR) — the page it opens shows who you're paying; nothing is printed in the game.
   // v88: Zelle has no pay link (it only lives inside each bank's app), so the button opens a card with Shaun's Zelle QR code: scan it with
@@ -7615,6 +7682,59 @@ if (typeof module !== 'undefined') module.exports = COMP;
       if (cv === 'forum') forumView({ h, add, msg, top, signInBtn, badges });
       return;
     }
+    if (tab === 'comps') {   // v104 competitions tab: practice, upcoming events (register), host your own, results
+      const myId = O.user && O.user.id, signed = !!O.profile;
+      h('Practice', 'solo qualifying');
+      msg('Real comp rules: stage at the tower, go on green, one lap. Points only come from the zones: Line (how deep and how much of each zone), Angle (angle held in the zones and angle checks), Style (speed through the zones, entries, linking zone to zone). Hit the wall, spin or leave the track and the run is 0.');
+      if (COMP.available(track) && !inRoom) { const cb = el('button', 'big compbtn'); cb.innerHTML = '🏁 PRACTICE ON ' + track.def.name.toUpperCase() + '<small>tower start · robot judges · instant replay</small>'; cb.onclick = compStart; add(cb); }
+      else msg(inRoom ? 'Leave the room to practice comp runs.' : 'Pick a track with zones on the Drive tab to practice (Touge, Crawler Canyon and The Lot have no comp zones).');
+      { let pb = {}; try { pb = JSON.parse(localStorage.getItem('rcdl_comp_pb') || '{}'); } catch (e) { } const ks = Object.keys(pb); if (ks.length) { const w = el('div', 'lb'); for (const k of ks) { const r = el('div', 'lbr lbr3'); r.appendChild(el('span', '', compTrackName(k))); r.appendChild(el('span', 'lbn', 'L ' + pb[k].line.toFixed(0) + ' · A ' + pb[k].angle.toFixed(0) + ' · S ' + pb[k].style.toFixed(0))); r.appendChild(el('span', 'lbp', pb[k].total.toFixed(1))); w.appendChild(r); } h('My practice bests', 'this device'); add(w); } }
+      if (!web || O.status !== 'ready') { h('Events'); msg(!web ? 'Online events are on the web version: ' + WEB : 'Connecting…'); return; }
+      const d = compData; if (!d || Date.now() - compAt > 20000) compLoad(!d).then(() => { if (tab === 'comps' && mode !== 'drive') renderPanel(); });
+      if (!d) { h('Upcoming events'); msg('Loading…'); return; }
+      const card = c => { const off = !!c.official, past = new Date(c.starts_at) <= Date.now(), full = c.n >= c.max, b = el('div', 'ecard' + (off ? ' off' : ''));
+        b.appendChild(el('div', 'etag', off ? '★ OFFICIAL EVENT' : 'FRIENDLY · hosted by ' + c.host_name));
+        b.appendChild(el('div', 'ett', c.title));
+        b.appendChild(el('div', 'emeta', compTrackName(c.track) + ' · ' + COMP_FMT[c.format] + ' · ' + c.staging + ' s to stage'));
+        b.appendChild(el('div', 'ewhen', compWhen(c.starts_at) + ' · ' + compIn(c.starts_at)));
+        if (c.blurb) b.appendChild(el('p', 'tip', c.blurb));
+        const fill = el('div', 'efill'); fill.innerHTML = '<span><i style="width:' + Math.min(100, 100 * c.n / c.max) + '%"></i></span><b></b>'; fill.querySelector('b').textContent = c.n + ' / ' + c.max + (full ? ' · FULL' : ''); b.appendChild(fill);
+        if (c.drivers && c.drivers.length) b.appendChild(el('div', 'edrv', c.drivers.map(String).join(' · ')));
+        const row2 = el('div', 'btnrow');
+        if (!signed) { const sb = el('button', 'ghost', 'Sign in to register'); sb.onclick = () => { tab = 'online'; renderNav(); renderPanel(); }; row2.appendChild(sb); }
+        else if (!past) { const rb = el('button', c.mine ? 'ghost' : 'big', c.mine ? '✓ Registered · tap to drop out' : full ? 'Full' : 'Register'); rb.disabled = !c.mine && full;
+          rb.onclick = async () => { rb.disabled = true; const e = await ONLINE.compRegister(c.id, !c.mine); if (e) toast(e, 'bad'); else toast(c.mine ? 'Dropped out of ' + c.title : 'You\'re in: ' + c.title, 'good'); await compLoad(true); renderPanel(); }; row2.appendChild(rb); }
+        if (signed && (c.host === myId || d.admin)) { const cx = el('button', 'ghost', 'Cancel event'); cx.onclick = async () => { if (cx.dataset.sure !== '1') { cx.dataset.sure = '1'; cx.textContent = 'Tap again to cancel it'; return; } const e = await ONLINE.compCancel(c.id); if (e) toast(e, 'bad'); else toast('Event cancelled'); await compLoad(true); renderPanel(); }; row2.appendChild(cx); }
+        b.appendChild(row2); return b; };
+      const up = (d.upcoming || []).slice().sort((a, b) => (b.official - a.official) || (new Date(a.starts_at) - new Date(b.starts_at)));
+      h('Upcoming events', up.length ? up.length + '' : ''); if (!up.length) msg('Nothing scheduled yet. Official events get announced when you open the game. Host a friendly one below.'); for (const c of up) add(card(c));
+      msg('Event day: the tower calls drivers up, the robot judges score every run, then bystanders vote on each result. The live event runner is in the next update, so events listed here are taking sign-ups only for now.');
+      // ---- host ----
+      h(d.admin ? 'Host an event' : 'Host a friendly event'); 
+      if (!signed) msg('Sign in on the Online tab to host your own friendly comp.');
+      else { const f = el('div', 'hostf'), inp = (lbl, node) => { const r = el('label', 'hrow'); r.appendChild(el('span', '', lbl)); r.appendChild(node); f.appendChild(r); return node; };
+        const ti = inp('Name', el('input')); ti.maxLength = 48; ti.placeholder = 'Thursday Night Throwdown';
+        const tsel = inp('Track', el('select')); for (const [dd] of TRKALL()) { if (!COMP.available({ zones: [1], def: dd })) continue; const o = el('option', '', dd.name + (dd.ver ? '' : '')); o.value = dd.id; if (dd.id === track.def.id) o.selected = true; tsel.appendChild(o); }
+        const wh = inp('Starts', el('input')); wh.type = 'datetime-local'; { const t = new Date(Date.now() + 86400000); t.setMinutes(0, 0, 0); const z = n => String(n).padStart(2, '0'); wh.value = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate()) + 'T' + z(t.getHours()) + ':00'; }
+        const mx = inp('Max drivers', el('select')); for (const n of (d.admin ? [4, 8, 16, 24, 32] : [4, 8, 12, 16])) { const o = el('option', '', n + ' drivers'); o.value = n; if (n === (d.admin ? 16 : 8)) o.selected = true; mx.appendChild(o); }
+        const fm = inp('Format', el('select')); for (const k of Object.keys(COMP_FMT)) { const o = el('option', '', COMP_FMT[k]); o.value = k; fm.appendChild(o); }
+        const sg = inp('Time to stage', el('select')); for (const n of [60, 90, 120]) { const o = el('option', '', n + ' s'); o.value = n; if (n === 90) o.selected = true; sg.appendChild(o); }
+        const bl = inp('Notes', el('textarea')); bl.maxLength = 400; bl.rows = 2; bl.placeholder = 'Prizes, car class, anything drivers should know';
+        let offc = null; if (d.admin) { offc = inp('Official', el('input')); offc.type = 'checkbox'; offc.checked = true; }
+        add(f); const go = el('button', 'big', d.admin ? 'CREATE EVENT' : 'CREATE FRIENDLY EVENT');
+        go.onclick = async () => { const when = new Date(wh.value); if (isNaN(when)) { toast('Pick a start time', 'bad'); return; } go.disabled = true;
+          const r = await ONLINE.compCreate({ title: ti.value, track: tsel.value, starts_at: when.toISOString(), max: +mx.value, format: fm.value, staging: +sg.value, blurb: bl.value, official: offc ? offc.checked : false });
+          go.disabled = false; if (r.err) { toast(r.err, 'bad'); return; } toast((offc && offc.checked ? 'Official event' : 'Friendly event') + ' created · you\'re registered', 'good'); await compLoad(true); renderPanel(); };
+        add(go); msg(d.admin ? 'Official events get the gold card and a full-screen announcement for every player. Untick Official for a friendly one.' : 'Friendly events are open to anyone. You can have 2 upcoming at a time, up to 16 drivers. Official events come from RC Drift Lab.'); }
+      // ---- results ----
+      h('Results', 'past events'); const past = d.past || [];
+      if (!past.length) msg('No finished events yet. Podiums and full results land here after each event.');
+      for (const c of past) { const b = el('div', 'ecard' + (c.official ? ' off' : '') + ' done'); b.appendChild(el('div', 'etag', (c.official ? '★ OFFICIAL' : 'FRIENDLY · ' + c.host_name) + ' · ' + compWhen(c.starts_at)));
+        b.appendChild(el('div', 'ett', c.title)); b.appendChild(el('div', 'emeta', compTrackName(c.track) + ' · ' + c.n + ' drivers'));
+        const pod = (c.results && c.results.podium) || []; if (pod.length) { const pd = el('div', 'epod'); pod.slice(0, 3).forEach((nm, i) => pd.appendChild(el('span', 'p' + (i + 1), ['🥇', '🥈', '🥉'][i] + ' ' + nm))); b.appendChild(pd); }
+        add(b); }
+      return;
+    }
     if (tab === 'boards') {
       if (lbTrack == null || SIM.TRACK_DEFS[lbTrack].hidden) lbTrack = SIM.TRACK_DEFS[S.opt.track].hidden ? SIM.TRACK_DEFS.findIndex(d => d.id === 'prodigy2') : S.opt.track;
       const myId = O.user && O.user.id;
@@ -7788,7 +7908,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
       dead.forEach(o => o.parent.remove(o)); const empty = []; g.traverse(o => { if (o !== g && !o.isMesh && !o.children.length) empty.push(o); }); empty.forEach(o => o.parent && o.parent.remove(o));
       for (const L of by.values()) { const q = T.BufferGeometryUtils.mergeBufferGeometries(L.g); L.g.forEach(x => x.dispose()); if (!q) continue; const mm = new T.Mesh(q, L.mat); mm.castShadow = L.cs; mm.receiveShadow = true; g.add(mm); } } catch (e) { }
   }
-  window.__game = { comp: { start: () => compStart(), exit: () => compExit(), on: () => compOn, C: COMP }, GFX, camera, openMenu: (k, t) => openMenu(k, t), peds: () => peds, pedHit: (pd) => pedHit(pd, player.sim), pedBack: () => { for (const pd of peds) pd.back = 0; }, notify: (a, b) => notify(a, b, () => {}), chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
+  window.__game = { comp: { start: () => compStart(), exit: () => compExit(), on: () => compOn, C: COMP, ann: () => { compAnnDone = false; compData = null; return compAnnounce(); } }, GFX, camera, openMenu: (k, t) => openMenu(k, t), peds: () => peds, pedHit: (pd) => pedHit(pd, player.sim), pedBack: () => { for (const pd of peds) pd.back = 0; }, notify: (a, b) => notify(a, b, () => {}), chatShow: m => chatShow(m), chatHist: o => chatHist(o), rides: () => rides, rideDbg: () => ({ rideT, near: !!rideNear, RD: !!RD, mode }), rideSkip: () => { rideT = 9.99; }, rideStart, rideExit, rideTo, HY, hydroHop, hydroLock, lotDbg: () => ({ d: Math.hypot(player.sim.x - LR_SPOT.x, player.sim.y - LR_SPOT.y), ok: lotOK(), trk: track.def.id, mode, tt: trailerT, sp: player.sim.speed }), ov: OV, save: () => save(), camFocus, joinLobby, leaveLobby, ONLINE, renderer, scene, S, trk: () => track, wld: () => world, cars: () => cars, player: () => player, drive, openMenu, loadTrack, NET, score, inp, setTab: (t) => { tab = t; renderNav(); renderPanel(); }, setMode: m => mode = m, setLook: l => { Object.assign(S.look, l); rebuildPlayer(); }, voice: { setMode: setVoiceMode, talk, st: () => ({ mode: S.opt.voice, mic: !!VO.track, enabled: VO.track ? VO.track.enabled : null, talking: voiceTalking() }) }, netCars: () => Array.from(netCars.values()).map(c => ({ peer: c.peer, name: c.name, sig: c.sig, vt: !!c.vt, crawl: !!c.sim.crawl, mz: c.sim.mz })) };
 })();
 
 </script>
