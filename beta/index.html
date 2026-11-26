@@ -283,6 +283,7 @@ select{width:100%;padding:8px 10px;background:#1a1c23;border:1px solid var(--ln)
 #comp .rpcap{position:absolute;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(10,11,14,.86);border-left:4px solid #3ddc6a;color:#fff;font-weight:800;letter-spacing:.06em;padding:8px 14px;border-radius:6px;font-size:16px;opacity:0;transition:opacity .15s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #comp .rpcap.on{opacity:1}#comp .rpcap.bad{border-left-color:#ff3b30;color:#ffd1cd}
 #comp .cw.qres{background:rgba(255,210,63,.08);border-radius:6px;padding:6px}#comp .cw.qres>b{color:#ffd23f}#comp .cw.qres em{font-style:normal;font-weight:900;font-size:18px;color:#ffd23f}
+#comp .cver{font-size:12px;color:#9fb3c8;margin:6px 0 2px}#comp .cver.ok{color:#8ff0a6}#comp .cver.warn{color:#ffd23f}
 .comprp #hud,.comprp #touch,.comprp #toast{display:none!important}
 .inmenu #comp{display:none!important}
 .compbtn{background:linear-gradient(90deg,#1b2a6b,#13306b)!important;color:#fff!important;border:1px solid #2f5bff!important}.compbtn small{display:block;font-size:11px;font-style:normal;font-weight:600;letter-spacing:.06em;opacity:.75;margin-top:3px}
@@ -5357,6 +5358,8 @@ const ONLINE = (() => {
   O.compList = async () => (await rpc('comp_list')) || null;
   O.compCreate = async p => { const r = await rpc('comp_create', { p }); return r && r.ok ? { id: r.id } : { err: said(r) }; };
   O.compRegister = async (id, on) => said(await rpc('comp_register', { p_comp: id, p_on: !!on }));
+  O.compSaveRun2 = async p => { if (!O.sb) return null; const { data, error } = await O.sb.rpc('comp_run_save2', { p }); return error ? null : data; };
+  O.compJudge = async id => { try { const { data, error } = await O.sb.functions.invoke('judge-run', { body: { id } }); return error || !data ? null : data; } catch (e) { return null; } };   /* v109: server re-scores the recording */
   O.compSaveRun = async p => !!(await rpc('comp_run_save', { p }));
   O.compCancel = async id => said(await rpc('comp_cancel', { p_comp: id }));
   O.pedBoard = async () => (await rpc('ped_board')) || { top: [] };   // v98
@@ -5806,7 +5809,7 @@ const COMP = (function () {
       '<div class="cw"><b>WHERE</b><span>' + esc(S.trackName) + '</span></div>' +
       '<div class="cw"><b>WHAT</b><span>' + (R.zero ? '0 · ' + esc(R.zero.why) : R.total.toFixed(1) + ' (average of the three judges)') + (R.fs ? ' · ' + R.fs + ' false start' + (R.fs > 1 ? 's' : '') : '') + '</span></div>' +
       (R.zero && !R.rec ? '' : bar('LINE', R.line) + bar('ANGLE', R.angle) + bar('STYLE', R.style)) +
-      (zl ? '<div class="czs">' + zl + '</div>' : '') +
+      (zl ? '<div class="czs">' + zl + '</div>' : '') + '<div class="cver">' + verTxt(R) + '</div>' +
       '<div class="cw why"><b>WHY</b><ul>' + (why.length ? why.map((w, i) => '<li class="' + (w.bad ? 'bad' : 'good') + (i >= 7 ? ' more' : '') + '">' + esc(w.txt) + (w.t != null && R.rec ? ' <a data-t="' + w.t + '">▶ watch</a>' : '') + '</li>').join('') + (why.length > 7 ? '<li class="mtog"><a>+ ' + (why.length - 7) + ' more</a></li>' : '') : '<li>Clean run.</li>') + '</ul></div>' +
       (qn === 2 ? '<div class="cw qres"><b>QUALIFIED</b><span><em>' + P[pb2].total.toFixed(1) + '</em> · run 1 ' + P[0].total.toFixed(1) + (pb2 === 0 ? ' ✓' : '') + ' · run 2 ' + P[1].total.toFixed(1) + (pb2 === 1 ? ' ✓' : '') + ' · the better run counts</span></div>' : '') +
       '<div class="cw"><b>NEXT</b><span>' + (qn === 1 ? 'Qualifying run 2 · the better of your two runs counts' : 'Start a new qualifying pair · best single run today ' + (best ? best.total.toFixed(1) : '—')) + '</span></div>' +
@@ -5829,8 +5832,13 @@ const COMP = (function () {
       if (a === 'bk') backToCard(); });
   }
 
+  // v109: the server judge re-scores the uploaded recording with the same code; the card shows whether it agrees
+  function verTxt(R) { const v = R.server; if (R.server === undefined) return R.rec && R.rec.f.length > 3 ? (ctx && ctx.signedIn && ctx.signedIn() ? 'Sending the run to the server judge…' : 'Sign in to have runs checked by the server judge.') : '';
+    if (!v || !v.ok) return 'Server judge unavailable right now (your score still saved here).';
+    const s = v.server; return s.match ? '✓ Server judge agrees: ' + s.total.toFixed(1) : '⚠ Server judge scored it ' + s.total.toFixed(1) + (s.zero ? ' (' + s.zero + ')' : '') + ' · in events the server score counts'; }
+  function verified(R, r) { R.server = r || null; if (S.res === R && ui) { const e = document.querySelector('#comp .cver'); if (e) { e.textContent = verTxt(R); e.className = 'cver ' + (r && r.ok && r.server.match ? 'ok' : 'warn'); } } }
   function packRec(rec) { const r4 = v => Math.round(v * 1e4) / 1e4, r3 = v => Math.round(v * 1e3) / 1e3; return { v: rec.v, hz: HZ, pa: r4(rec.pa), pb: r4(rec.pb), f: rec.f.map(a => a.map((v, i) => i === 8 || i === 17 ? v : i <= 3 ? r4(v) : r3(v))) }; }
-  return { packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
+  return { verified, packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
 })();
 if (typeof module !== 'undefined') module.exports = COMP;
 
@@ -6180,8 +6188,8 @@ if (typeof module !== 'undefined') module.exports = COMP;
     lock: on => { if (on) { const s = player.sim; s.inp.throttle = 0; s.inp.steer = 0; } },
     bodyClass: (c, on) => compCls(on, c),
     beep: (f, d, v, type) => { if (!AC || !S.opt.sound) return; const t0 = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(v || 0.3, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d); o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d + 0.05); },
-    toast: (m, c) => toast(m, c), go: () => { },
-    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec), parts: Object.assign({}, R.parts, { ded: R.ded.map(d => d.j + ':' + d.pts), hit: (R.zones || []).filter(z => z.hit).length, zones: (R.zones || []).length, phys: physOf(devOf()), dev: devOf() }) }); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
+    toast: (m, c) => toast(m, c), go: () => { }, signedIn: () => !!ONLINE.profile && !inClaude,
+    saveRun: (R, tr) => { if (!ONLINE.profile || inClaude) return; try { ONLINE.compSaveRun2({ track: tr.def.id, ver: VERSION, total: R.total, line: R.line, angle: R.angle, style: R.style, zero: R.zero ? R.zero.why : null, rec: COMP.packRec(R.rec), parts: Object.assign({}, R.parts, { ded: R.ded.map(d => d.j + ':' + d.pts), hit: (R.zones || []).filter(z => z.hit).length, zones: (R.zones || []).length, phys: physOf(devOf()), dev: devOf() }) }).then(id => id ? ONLINE.compJudge(id) : null).then(r => COMP.verified(R, r)); } catch (e) { } }, win: () => sfxWin(), exit: () => { compExit(); toast('Left comp mode'); }
   });
   // v107 (Shaun): joining a room puts you OFF the track, just inside the pit opening, nose angled toward the track, so nobody already drifting
   // slams into a car that appears in their line. Spots are checked against walls/props/people/other cars; your player id picks a different first spot.
@@ -6358,7 +6366,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v108', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v109', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
