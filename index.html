@@ -3952,7 +3952,7 @@ const GFX = (function () {
     { id: 'malwagon', name: 'Malibru Wagon', tag: '80 two-door wagon', cls: 'drift', reg: 'us', ds: 1 },
     { id: 'bel55', name: 'Chebby 150', tag: '55 utility sedan', cls: 'drift', reg: 'us', ds: 1 },
     { id: 'cyber', egg: 1, name: 'Cyber Wedge', tag: 'Stainless wedge pickup', cls: 'truck', ds: 1 },
-    { id: 'ecto', name: 'Spook Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
+    { id: 'ecto', name: 'Ghost Wagon', tag: '59 ambulance, roof rack', cls: 'movie' },
     { id: 'delorean', name: 'Time Machine', tag: 'Stainless gullwing', cls: 'movie', ds: 1 },
     { id: 'chibidm', name: 'Mini Time Machine', tag: 'Chibi gullwing, giant wheels', cls: 'chibi', egg: 1, ds: 1 },
     { id: 'kitt', name: 'Knight Car', tag: '82 T-top, red scanner', cls: 'movie' },
@@ -5707,7 +5707,7 @@ const ONLINE = (() => {
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v97', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v97.1', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
