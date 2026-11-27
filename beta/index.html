@@ -5648,7 +5648,9 @@ const COMP = (function () {
   let ctx = null, tr = null, st = null, tower = null, ui = null;
   const S = { on: false, ph: 'off', t: 0, hold: 0, outT: 0, fs: 0, runs: [], rec: null, res: null, target: 0, cap: 90, stageLimit: 90, stageT: 0, rp: null, nRun: 0 };
   function init(c) { ctx = c; }
-  function available(track) { return !!(track && track.zones && track.zones.length && !track.def.free && !track.def.crawl && track.def.id !== 'crawl' && track.def.id !== 'lowrider' && !track.def.touge && track.def.id !== 'touge'); }
+  // v112 (Shaun): comp practice and events only on tracks whose zones he has approved for competition. Right now that's Prodigy RC V2.1 only.
+  const COMP_TRACKS = ['prodigy2_1'];
+  function available(track) { return !!(track && track.zones && track.zones.length && track.def && COMP_TRACKS.includes(track.def.id)); }
 
   // ---- the tower model: from the photos and CAD (3 stacked white-lens cubes, black bands, black base with antenna, two black sensor boxes) ----
   function buildTower(group) {
@@ -5848,7 +5850,7 @@ const COMP = (function () {
     if (!e.ok) return '⚠ Not counted for the event: ' + esc(e.why || '') + (e.best != null ? ' · your best ' + (+e.best).toFixed(1) : '');
     return '<b>Counted: event run ' + e.runs + ' of 2</b> · server score ' + (+e.counted).toFixed(1) + ' · your best ' + (+e.best).toFixed(1) + ' · <b>#' + e.rank + '</b> of ' + e.of + ' so far'; }
   function packRec(rec) { const r4 = v => Math.round(v * 1e4) / 1e4, r3 = v => Math.round(v * 1e3) / 1e3; return { v: rec.v, hz: HZ, pa: r4(rec.pa), pb: r4(rec.pb), f: rec.f.map(a => a.map((v, i) => i === 8 || i === 17 ? v : i <= 3 ? r4(v) : r3(v))) }; }
-  return { verified, packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
+  return { COMP_TRACKS, verified, packRec, live, zoneHit, FW, HZ, stageOf, boxRead, newRec, recTick, sample, judgeRun, whyLines, lineCredit, init, available, start, stop, dropWorld, tick, lock, replaying: () => S.on && S.ph === 'replay' && !!S.rp, rpTick, cam, state: () => S, restage, replay, seek, backToCard };
 })();
 if (typeof module !== 'undefined') module.exports = COMP;
 
@@ -6185,9 +6187,13 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- v103 competition: solo qualifying practice (comp.js does the tower, judges, card and replay) ----------------
   let compOn = false;
   const compCls = (on, c) => document.documentElement.classList.toggle(c || 'comp', !!on);
-  function compStart(ev) {
+  function compStart(ev, onTrack) {
     // v109 qualifying events: the event's track is loaded first; the run is scored by the server judge and counted for the event
-    if (ev && ev.track && track.def.id !== ev.track) { const i = SIM.TRACK_DEFS.findIndex(d => d.id === ev.track); if (i < 0) { toast('This event needs a newer version of the game', 'bad'); return; } if (ONLINE.room) leaveLobby(); S.opt.track = i; loadTrack(i); }
+    // v112: practice can also bring you to the comp track (onTrack) without being an event run
+    const want = ev && ev.track ? ev.track : onTrack;
+    if (want && locked(SIM.TRACK_DEFS.findIndex(d => d.id === want))) { freeCard('comp practice'); return; }
+    if (want && track.def.id !== want) { const i = SIM.TRACK_DEFS.findIndex(d => d.id === want); if (i < 0) { toast('This event needs a newer version of the game', 'bad'); return; } if (ONLINE.room) leaveLobby(); S.opt.track = i; loadTrack(i); }
+    if (ev && !ev.id) ev = null;
     if (ONLINE.room || !COMP.available(track)) return; if (isTouchDev()) goFull();
     compOn = true; newSession(); drive(false);
     const who = ONLINE.profile ? ONLINE.profile.driver_name : (S.opt.name || 'You').trim() || 'You';
@@ -6379,7 +6385,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
   // ---------------- online (lights up on the shared page) ----------------
   const NET = { room: null, status: 'solo', sendT: 0, count: 0, looks: new Map(), firstSeen: new Map(), ptrk: new Map(), pjoin: new Map() }, netCars = new Map();
   const HEX = /^#[0-9a-f]{6}$/i, okId = (list, v, d) => list.some(x => x.id === v) ? v : d, num = (v, lo, hi) => typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : 0;
-  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v111', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
+  const inClaude = !!(window.claude && window.claude.use), VENMO = 'StrangerKreations', VERSION = 'v112', WEB = 'https://rcdriftlab.github.io/';   // Venmo @username for the Support button
   const invite = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); let inviteTried = false;
   ONLINE.changed = () => {
     if (!inClaude && ONLINE.authKnown && needName() && !ONLINE._nameAsked) { ONLINE._nameAsked = true; setTimeout(() => { if (needName()) nameCard(); }, 600); }
@@ -7245,7 +7251,7 @@ if (typeof module !== 'undefined') module.exports = COMP;
     g.fillStyle = '#ff5a1f'; g.beginPath(); g.arc(ox + tr.X[0] * s, oy - tr.Y[0] * s, 3.6, 0, 6.3); g.fill();
     return (thumbs[i] = c.toDataURL());
   }
-  const locked = i => ONLINE.isGuest && ONLINE.isGuest() && !ONLINE.TRIAL.includes(SIM.TRACK_DEFS[i].id) && !SIM.TRACK_DEFS[i].hidden;
+  const locked = i => ONLINE.isGuest && ONLINE.isGuest() && !ONLINE.TRIAL.includes(SIM.TRACK_DEFS[i].id) && !ONLINE.TRIAL.includes(SIM.TRACK_DEFS[i].base) && !SIM.TRACK_DEFS[i].hidden;   /* v112: a trial track's newer versions (V2.1) are in the trial too */
   // v68: signed in with Google but no driver name yet. Every gate used to offer "Sign in with Google" again here, so new players
   //      looped through Google over and over and thought sign-up wasn't sticking. This card finishes the job instead.
   function nameForm(done) { const O = ONLINE, w = el('div', 'nameform'), ni = el('input'); ni.type = 'text'; ni.maxLength = 16; ni.placeholder = 'Driver name'; ni.value = S.opt.name && S.opt.name !== 'Driver' ? S.opt.name : '';
@@ -7764,8 +7770,9 @@ if (typeof module !== 'undefined') module.exports = COMP;
       const myId = O.user && O.user.id, signed = !!O.profile;
       h('Practice', 'solo qualifying');
       msg('Real comp rules: stage at the tower, go on green, one lap. Points only come from the zones: Line (how deep and how much of each zone), Angle (angle held in the zones and angle checks), Style (speed through the zones, entries, linking zone to zone). Hit the wall, spin or leave the track and the run is 0.');
-      if (COMP.available(track) && !inRoom) { const cb = el('button', 'big compbtn'); cb.innerHTML = '🏁 PRACTICE ON ' + track.def.name.toUpperCase() + '<small>tower start · robot judges · instant replay</small>'; cb.onclick = compStart; add(cb); }
-      else msg(inRoom ? 'Leave the room to practice comp runs.' : 'Pick a track with zones on the Drive tab to practice (Touge, Crawler Canyon and The Lot have no comp zones).');
+      if (inRoom) msg('Leave the room to practice comp runs.');
+      else { const cid = COMP.COMP_TRACKS[0], cb = el('button', 'big compbtn'); cb.innerHTML = '🏁 PRACTICE ON ' + compTrackName(cid).toUpperCase() + '<small>tower start · robot judges · instant replay' + (track.def.id !== cid ? ' · takes you there' : '') + '</small>'; cb.onclick = () => compStart(null, cid); add(cb);
+        msg('Comp practice runs on Prodigy RC V2.1 for now: its zones are set up for real competition. More tracks join once their comp zones are approved.'); }
       { let pb = {}; try { pb = JSON.parse(localStorage.getItem('rcdl_comp_pb') || '{}'); } catch (e) { } const ks = Object.keys(pb); if (ks.length) { const w = el('div', 'lb'); for (const k of ks) { const r = el('div', 'lbr lbr3'); r.appendChild(el('span', '', compTrackName(k))); r.appendChild(el('span', 'lbn', 'L ' + pb[k].line.toFixed(0) + ' · A ' + pb[k].angle.toFixed(0) + ' · S ' + pb[k].style.toFixed(0))); r.appendChild(el('span', 'lbp', pb[k].total.toFixed(1))); w.appendChild(r); } h('My practice bests', 'this device'); add(w); } }
       if (!web || O.status !== 'ready') { h('Events'); msg(!web ? 'Online events are on the web version: ' + WEB : 'Connecting…'); return; }
       const d = compData; if (!d || Date.now() - compAt > 20000) compLoad(!d).then(() => { if (tab === 'comps' && mode !== 'drive') renderPanel(); });
